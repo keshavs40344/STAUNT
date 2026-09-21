@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env
+.venv
+env/
+venv/
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Node / Electron
+node_modules/
+dist/
+out/
+.electron/
+*.log
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.hprof
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Scratch / Temp
+scratch/
+backups/
+tmp/

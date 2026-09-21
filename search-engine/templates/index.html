@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>STAUNT — Intelligent Search Engine</title>
+  <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0a0d14" />
+  <meta name="description" content="STAUNT is a high-speed, private search engine and neural discovery platform." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <meta name="referrer" content="no-referrer" />
+  <link rel="stylesheet" href="/static/css/style.css?v=50" />
+</head>
+
+<body>
+
+  <!-- APP HEADER -->
+  <header class="app-header" id="appHeader">
+    <div class="brand-logo" id="brandLogo" title="STAUNT Home" onclick="window.location.href='/'" style="cursor: pointer;">
+      <div class="logo-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div class="brand-text-wrap">
+        <span class="brand-name">STAUNT</span>
+      </div>
+    </div>
+
+    <!-- Header Search Form (Visible on results view) -->
+    <div class="header-search-wrapper" id="headerSearchWrap" style="display: none;">
+      <form class="search-form" id="headerSearchForm">
+        <input 
+          type="text" 
+          id="headerSearchInput" 
+          class="search-input" 
+          placeholder="Search the web with STAUNT..." 
+          autocomplete="off" 
+          required 
+        />
+        <button type="button" class="clear-btn" id="headerClearBtn" title="Clear input" style="display: none;">✕</button>
+        <button type="submit" class="search-btn" aria-label="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+      </form>
+      <div class="suggest-box" id="suggestBoxHeader"></div>
+    </div>
+
+    <!-- Header Actions (Downloads & Theme) -->
+    <div class="header-actions">
+      <a href="/download/windows" class="native-app-btn" title="Download STAUNT Browser for Windows (Setup.exe)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.95-1.801"/></svg>
+        <span>Download for Windows</span>
+      </a>
+      <a href="/download/android" class="native-app-btn android-btn" title="Download STAUNT Browser for Android (.apk)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.086 12 8.086s-3.5902.3251-5.1368.8637L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
+        <span>Download for Android</span>
+      </a>
+
+      <!-- Theme Switcher -->
+      <button class="icon-btn" id="themeToggle" title="Toggle Dark/Light Theme" aria-label="Toggle Theme">
+      </button>
+    </div>
+  </header>
+
+  <!-- HOME HERO VIEW (Search-First) -->
+  <main class="home-container" id="homeView">
+    
+    <div class="home-logo-wrap">
+      <div class="home-mark">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <h1 class="home-title">STAUNT</h1>
+      <p class="home-subtitle">High-Speed Sovereign Search Engine</p>
+    </div>
+
+    <!-- Home Central Search Form -->
+    <div class="home-search-wrap">
+      <form class="search-form home-large-form" id="homeSearchForm">
+        <input 
+          type="text" 
+          id="homeSearchInput" 
+          class="search-input" 
+          placeholder="Search the web with STAUNT..." 
+          autocomplete="off" 
+          required 
+          autofocus
+        />
+        <button type="button" class="clear-btn" id="homeClearBtn" title="Clear input" style="display: none;">✕</button>
+        <button type="submit" class="search-btn" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+      </form>
+      <div class="suggest-box" id="suggestBoxHome"></div>
+    </div>
+
+    <!-- Verified Working Search Categories -->
+    <nav class="home-modes-nav" id="homeVerticalShortcuts">
+      <button class="mode-nav-btn active" data-tab="all" title="Web Search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>All</span>
+      </button>
+      <button class="mode-nav-btn" data-tab="images" title="Search Images">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <span>Images</span>
+      </button>
+      <button class="mode-nav-btn" data-tab="news" title="Search News">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+        <span>News</span>
+      </button>
+    </nav>
+
+    <!-- Download Banner Section -->
+    <div class="download-section-banner" style="margin-top: 48px; padding: 24px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); text-align: center; max-width: 680px; width: 100%;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">Browse with STAUNT Native Apps</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted, #8b949e); margin-bottom: 18px;">Built-in ad-blocking, tab isolation, and lightning-fast search.</p>
+      <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+        <a href="/download/windows" class="native-app-btn" style="padding: 10px 20px; font-size: 0.9rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.95-1.801"/></svg>
+          <span>Download Windows (.exe • 83.7 MB)</span>
+        </a>
+        <a href="/download/android" class="native-app-btn android-btn" style="padding: 10px 20px; font-size: 0.9rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.086 12 8.086s-3.5902.3251-5.1368.8637L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
+          <span>Download Android (.apk • 2.2 MB)</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Home Footer Navigation -->
+    <footer class="home-footer">
+      <a href="/privacy">Privacy</a>
+      <span>•</span>
+      <a href="/terms">Terms</a>
+      <span>•</span>
+      <span>&copy; 2026 STAUNT</span>
+    </footer>
+  </main>
+
+  <!-- SEARCH RESULTS VIEW -->
+  <main class="results-container" id="resultsView" style="display: none;">
+    <!-- Category Tabs Navigation -->
+    <nav class="tabs-bar" id="categoriesBar">
+      <button class="tab-btn active" data-tab="all">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>All</span>
+      </button>
+      <button class="tab-btn" data-tab="images">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <span>Images</span>
+      </button>
+      <button class="tab-btn" data-tab="news">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+        <span>News</span>
+      </button>
+    </nav>
+
+    <!-- Search Filters Bar (Time Filters) -->
+    <div class="filters-bar" id="searchFiltersBar">
+      <button class="filter-pill active" data-time="">All Time</button>
+      <button class="filter-pill" data-time="d">Past 24 Hours</button>
+      <button class="filter-pill" data-time="w">Past Week</button>
+      <button class="filter-pill" data-time="m">Past Month</button>
+      <button class="filter-pill" data-time="y">Past Year</button>
+    </div>
+
+    <!-- Results Layout -->
+    <div class="results-layout">
+      <!-- Main Results Column -->
+      <div class="results-main">
+        <div class="results-meta-bar" id="resultsMetaBar">
+          <span class="results-stats" id="resultsStats"></span>
+        </div>
+
+        <!-- Visual Discovery Strip -->
+        <div class="visual-strip-container" id="visualStripContainer" style="display: none;">
+          <div class="visual-strip-header">
+            <span class="visual-strip-title">Images</span>
+            <button class="visual-strip-more" id="visualStripMoreBtn">View All Images ↗</button>
+          </div>
+          <div class="visual-strip-scroll" id="visualStripScroll"></div>
+        </div>
+
+        <!-- AI Overview Synthesis Card -->
+        <div class="ai-overview-card" id="aiOverviewCard" style="display: none;">
+          <div class="ai-overview-header">
+            <div class="ai-header-left">
+              <span class="ai-spark-icon">✨</span>
+              <span class="ai-title">STAUNT Overview</span>
+            </div>
+            <div class="ai-header-actions">
+              <button class="ai-action-btn" id="copyOverviewBtn" title="Copy text">Copy</button>
+              <button class="ai-action-btn" id="collapseOverviewBtn" title="Collapse">Collapse</button>
+            </div>
+          </div>
+          <div class="ai-overview-body" id="aiOverviewBody">
+            <div class="ai-skeleton-wrap">
+              <div class="ai-skeleton-line" style="width: 90%;"></div>
+              <div class="ai-skeleton-line" style="width: 75%;"></div>
+              <div class="ai-skeleton-line" style="width: 82%;"></div>
+            </div>
+          </div>
+          <div class="ai-sources-tray" id="aiSourcesTray" style="display: none;">
+            <span class="sources-label">Sources:</span>
+            <div class="sources-list" id="aiSourcesList"></div>
+          </div>
+        </div>
+
+        <!-- Web Search Results List -->
+        <div class="search-results-list" id="searchResultsList"></div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <div class="empty-icon">🔍</div>
+          <h3 class="empty-title">No search results found</h3>
+          <p class="empty-desc">Try checking your spelling or use more general keywords.</p>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-bar" id="paginationBar" style="display: none;">
+          <button class="page-btn" id="prevPageBtn" disabled>← Previous</button>
+          <span class="page-indicator" id="pageIndicator">Page 1</span>
+          <button class="page-btn" id="nextPageBtn">Next →</button>
+        </div>
+      </div>
+
+      <!-- Sidebar Column (Wikipedia Knowledge Graph) -->
+      <aside class="results-sidebar" id="resultsSidebar">
+        <div class="knowledge-card" id="knowledgeCard" style="display: none;">
+          <div class="kc-img-wrap" id="kcImgWrap" style="display: none;">
+            <img id="kcImg" src="" alt="Knowledge Entity" referrerpolicy="no-referrer" />
+          </div>
+          <div class="kc-content">
+            <h3 class="kc-title" id="kcTitle">Entity</h3>
+            <p class="kc-snippet" id="kcSnippet"></p>
+            <div class="kc-attrs" id="kcAttrs"></div>
+            <a href="#" target="_blank" rel="noopener noreferrer" class="kc-link" id="kcLink">Read on Wikipedia ↗</a>
+          </div>
+        </div>
+
+        <!-- Did You Mean Suggestion -->
+        <div class="did-you-mean-card" id="didYouMeanCard" style="display: none;">
+          <span class="dym-label">Did you mean:</span>
+          <a href="#" class="dym-link" id="dymLink">suggestion</a>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- IMAGE LIGHTBOX MODAL -->
+  <div class="modal-overlay" id="lightboxModal">
+    <div class="lightbox-content">
+      <button class="modal-close-btn lightbox-close-btn" id="closeLightboxBtn">✕</button>
+      <img id="lightboxImg" src="" alt="Full view" />
+      <div class="lightbox-footer">
+        <span id="lightboxTitle">Image</span>
+        <a id="lightboxVisitBtn" href="" target="_blank" rel="noopener noreferrer" class="auth-submit-btn" style="width: auto; padding: 6px 18px; text-decoration: none;">Visit Source</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=50"></script>
+</body>
+</html>
