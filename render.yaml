@@ -17,7 +17,7 @@ services:
       - key: FLASK_ENV
         value: production
       - key: ALLOWED_ORIGINS
-        value: "https://staunt-search.onrender.com,https://vastuda-search.onrender.com,http://localhost:5000,app://."
+        value: "https://staunt-search.onrender.com,http://localhost:5000,app://."
       - key: SECRET_KEY
         generateValue: true
       - key: GROQ_API_KEY

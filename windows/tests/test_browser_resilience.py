@@ -44,7 +44,7 @@ node_test_script = """
 const path = require('path');
 
 // Simulate formatUrlOrSearch logic
-const STAUNT_SEARCH_URL = process.env.STAUNT_SEARCH_URL || 'https://vastuda-search.onrender.com' || 'http://127.0.0.1:5000';
+const STAUNT_SEARCH_URL = process.env.STAUNT_SEARCH_URL || 'http://127.0.0.1:5000';
 
 function formatUrlOrSearch(input) {
   const trimmed = (input || '').trim().slice(0, 2048);
@@ -55,9 +55,9 @@ function formatUrlOrSearch(input) {
   return `${STAUNT_SEARCH_URL}/?q=${encodeURIComponent(trimmed)}`;
 }
 
-// 1. Direct query routes to production search URL
+// 1. Direct query routes to configured search URL
 const resSearch = formatUrlOrSearch('artificial intelligence');
-if (!resSearch.startsWith('https://vastuda-search.onrender.com/?q=')) {
+if (!resSearch.startsWith(`${STAUNT_SEARCH_URL}/?q=`)) {
   console.error('FAIL search routing:', resSearch);
   process.exit(1);
 }

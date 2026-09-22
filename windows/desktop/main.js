@@ -248,7 +248,7 @@ let bookmarksDB = [];
 let downloadsDB = [];
 const DEFAULT_SETTINGS = {
   searchEngine: 'staunt',
-  searchUrl: 'https://vastuda-search.onrender.com',
+  searchUrl: process.env.STAUNT_SEARCH_URL || 'http://127.0.0.1:5000',
   homeUrl: 'staunt://newtab',
   shieldLevel: 'standard',
   hardwareAcceleration: true,
@@ -1414,14 +1414,15 @@ function toggleSplitView(secId) {
 
 // URL SANITIZER & PARSER (Intelligent URL vs STAUNT Search)
 // =============================================================================
-// Production URL resolution (3-tier):
-//   1. STAUNT_SEARCH_URL env var — highest priority (set per-environment)
-//   2. vastuda-search.onrender.com — permanent production URL (Render.com)
-//   3. http://127.0.0.1:5000 — local development fallback
-// NOTE: Temporary ephemeral tunnels are NEVER used here by design.
+// Production URL resolution (Configuration-driven priority):
+//   1. process.env.STAUNT_SEARCH_URL (Explicit environment / build override)
+//   2. process.env.STAUNT_PRODUCTION_URL (Verified production HTTPS endpoint if configured)
+//   3. 'http://127.0.0.1:5000' (Local development fallback)
+// NOTE: Unverified external targets (e.g. historical https://vastuda-search.onrender.com which returned 404)
+// are strictly never used as active fallbacks without verified live deployment.
 const STAUNT_SEARCH_URL = (
   process.env.STAUNT_SEARCH_URL ||
-  'https://vastuda-search.onrender.com' ||
+  process.env.STAUNT_PRODUCTION_URL ||
   'http://127.0.0.1:5000'
 );
 

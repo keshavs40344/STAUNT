@@ -127,7 +127,6 @@ def is_rate_limited_for_path(ip, path):
 
 # --- CORS: allowed origins (non-wildcard in production) ---
 _DEFAULT_ORIGINS = ",".join([
-    "https://vastuda-search.onrender.com",
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "http://localhost:3000",
@@ -135,6 +134,9 @@ _DEFAULT_ORIGINS = ",".join([
 ])
 _ALLOWED_ORIGINS_RAW = os.getenv("ALLOWED_ORIGINS", _DEFAULT_ORIGINS)
 ALLOWED_ORIGINS = set(o.strip() for o in _ALLOWED_ORIGINS_RAW.split(",") if o.strip())
+_pub_url = os.getenv("STAUNT_PUBLIC_URL", "").strip()
+if _pub_url:
+    ALLOWED_ORIGINS.add(_pub_url)
 
 def _get_cors_origin(request_origin):
     """Return the matching allowed origin or None."""
@@ -197,14 +199,20 @@ def add_security_headers(response):
 
     # --- Content-Security-Policy ---
     # Compatible with VASTUDA search UI: allows inline styles/scripts (needed for the
-    # existing vanilla-JS UI), Wikimedia images, Google Fonts, and external APIs.
+    # Dynamic connect-src: allows 'self', localhost, and explicitly configured STAUNT_PUBLIC_URL
+    connect_sources = ["'self'", "http://localhost:5000", "http://127.0.0.1:5000"]
+    public_url = os.getenv("STAUNT_PUBLIC_URL", "").strip()
+    if public_url and public_url not in connect_sources:
+        connect_sources.append(public_url)
+    connect_src_str = " ".join(connect_sources)
+
     csp = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: https: blob:; "
-        "connect-src 'self' https://vastuda-search.onrender.com https://paying-andrews-focused-potential.trycloudflare.com http://localhost:5000 http://127.0.0.1:5000; "
+        f"connect-src {connect_src_str}; "
         "media-src 'self' blob:; "
         "object-src 'none'; "
         "base-uri 'self'; "
@@ -255,7 +263,7 @@ def health_check():
     return jsonify({
         "status": "ok",
         "version": "5.4",
-        "service": "VASTUDA Sovereign Search & Discovery Engine",
+        "service": "STAUNT Sovereign Search & Discovery Engine",
         "timestamp": int(time.time())
     })
 

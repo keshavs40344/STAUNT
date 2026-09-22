@@ -1,7 +1,7 @@
 # STAUNT Search Engine — API Reference
 
 ## Base URL
-- Production: `https://vastuda-search.onrender.com` / `https://staunt-search.onrender.com`
+- Production: Configured via `$STAUNT_PUBLIC_URL` (e.g. `https://staunt-search.onrender.com` or custom domain once deployment is verified)
 - Local Development: `http://127.0.0.1:5000`
 
 ---

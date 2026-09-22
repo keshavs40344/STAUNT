@@ -55,7 +55,16 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val NEW_TAB_URL = "file:///android_asset/newtab.html"
-        const val STAUNT_SEARCH_BASE = "https://vastuda-search.onrender.com/?q="
+        // Configuration-driven STAUNT Search endpoint:
+        // Reads "staunt.search.url" system property or defaults to local development gateway (10.0.2.2 for Android emulator)
+        val STAUNT_SEARCH_BASE: String
+            get() {
+                val prop = System.getProperty("staunt.search.url")
+                if (!prop.isNullOrBlank()) {
+                    return if (prop.endsWith("?q=")) prop else "$prop/?q="
+                }
+                return "http://10.0.2.2:5000/?q="
+            }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

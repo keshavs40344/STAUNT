@@ -677,7 +677,7 @@ def search_code_mode(query):
     # 1. Query GitHub Search API (Free public endpoint)
     try:
         gh_url = f"https://api.github.com/search/repositories?q={urllib.parse.quote(query)}&sort=stars&order=desc&per_page=6"
-        gh_resp = http_session.get(gh_url, headers={"User-Agent": "VASTUDA-Search-Engine"}, timeout=(3.05, 4.0))
+        gh_resp = http_session.get(gh_url, headers={"User-Agent": "STAUNT-Search-Engine"}, timeout=(1.0, 2.0))
         if gh_resp.status_code == 200:
             gh_data = gh_resp.json()
             for repo in gh_data.get("items", []):
