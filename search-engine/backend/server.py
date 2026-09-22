@@ -12,12 +12,18 @@ import requests
 from dotenv import load_dotenv
 
 import sys
+import types
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 SEARCH_ENGINE_DIR = os.path.dirname(BACKEND_DIR)
 STAUNT_ROOT = os.path.dirname(SEARCH_ENGINE_DIR)
 
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
+
+if "search_engine" not in sys.modules:
+    _pkg = types.ModuleType("search_engine")
+    _pkg.__path__ = [BACKEND_DIR]
+    sys.modules["search_engine"] = _pkg
 
 # Import database, indexer, crawler, and search core modules
 import db
@@ -733,6 +739,15 @@ def download_windows():
     return jsonify({"error": "Windows installer binary not found in releases"}), 404
 
 
+@app.route("/download/windows-portable")
+def download_windows_portable():
+    for name in ["STAUNT-Windows-Portable.zip", "Staunt-Browser-Windows-Setup.zip"]:
+        p = os.path.join(ASSETS_DIR, name)
+        if os.path.exists(p):
+            return send_file(p, as_attachment=True, download_name="STAUNT-Windows-Portable.zip")
+    return jsonify({"error": "Windows portable package not found in releases"}), 404
+
+
 @app.route("/download/android")
 def download_android():
     for name in ["STAUNT-Android.apk", "staunt-browser-release.apk", "Staunt-Browser-Mobile.apk"]:
@@ -740,6 +755,19 @@ def download_android():
         if os.path.exists(p):
             return send_file(p, as_attachment=True, download_name="STAUNT-Android.apk")
     return jsonify({"error": "Android APK binary not found in releases"}), 404
+
+
+@app.route("/api/releases", methods=["GET"])
+def api_releases():
+    manifest_path = os.path.join(ASSETS_DIR, "releases.json")
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return jsonify(data)
+        except Exception as e:
+            return jsonify({"error": f"Failed to parse releases manifest: {e}"}), 500
+    return jsonify([]), 404
 
 
 @app.route("/assets/<path:filename>")
@@ -1442,7 +1470,6 @@ def api_crawler_status():
     except Exception as e:
         logger.error(f"Crawler status endpoint error: {e}")
         return jsonify({"status": "error", "error": str(e)}), 500
-
 
 @app.route("/api/reader", methods=["GET"])
 def api_reader():

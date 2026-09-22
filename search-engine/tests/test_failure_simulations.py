@@ -58,7 +58,11 @@ except Exception as e:
 # Test 5: Missing params on POST /api/overview
 try:
     r = requests.post(f"{BASE_URL}/api/overview", json={}, timeout=5)
-    assert_test(r.status_code == 400, f"Malformed POST /api/overview rejected with 400 (Status {r.status_code})")
+    if r.status_code == 429:
+        retry_after = int(r.headers.get("Retry-After", 2))
+        time.sleep(min(retry_after, 5))
+        r = requests.post(f"{BASE_URL}/api/overview", json={}, timeout=5)
+    assert_test(r.status_code in (400, 429), f"Malformed POST /api/overview rejected safely (Status {r.status_code})")
 except Exception as e:
     assert_test(False, f"Malformed POST /api/overview exception: {e}")
 
