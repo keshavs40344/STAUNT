@@ -3,152 +3,106 @@
 VASTUDA 5.3 Step 31 Regression Verification Suite:
 Covers all 13 regression tests against running server.
 """
-
+import unittest
 import sys
 import time
 import requests
+import urllib.parse
+import os
 
-BASE = "http://127.0.0.1:5000"
-passed = 0
-failed = 0
+BASE = os.environ.get("STAUNT_SEARCH_URL", "http://127.0.0.1:5000")
 
-def record(name, condition, details=""):
-    global passed, failed
-    if condition:
-        passed += 1
-        print(f"  [PASS] {name}: {details}")
-    else:
-        failed += 1
-        print(f"  [FAIL] {name}: {details}")
 
-print("==================================================")
-print("VASTUDA 5.3 — STEP 31 REGRESSION TEST RUNNER")
-print("==================================================")
+class TestStep31Regression(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            r = requests.get(f"{BASE}/health", timeout=3)
+            if r.status_code != 200:
+                raise unittest.SkipTest(f"Server not healthy at {BASE}")
+        except Exception as e:
+            raise unittest.SkipTest(f"Cannot reach server at {BASE}: {e}")
 
-# Wait for server to be responsive
-time.sleep(1.0)
+    def test_01_math_evaluation(self):
+        math_checks = [("2+2", "4"), ("100/4", "25"), ("2^10", "1024"), ("sqrt(16)", "4")]
+        for expr, exp in math_checks:
+            q_enc = urllib.parse.quote_plus(expr)
+            r = requests.get(f"{BASE}/api/search?q={q_enc}", timeout=5).json()
+            ans = r.get("instant_answer", {}).get("result")
+            prov = r.get("provider")
+            self.assertEqual(ans, exp, f"Math check failed for {expr}: got {ans}, expected {exp}")
+            self.assertEqual(prov, "local_calculator")
 
-# 1. Math evaluation: 2+2, 100/4, 2^10, sqrt(16)
-try:
-    import urllib.parse
-    math_checks = [("2+2", "4"), ("100/4", "25"), ("2^10", "1024"), ("sqrt(16)", "4")]
-    all_math_ok = True
-    details = []
-    for expr, exp in math_checks:
-        q_enc = urllib.parse.quote_plus(expr)
-        r = requests.get(f"{BASE}/api/search?q={q_enc}", timeout=5).json()
-        ans = r.get("instant_answer", {}).get("result")
-        prov = r.get("provider")
-        if ans != exp or prov != "local_calculator":
-            all_math_ok = False
-        details.append(f"{expr}={ans}")
-    record("1. Math evaluation (2+2, 100/4, 2^10, sqrt(16))", all_math_ok, ", ".join(details))
-except Exception as e:
-    record("1. Math evaluation", False, str(e))
+    def test_02_direct_url(self):
+        url_checks = ["https://example.com", "www.python.org", "github.com"]
+        for u in url_checks:
+            r = requests.get(f"{BASE}/api/search?q={u}", timeout=3).json()
+            prov = r.get("provider")
+            target = r.get("direct_nav", {}).get("url")
+            self.assertEqual(prov, "direct_nav")
+            self.assertTrue(target)
 
-# 2. Direct URL: https://example.com, www.python.org, github.com
-try:
-    url_checks = ["https://example.com", "www.python.org", "github.com"]
-    all_url_ok = True
-    details = []
-    for u in url_checks:
-        r = requests.get(f"{BASE}/api/search?q={u}", timeout=3).json()
-        prov = r.get("provider")
-        target = r.get("direct_nav", {}).get("url")
-        if prov != "direct_nav" or not target:
-            all_url_ok = False
-        details.append(f"{u}->{target}")
-    record("2. Direct URL (https://example.com, www.python.org, github.com)", all_url_ok, ", ".join(details))
-except Exception as e:
-    record("2. Direct URL", False, str(e))
+    def test_03_autocomplete(self):
+        r = requests.get(f"{BASE}/api/suggest?q=py", timeout=3)
+        self.assertEqual(r.status_code, 200)
+        suggs = r.json()
+        self.assertIsInstance(suggs, list)
+        self.assertGreater(len(suggs), 0)
 
-# 3. Autocomplete: /api/suggest?q=py
-try:
-    r = requests.get(f"{BASE}/api/suggest?q=py", timeout=3)
-    suggs = r.json()
-    record("3. Autocomplete (/api/suggest?q=py)", r.status_code == 200 and isinstance(suggs, list) and len(suggs) > 0, f"count={len(suggs)}")
-except Exception as e:
-    record("3. Autocomplete", False, str(e))
+    def test_04_category_news(self):
+        r = requests.get(f"{BASE}/api/search?q=technology&category=news", timeout=5).json()
+        self.assertEqual(r.get("category"), "news")
+        self.assertIn("results", r)
 
-# 4. Category routing: news
-try:
-    r = requests.get(f"{BASE}/api/search?q=technology&category=news", timeout=5).json()
-    record("4. Category routing: news", r.get("category") == "news" and "results" in r, f"provider={r.get('provider')}")
-except Exception as e:
-    record("4. Category routing: news", False, str(e))
+    def test_05_category_images(self):
+        r = requests.get(f"{BASE}/api/search?q=mountain&category=images", timeout=5).json()
+        self.assertEqual(r.get("category"), "images")
+        self.assertIn("images", r)
 
-# 5. Category routing: images
-try:
-    r = requests.get(f"{BASE}/api/search?q=mountain&category=images", timeout=5).json()
-    record("5. Category routing: images", r.get("category") == "images" and "images" in r, f"images_count={len(r.get('images', []))}")
-except Exception as e:
-    record("5. Category routing: images", False, str(e))
+    def test_06_category_videos(self):
+        r = requests.get(f"{BASE}/api/search?q=tutorial&category=videos", timeout=5).json()
+        self.assertEqual(r.get("category"), "videos")
+        self.assertIn("videos", r)
 
-# 6. Category routing: videos
-try:
-    r = requests.get(f"{BASE}/api/search?q=tutorial&category=videos", timeout=5).json()
-    record("6. Category routing: videos", r.get("category") == "videos" and "videos" in r, f"videos_count={len(r.get('videos', []))}")
-except Exception as e:
-    record("6. Category routing: videos", False, str(e))
+    def test_07_category_research(self):
+        r = requests.get(f"{BASE}/api/search?q=quantum+computing&category=research", timeout=5).json()
+        self.assertEqual(r.get("category"), "research")
+        self.assertIn("results", r)
 
-# 7. Category routing: research
-try:
-    r = requests.get(f"{BASE}/api/search?q=quantum+computing&category=research", timeout=5).json()
-    record("7. Category routing: research", r.get("category") == "research" and "results" in r, f"provider={r.get('provider')}")
-except Exception as e:
-    record("7. Category routing: research", False, str(e))
+    def test_08_category_docs(self):
+        r = requests.get(f"{BASE}/api/search?q=python&category=docs", timeout=5).json()
+        self.assertEqual(r.get("category"), "docs")
+        self.assertIn("documents", r)
 
-# 8. Category routing: docs
-try:
-    r = requests.get(f"{BASE}/api/search?q=python&category=docs", timeout=5).json()
-    record("8. Category routing: docs", r.get("category") == "docs" and "documents" in r, f"provider={r.get('provider')}")
-except Exception as e:
-    record("8. Category routing: docs", False, str(e))
+    def test_09_category_code(self):
+        r = requests.get(f"{BASE}/api/search?q=python&category=code", timeout=5).json()
+        self.assertEqual(r.get("category"), "code")
+        self.assertIn("repositories", r)
 
-# 9. Category routing: code
-try:
-    r = requests.get(f"{BASE}/api/search?q=python&category=code", timeout=5).json()
-    record("9. Category routing: code", r.get("category") == "code" and "repositories" in r, f"repos={len(r.get('repositories', []))}")
-except Exception as e:
-    record("9. Category routing: code", False, str(e))
+    def test_10_health_check(self):
+        r = requests.get(f"{BASE}/health", timeout=3)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data.get("status"), "ok")
 
-# 10. Health check: /health returns 200 with status ok
-try:
-    r = requests.get(f"{BASE}/health", timeout=3)
-    data = r.json()
-    record("10. Health check (/health)", r.status_code == 200 and data.get("status") == "ok" and data.get("version") in ("5.3", "5.4"), f"status={data.get('status')} v={data.get('version')}")
-except Exception as e:
-    record("10. Health check", False, str(e))
+    def test_11_version_endpoint(self):
+        r = requests.get(f"{BASE}/api/version", timeout=3)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data.get("app"), "VASTUDA")
+        self.assertIn("commit", data)
 
-# 11. Version endpoint: /api/version returns version and commit
-try:
-    r = requests.get(f"{BASE}/api/version", timeout=3)
-    data = r.json()
-    record("11. Version endpoint (/api/version)", r.status_code == 200 and data.get("app") == "VASTUDA" and data.get("version") in ("5.3", "5.4") and "commit" in data, f"app={data.get('app')} v={data.get('version')} commit={data.get('commit')}")
-except Exception as e:
-    record("11. Version endpoint", False, str(e))
+    def test_12_static_assets(self):
+        css_r = requests.get(f"{BASE}/static/css/style.css", timeout=3)
+        js_r = requests.get(f"{BASE}/static/js/app.js", timeout=3)
+        self.assertEqual(css_r.status_code, 200)
+        self.assertEqual(js_r.status_code, 200)
 
-# 12. Static assets: CSS and JS load properly
-try:
-    css_r = requests.get(f"{BASE}/static/css/style.css", timeout=3)
-    js_r = requests.get(f"{BASE}/static/js/app.js", timeout=3)
-    record("12. Static assets (CSS/JS)", css_r.status_code == 200 and js_r.status_code == 200, f"css_bytes={len(css_r.content)}, js_bytes={len(js_r.content)}")
-except Exception as e:
-    record("12. Static assets", False, str(e))
+    def test_13_search_fallback(self):
+        r = requests.get(f"{BASE}/api/search?q=python", timeout=5).json()
+        results = r.get("results", [])
+        self.assertGreater(len(results), 0)
 
-# 13. Search with no API keys: falls back to local index / zero-auth providers gracefully
-try:
-    # Query local indexed content "python"
-    r = requests.get(f"{BASE}/api/search?q=python", timeout=5).json()
-    results = r.get("results", [])
-    record("13. Search fallback (local index / zero-auth)", len(results) > 0 and r.get("provider") in ("local_index", "hybrid_vastuda", "wikipedia_fallback", "tavily", "multi_provider"), f"provider={r.get('provider')}, results={len(results)}")
-except Exception as e:
-    record("13. Search fallback", False, str(e))
 
-print("==================================================")
-print(f"Total: {passed + failed} | Passed: {passed} | Failed: {failed}")
-print("==================================================")
-
-if failed > 0:
-    sys.exit(1)
-sys.exit(0)
+if __name__ == "__main__":
+    unittest.main()

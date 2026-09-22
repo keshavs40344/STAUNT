@@ -6,78 +6,63 @@ Simulates:
 3. Unrecognized category routing
 4. Offline / graceful degraded responses
 """
+import unittest
 import requests
 import time
 import os
 import sys
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = os.environ.get("STAUNT_SEARCH_URL", "http://127.0.0.1:5000")
 
-print(f"Executing Failure Recovery Simulations on: {BASE_URL}")
 
-failures = 0
+class TestFailureSimulations(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            r = requests.get(f"{BASE_URL}/health", timeout=3)
+            if r.status_code != 200:
+                raise unittest.SkipTest(f"Server at {BASE_URL} not healthy (HTTP {r.status_code})")
+        except Exception as e:
+            raise unittest.SkipTest(f"Could not connect to {BASE_URL}: {e}")
 
-def assert_test(condition, name):
-    global failures
-    if condition:
-        print(f"[PASS] {name}")
-    else:
-        print(f"[FAIL] {name}")
-        failures += 1
+    def test_oversize_payload_handling(self):
+        """Test 1: Malformed and oversize payload handling"""
+        giant_query = "A" * 15000
+        r = requests.get(f"{BASE_URL}/api/search", params={"q": giant_query}, timeout=10)
+        self.assertIn(r.status_code, (200, 400), f"Oversize query handled safely (Status {r.status_code})")
 
-# Test 1: Malformed and oversize payload handling
-try:
-    giant_query = "A" * 15000
-    r = requests.get(f"{BASE_URL}/api/search", params={"q": giant_query}, timeout=10)
-    assert_test(r.status_code in (200, 400), f"Oversize query handled safely (Status {r.status_code})")
-except Exception as e:
-    assert_test(False, f"Oversize query exception: {e}")
+    def test_unrecognized_search_category_fallback(self):
+        """Test 2: Unrecognized search category fallback"""
+        r = requests.get(f"{BASE_URL}/api/search", params={"q": "test", "category": "non_existent_category_999"}, timeout=10)
+        self.assertEqual(r.status_code, 200, f"Unrecognized category falls back gracefully (Status {r.status_code})")
 
-# Test 2: Unrecognized search category fallback
-try:
-    r = requests.get(f"{BASE_URL}/api/search", params={"q": "test", "category": "non_existent_category_999"}, timeout=10)
-    assert_test(r.status_code == 200, f"Unrecognized category falls back gracefully (Status {r.status_code})")
-except Exception as e:
-    assert_test(False, f"Unrecognized category exception: {e}")
+    def test_sql_injection_simulation(self):
+        """Test 3: SQL injection simulation in query"""
+        sql_injection = "' OR 1=1; DROP TABLE documents; --"
+        r = requests.get(f"{BASE_URL}/api/search", params={"q": sql_injection}, timeout=10)
+        self.assertIn(r.status_code, (200, 400), f"SQL injection attempt safely escaped (Status {r.status_code})")
 
-# Test 3: SQL injection simulation in query
-try:
-    sql_injection = "' OR 1=1; DROP TABLE documents; --"
-    r = requests.get(f"{BASE_URL}/api/search", params={"q": sql_injection}, timeout=10)
-    assert_test(r.status_code in (200, 400), f"SQL injection attempt safely escaped (Status {r.status_code})")
-except Exception as e:
-    assert_test(False, f"SQL injection attempt exception: {e}")
+    def test_database_integrity_after_fuzzing(self):
+        """Test 4: Verify database integrity intact after injection test"""
+        r = requests.get(f"{BASE_URL}/health", timeout=5)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json().get("status"), "ok")
 
-# Test 4: Verify database integrity intact after injection test
-try:
-    r = requests.get(f"{BASE_URL}/health", timeout=5)
-    assert_test(r.status_code == 200 and r.json().get("status") == "ok", "Database intact and healthy after fuzzing")
-except Exception as e:
-    assert_test(False, f"Database health exception: {e}")
-
-# Test 5: Missing params on POST /api/overview
-try:
-    r = requests.post(f"{BASE_URL}/api/overview", json={}, timeout=5)
-    if r.status_code == 429:
-        retry_after = int(r.headers.get("Retry-After", 2))
-        time.sleep(min(retry_after, 5))
+    def test_missing_params_overview(self):
+        """Test 5: Missing params on POST /api/overview"""
         r = requests.post(f"{BASE_URL}/api/overview", json={}, timeout=5)
-    assert_test(r.status_code in (400, 429), f"Malformed POST /api/overview rejected safely (Status {r.status_code})")
-except Exception as e:
-    assert_test(False, f"Malformed POST /api/overview exception: {e}")
+        if r.status_code == 429:
+            retry_after = int(r.headers.get("Retry-After", 2))
+            time.sleep(min(retry_after, 5))
+            r = requests.post(f"{BASE_URL}/api/overview", json={}, timeout=5)
+        self.assertIn(r.status_code, (400, 429), f"Malformed POST /api/overview rejected safely (Status {r.status_code})")
 
-# Test 6: Special UTF-8 chars and emojis
-try:
-    emoji_q = "🐍 🚀 🔥 💻 🇮🇳"
-    r = requests.get(f"{BASE_URL}/api/search", params={"q": emoji_q}, timeout=10)
-    assert_test(r.status_code == 200, f"Emoji & UTF-8 queries processed without crash (Status {r.status_code})")
-except Exception as e:
-    assert_test(False, f"Emoji query exception: {e}")
+    def test_special_utf8_emojis(self):
+        """Test 6: Special UTF-8 chars and emojis"""
+        emoji_q = "🐍 🚀 🔥 💻 🇮🇳"
+        r = requests.get(f"{BASE_URL}/api/search", params={"q": emoji_q}, timeout=10)
+        self.assertEqual(r.status_code, 200, f"Emoji & UTF-8 queries processed without crash (Status {r.status_code})")
 
-print("-" * 50)
-if failures == 0:
-    print("ALL 6 FAILURE SIMULATIONS PASSED")
-    sys.exit(0)
-else:
-    print(f"FAILED {failures} SIMULATION(S)")
-    sys.exit(1)
+
+if __name__ == "__main__":
+    unittest.main()

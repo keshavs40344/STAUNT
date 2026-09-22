@@ -45,17 +45,16 @@ TEMPLATES_DIR = os.path.join(SEARCH_ENGINE_DIR, "templates")
 STATIC_DIR = os.path.join(SEARCH_ENGINE_DIR, "static")
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 
-# --- SECRET KEY: no insecure hardcoded fallback ---
+# --- SECRET KEY: secure random fallback if not explicitly provided ---
 _secret_key = os.getenv("SECRET_KEY", "").strip()
 if not _secret_key:
+    import secrets as _secrets
+    _secret_key = _secrets.token_hex(32)
     _is_local = os.getenv("FLASK_ENV", "production").lower() in ("development", "dev", "local")
     if _is_local:
-        import secrets as _secrets
-        _secret_key = _secrets.token_hex(32)
         logger.warning("[SECURITY] SECRET_KEY not set; using random ephemeral key (dev mode). Set SECRET_KEY env var for production.")
     else:
-        logger.critical("[SECURITY] SECRET_KEY env var is not set. Refusing to start in production without a secure secret.")
-        raise RuntimeError("SECRET_KEY environment variable must be set in production. Aborting startup.")
+        logger.warning("[SECURITY] SECRET_KEY env var not set. Generated random cryptographically secure key for worker process. Set SECRET_KEY in deployment environment variables for persistent session state across restarts.")
 app.secret_key = _secret_key
 
 ASSETS_DIR = os.path.join(STAUNT_ROOT, "releases")
