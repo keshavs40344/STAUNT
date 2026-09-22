@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "gunicorn --chdir search-engine wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --log-level info",
+    "startCommand": "python -m gunicorn wsgi:app",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
