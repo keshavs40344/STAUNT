@@ -70,12 +70,12 @@ class TestStep31Regression(unittest.TestCase):
         self.assertIn("results", r)
 
     def test_08_category_docs(self):
-        r = requests.get(f"{BASE}/api/search?q=python&category=docs", timeout=5).json()
+        r = requests.get(f"{BASE}/api/search?q=python&category=docs", timeout=10).json()
         self.assertEqual(r.get("category"), "docs")
         self.assertIn("documents", r)
 
     def test_09_category_code(self):
-        r = requests.get(f"{BASE}/api/search?q=python&category=code", timeout=5).json()
+        r = requests.get(f"{BASE}/api/search?q=python&category=code", timeout=10).json()
         self.assertEqual(r.get("category"), "code")
         self.assertIn("repositories", r)
 

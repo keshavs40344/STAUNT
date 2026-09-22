@@ -69,7 +69,8 @@ def ensure_seed_index():
     except Exception as e:
         logger.warning(f"Seed crawl check note: {e}")
 
-threading.Thread(target=ensure_seed_index, daemon=True).start()
+if not os.getenv("VERCEL"):
+    threading.Thread(target=ensure_seed_index, daemon=True).start()
 
 # --- Production Security & Rate Limiting ---
 RATE_LIMIT_BUCKETS = {}

@@ -14,11 +14,15 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vastuda.db")
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=15.0)
     conn.row_factory = sqlite3.Row
-    # High-concurrency performance pragmas
-    conn.execute("PRAGMA journal_mode = WAL;")
-    conn.execute("PRAGMA busy_timeout = 5000;")
-    conn.execute("PRAGMA synchronous = NORMAL;")
-    conn.execute("PRAGMA cache_size = -64000;")  # 64MB cache in RAM
+    # High-concurrency performance pragmas (safe against read-only filesystems)
+    try:
+        conn.execute("PRAGMA busy_timeout = 5000;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA cache_size = -64000;")  # 64MB cache in RAM
+        if not os.getenv("VERCEL"):
+            conn.execute("PRAGMA journal_mode = WAL;")
+    except Exception as e:
+        logger.debug(f"SQLite pragma note: {e}")
     return conn
 
 
@@ -250,7 +254,7 @@ def get_cached_search_result(cache_key: str) -> dict:
 def set_cached_search_result(cache_key: str, query: str, category: str, page: int, page_size: int,
                              time_filter: str, data: dict, ttl_seconds: int = 900):
     """Store search result into persistent SQLite cache with expiration."""
-    if not cache_key or not data:
+    if not cache_key or not data or os.getenv("VERCEL"):
         return
     now = int(time.time())
     expires_at = now + ttl_seconds
@@ -437,24 +441,29 @@ def update_user_preferences(user_id, prefs_dict):
 # --- History Management ---
 
 def record_search_history(user_id, query, category="all"):
+    if os.getenv("VERCEL") or not query:
+        return
     now = int(time.time())
-    with get_db() as conn:
-        # Check if history is paused/disabled
-        if user_id:
-            user = conn.execute("SELECT preferences FROM users WHERE id = ?", (user_id,)).fetchone()
-            if user:
-                prefs = json.loads(user["preferences"] or "{}")
-                if not prefs.get("history_enabled", True):
-                    return
-        conn.execute(
-            "INSERT INTO search_history (user_id, query, category, created_at) VALUES (?, ?, ?, ?)",
-            (user_id, query, category, now)
-        )
-        conn.execute(
-            "INSERT INTO search_analytics (query, category, created_at) VALUES (?, ?, ?)",
-            (query, category, now)
-        )
-        conn.commit()
+    try:
+        with get_db() as conn:
+            # Check if history is paused/disabled
+            if user_id:
+                user = conn.execute("SELECT preferences FROM users WHERE id = ?", (user_id,)).fetchone()
+                if user:
+                    prefs = json.loads(user["preferences"] or "{}")
+                    if not prefs.get("history_enabled", True):
+                        return
+            conn.execute(
+                "INSERT INTO search_history (user_id, query, category, created_at) VALUES (?, ?, ?, ?)",
+                (user_id, query, category, now)
+            )
+            conn.execute(
+                "INSERT INTO search_analytics (query, category, created_at) VALUES (?, ?, ?)",
+                (query, category, now)
+            )
+            conn.commit()
+    except Exception as e:
+        logger.warning(f"History record note: {e}")
 
 
 def get_search_history(user_id, limit=50):

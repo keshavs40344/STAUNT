@@ -13,6 +13,10 @@ for p in (BACKEND_DIR, SEARCH_ENGINE_DIR):
         sys.path.insert(0, p)
 
 from server import app
+
+# Authoritative WSGI references
+application = app
+app = application
 import db
 
 try:

@@ -2,11 +2,10 @@ services:
   - type: web
     name: staunt-search
     env: python
-    rootDir: search-engine
     region: oregon
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --log-level info"
+    startCommand: "python -m gunicorn wsgi:app"
     autoDeploy: true
     healthCheckPath: /health
     envVars:

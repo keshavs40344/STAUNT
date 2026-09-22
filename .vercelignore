@@ -1,0 +1,11 @@
+.git
+android
+windows
+backups
+docs
+releases/*.exe
+releases/*.zip
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache

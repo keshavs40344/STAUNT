@@ -10,6 +10,10 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 from server import app
+
+# Authoritative WSGI references
+application = app
+app = application
 import db
 
 try:
