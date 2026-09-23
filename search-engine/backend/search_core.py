@@ -216,7 +216,7 @@ def search_wikipedia_fallback(query, max_results=6):
     """Zero-auth fallback search using Wikipedia API when commercial providers fail or bot-check."""
     try:
         url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(query)}&format=json&srlimit={max_results}"
-        resp = http_session.get(url, headers={"User-Agent": "VASTUDA-SearchEngine/1.0"}, timeout=(2.0, 3.0))
+        resp = http_session.get(url, headers={"User-Agent": "VASTUDA-SearchEngine/1.0"}, timeout=(1.0, 1.5))
         if resp.status_code == 200:
             data = resp.json()
             results = []
@@ -365,7 +365,7 @@ def fetch_wikimedia_images(query, limit=8):
     try:
         # Direct generator search on Wikipedia for related high-res images
         search_url = f"https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch={urllib.parse.quote(query)}&gsrlimit={limit}&prop=pageimages&pithumbsize=800&piprop=thumbnail|original&format=json"
-        resp = http_session.get(search_url, headers={"User-Agent": "VASTUDA/1.0"}, timeout=3)
+        resp = http_session.get(search_url, headers={"User-Agent": "VASTUDA/1.0"}, timeout=(1.0, 1.5))
         if resp.status_code == 200:
             pages = resp.json().get("query", {}).get("pages", {})
             for p in pages.values():

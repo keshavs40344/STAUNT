@@ -150,6 +150,8 @@ def is_allowed_by_robots(url: str) -> tuple:
     Check if URL is allowed according to robots.txt and discover sitemaps.
     Returns (is_allowed: bool, sitemaps: list).
     """
+    if not is_safe_url(url):
+        return False, []
     try:
         parsed = urllib.parse.urlparse(url)
         base_url = f"{parsed.scheme}://{parsed.netloc}"
@@ -160,18 +162,25 @@ def is_allowed_by_robots(url: str) -> tuple:
             robots_url = urllib.parse.urljoin(base_url, "/robots.txt")
             rp.set_url(robots_url)
             sitemaps = []
+            parsed_ok = False
             try:
                 headers = {"User-Agent": USER_AGENT}
                 r = requests.get(robots_url, headers=headers, timeout=5)
                 if r.status_code == 200:
                     rp.parse(r.text.splitlines())
+                    parsed_ok = True
                     for line in r.text.splitlines():
                         if line.strip().lower().startswith("sitemap:"):
                             s_url = line.split(":", 1)[1].strip()
                             if is_safe_url(s_url):
                                 sitemaps.append(s_url)
+                elif r.status_code == 404:
+                    rp.allow_all = True
+                    parsed_ok = True
             except Exception:
                 pass
+            if not parsed_ok:
+                rp.allow_all = True
             ROBOTS_CACHE[base_url] = (rp, sitemaps)
 
         allowed = rp.can_fetch(USER_AGENT, url)

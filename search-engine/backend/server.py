@@ -993,7 +993,10 @@ def api_export_data():
 def api_search():
     t_start = time.time()
     req_id = uuid.uuid4().hex[:12]
-    query = request.args.get("q", "").strip()[:500]
+    raw_q = request.args.get("q", "")
+    if len(raw_q) > 4000:
+        return jsonify({"error": "Query payload exceeds maximum allowed size", "request_id": req_id}), 400
+    query = raw_q.strip()[:500]
     category = request.args.get("category", "all").strip().lower()
     time_filter = request.args.get("time", "").strip().lower()
     if time_filter not in ["day", "week", "month", "year"]:

@@ -12,7 +12,19 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vastuda.db")
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=15.0)
+    if os.getenv("VERCEL"):
+        try:
+            conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=10.0)
+            conn.row_factory = sqlite3.Row
+            return conn
+        except Exception:
+            pass
+
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15.0)
+    except sqlite3.OperationalError:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=15.0)
+
     conn.row_factory = sqlite3.Row
     # High-concurrency performance pragmas (safe against read-only filesystems)
     try:
@@ -29,8 +41,11 @@ def get_db():
 
 def init_db():
     """Initialize database tables for VASTUDA."""
-    with get_db() as conn:
-        conn.execute("""
+    if os.getenv("VERCEL"):
+        return
+    try:
+        with get_db() as conn:
+            conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT UNIQUE NOT NULL,
@@ -189,6 +204,8 @@ def init_db():
         except Exception:
             pass
         conn.commit()
+    except Exception as e:
+        logger.warning(f"Database initialization note: {e}")
 
 
 def get_cached_ai_overview(query: str, max_age_seconds: int = 43200):
