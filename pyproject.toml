@@ -16,6 +16,14 @@ dependencies = [
     "lxml>=4.9.0",
 ]
 
+[tool.uv]
+package = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*"]
+exclude = ["android*", "windows*", "releases*", "docs*", "backups*", "tests*", "search-engine*"]
+
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
