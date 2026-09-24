@@ -63,6 +63,38 @@ class TestMultiCloudArchitecture(unittest.TestCase):
         finally:
             os.environ.pop("VERCEL", None)
 
+    def test_python_version_standardization_312(self):
+        """Python version must be standardized to 3.12 across deployment configurations."""
+        pv_path = os.path.join(STAUNT_ROOT, ".python-version")
+        self.assertTrue(os.path.exists(pv_path), ".python-version must exist")
+        with open(pv_path, "r", encoding="utf-8") as f:
+            pv = f.read().strip()
+        self.assertEqual(pv, "3.12", ".python-version must specify 3.12")
+
+        pyproject_path = os.path.join(STAUNT_ROOT, "pyproject.toml")
+        self.assertTrue(os.path.exists(pyproject_path), "pyproject.toml must exist")
+        with open(pyproject_path, "r", encoding="utf-8") as f:
+            pyproj = f.read()
+        self.assertIn("requires-python", pyproj)
+        self.assertIn("3.12", pyproj)
+
+    def test_vercel_rewrite_middleware(self):
+        """VercelPathRewriteMiddleware must restore original requested route from x-matched-path."""
+        sys.path.insert(0, os.path.join(STAUNT_ROOT, "api"))
+        import index as vercel_entry
+        client = vercel_entry.app.test_client()
+
+        # Simulate Vercel routing /health via internal rewrite to /api/index
+        resp = client.get("/api/index", headers={"x-matched-path": "/health"})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertEqual(data.get("status"), "ok")
+
+        # Direct /api/index hit renders index HTML
+        resp_direct = client.get("/api/index")
+        self.assertEqual(resp_direct.status_code, 200)
+        self.assertIn("text/html", resp_direct.content_type)
+
 
 class TestAPIContractEndpoints(unittest.TestCase):
     @classmethod

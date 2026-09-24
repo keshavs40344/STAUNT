@@ -719,6 +719,7 @@ def extract_article_content(target_url):
 # --- Web Page Routes ---
 
 @app.route("/")
+@app.route("/api/index")
 def index():
     return render_template("index.html")
 

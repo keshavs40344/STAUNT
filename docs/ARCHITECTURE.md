@@ -50,7 +50,7 @@ STAUNT is an integrated, sovereign web ecosystem comprising three distinct produ
 ## 2. Component Specifications
 
 ### A. STAUNT Search Engine (`search-engine/`)
-- **Backend**: Python 3.11+ / Flask / WSGI.
+- **Backend**: Python 3.12+ / Flask / WSGI.
 - **Index Engine**: SQLite 3 with FTS5 virtual tables and BM25 ranking algorithm.
 - **Query Pipeline**:
   1. Input normalization & spell correction.
