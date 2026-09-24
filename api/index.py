@@ -34,14 +34,14 @@ class VercelPathRewriteMiddleware:
             matched_path = (
                 environ.get("HTTP_X_MATCHED_PATH") or
                 environ.get("HTTP_X_VERCEL_MATCHED_PATH") or
-                environ.get("HTTP_X_FORWARDED_URI")
+                environ.get("HTTP_X_FORWARDED_URI") or
+                environ.get("REQUEST_URI") or
+                environ.get("RAW_URI")
             )
             if matched_path:
-                if "?" in matched_path:
-                    matched_path = matched_path.split("?", 1)[0]
-                environ["PATH_INFO"] = matched_path
-            else:
-                environ["PATH_INFO"] = "/"
+                clean_path = matched_path.split("?", 1)[0]
+                if clean_path and clean_path not in ("/api/index", "/api/index.py"):
+                    environ["PATH_INFO"] = clean_path
         return self.wsgi_app(environ, start_response)
 
 
