@@ -29,32 +29,28 @@ class VercelPathRewriteMiddleware:
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        # Diagnostic inspection parameter
-        if "debug_env=1" in environ.get("QUERY_STRING", ""):
-            import json
-            safe_env = {
-                k: str(v) for k, v in environ.items()
-                if not any(s in k.lower() for s in ["key", "secret", "token", "password", "auth"])
-            }
-            body = json.dumps(safe_env, indent=2).encode("utf-8")
-            start_response("200 OK", [("Content-Type", "application/json"), ("Content-Length", str(len(body)))])
-            return [body]
+        # Reset SCRIPT_NAME so Flask treats the app as rooted at /
+        environ["SCRIPT_NAME"] = ""
 
-        path_info = environ.get("PATH_INFO", "")
-        if path_info in ("/api/index", "/api/index.py"):
-            matched_path = (
-                environ.get("HTTP_X_MATCHED_PATH") or
-                environ.get("HTTP_X_VERCEL_MATCHED_PATH") or
-                environ.get("HTTP_X_FORWARDED_URI") or
-                environ.get("REQUEST_URI") or
-                environ.get("RAW_URI")
-            )
-            if matched_path:
-                clean_path = matched_path.split("?", 1)[0]
-                if clean_path and clean_path not in ("/api/index", "/api/index.py"):
-                    environ["PATH_INFO"] = clean_path
-                if "?" in matched_path and not environ.get("QUERY_STRING"):
-                    environ["QUERY_STRING"] = matched_path.split("?", 1)[1]
+        # Check for original requested path passed by Vercel edge proxy
+        matched_path = (
+            environ.get("HTTP_X_MATCHED_PATH") or
+            environ.get("HTTP_X_VERCEL_MATCHED_PATH") or
+            environ.get("HTTP_X_FORWARDED_URI") or
+            environ.get("REQUEST_URI") or
+            environ.get("RAW_URI")
+        )
+        if matched_path:
+            clean_path = matched_path.split("?", 1)[0]
+            if clean_path and clean_path not in ("/api/index", "/api/index.py"):
+                environ["PATH_INFO"] = clean_path
+            elif clean_path in ("/api/index", "/api/index.py"):
+                environ["PATH_INFO"] = "/"
+            if "?" in matched_path and not environ.get("QUERY_STRING"):
+                environ["QUERY_STRING"] = matched_path.split("?", 1)[1]
+        elif environ.get("PATH_INFO") in ("/api/index", "/api/index.py"):
+            environ["PATH_INFO"] = "/"
+
         return self.wsgi_app(environ, start_response)
 
 
