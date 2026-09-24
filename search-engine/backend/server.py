@@ -719,22 +719,9 @@ def extract_article_content(target_url):
 # --- Web Page Routes ---
 
 @app.route("/")
+@app.route("/api/index")
 def index():
     return render_template("index.html")
-
-@app.route("/api/index")
-def vercel_debug_router():
-    # If original path is found in headers, forward or report it
-    headers_clean = {k: v for k, v in request.headers.items() if not any(s in k.lower() for s in ["auth", "cookie", "key", "secret"])}
-    return jsonify({
-        "debug": "vercel_routing_probe",
-        "path": request.path,
-        "environ_path_info": request.environ.get("PATH_INFO"),
-        "environ_raw_uri": request.environ.get("RAW_URI"),
-        "headers": headers_clean,
-        "query_string": request.environ.get("QUERY_STRING"),
-        "args": dict(request.args)
-    })
 
 
 @app.route("/search")
