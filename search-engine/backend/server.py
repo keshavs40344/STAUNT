@@ -16,6 +16,7 @@ import types
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 SEARCH_ENGINE_DIR = os.path.dirname(BACKEND_DIR)
 STAUNT_ROOT = os.path.dirname(SEARCH_ENGINE_DIR)
+BASE_DIR = STAUNT_ROOT
 
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
