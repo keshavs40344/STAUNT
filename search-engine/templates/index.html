@@ -173,6 +173,44 @@
       <div class="results-main">
         <div class="results-meta-bar" id="resultsMetaBar">
           <span class="results-stats" id="resultsStats"></span>
+          <span class="results-notice" id="resultsCountNotice" style="margin-left: 12px; font-size: 0.82rem; color: var(--text-muted);"></span>
+        </div>
+
+        <!-- Instant Calculator Card -->
+        <div class="instant-calc-card" id="instantAnswerCard" style="display: none;">
+          <div class="calc-expression" id="calcExpr"></div>
+          <div class="calc-result" id="calcResult"></div>
+        </div>
+
+        <!-- Destination & Travel Intelligence Card -->
+        <div class="destination-card" id="destinationCard" style="display: none;">
+          <div class="destination-hero-img-wrap" id="destHeroImgWrap" style="display: none;">
+            <img class="dest-hero-img" id="destHeroImg" src="" alt="Destination Photo" referrerpolicy="no-referrer" />
+          </div>
+          <div class="destination-hero">
+            <div class="destination-top-row">
+              <div>
+                <div class="destination-title" id="destTitle"></div>
+                <div class="destination-country" id="destCountry"></div>
+              </div>
+              <div class="destination-weather-badge" id="destWeather"></div>
+            </div>
+            <div class="destination-tagline" id="destTagline"></div>
+            <div class="destination-stats-row">
+              <span class="dest-stat-pill" id="destBestTime"></span>
+              <span class="dest-stat-pill" id="destDuration"></span>
+            </div>
+          </div>
+          <div class="destination-body">
+            <div class="dest-section-title">Top Attractions</div>
+            <div class="attractions-chips" id="destAttractions"></div>
+            <div class="destination-thumbs-row" id="destThumbsRow"></div>
+            <div class="destination-actions-row" style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+              <a href="#" target="_blank" rel="noopener noreferrer" class="auth-submit-btn" id="destMapsBtn" style="width: auto; padding: 8px 16px; font-size: 0.85rem; text-decoration: none;">View Maps ↗</a>
+              <a href="#" target="_blank" rel="noopener noreferrer" class="native-app-btn" id="destHotelsBtn" style="padding: 8px 16px; font-size: 0.85rem;">Find Hotels ↗</a>
+              <a href="#" target="_blank" rel="noopener noreferrer" class="native-app-btn" id="destFlightsBtn" style="padding: 8px 16px; font-size: 0.85rem;">Check Flights ↗</a>
+            </div>
+          </div>
         </div>
 
         <!-- Visual Discovery Strip -->
@@ -197,20 +235,45 @@
             </div>
           </div>
           <div class="ai-overview-body" id="aiOverviewBody">
-            <div class="ai-skeleton-wrap">
-              <div class="ai-skeleton-line" style="width: 90%;"></div>
-              <div class="ai-skeleton-line" style="width: 75%;"></div>
-              <div class="ai-skeleton-line" style="width: 82%;"></div>
+            <div id="aiContent">
+              <div class="ai-skeleton-wrap">
+                <div class="ai-skeleton-line" style="width: 90%;"></div>
+                <div class="ai-skeleton-line" style="width: 75%;"></div>
+                <div class="ai-skeleton-line" style="width: 82%;"></div>
+              </div>
             </div>
           </div>
           <div class="ai-sources-tray" id="aiSourcesTray" style="display: none;">
             <span class="sources-label">Sources:</span>
-            <div class="sources-list" id="aiSourcesList"></div>
+            <div class="sources-list" id="aiSourcesList">
+              <div id="aiSources"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scholarly Research Consensus Card -->
+        <div class="research-card" id="researchCard" style="display: none; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px 22px; margin-bottom: 24px;">
+          <h3 id="researchHeading" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">Scholarly Consensus</h3>
+          <p id="researchSummary" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px;"></p>
+          <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Key Findings</div>
+          <ul id="researchFindings" style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px;"></ul>
+          <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap;">
+            <div><strong>Methodology:</strong> <span id="researchMethodology"></span></div>
+            <div><strong>Limitations:</strong> <span id="researchLimitations"></span></div>
           </div>
         </div>
 
         <!-- Web Search Results List -->
-        <div class="search-results-list" id="searchResultsList"></div>
+        <div class="web-results search-results-list" id="webResultsSection"></div>
+        <div class="search-results-list" id="searchResultsList" style="display: none;"></div>
+
+        <!-- Vertical Tab Results Sections -->
+        <div class="images-grid" id="imagesSection" style="display: none;"></div>
+        <div class="videos-grid" id="videosSection" style="display: none;"></div>
+        <div class="docs-results" id="docsSection" style="display: none;"></div>
+        <div class="code-results" id="codeSection" style="display: none;"></div>
+        <div class="shopping-results" id="shoppingSection" style="display: none;"></div>
+        <div class="jobs-results" id="jobsSection" style="display: none;"></div>
 
         <!-- Empty State -->
         <div class="empty-state" id="emptyState" style="display: none;">
@@ -227,7 +290,7 @@
         </div>
       </div>
 
-      <!-- Sidebar Column (Wikipedia Knowledge Graph) -->
+      <!-- Sidebar Column (Wikipedia Knowledge Graph & Related) -->
       <aside class="results-sidebar" id="resultsSidebar">
         <div class="knowledge-card" id="knowledgeCard" style="display: none;">
           <div class="kc-img-wrap" id="kcImgWrap" style="display: none;">
@@ -246,6 +309,12 @@
           <span class="dym-label">Did you mean:</span>
           <a href="#" class="dym-link" id="dymLink">suggestion</a>
         </div>
+
+        <!-- Related Searches -->
+        <div class="related-queries-card" id="relatedQueriesCard" style="margin-top: 18px;">
+          <h4 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px;">Related Searches</h4>
+          <div class="related-chips-list" id="relatedQueriesList"></div>
+        </div>
       </aside>
     </div>
   </main>
@@ -262,6 +331,43 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=50"></script>
+  <!-- READER MODE MODAL -->
+  <div class="modal-overlay" id="readerModal">
+    <div class="reader-modal-content">
+      <div class="reader-header">
+        <div class="reader-header-left">
+          <span class="reader-badge" id="readerDomainBadge">web</span>
+          <span class="reader-badge" id="readerTimeBadge">Reading View</span>
+        </div>
+        <div class="reader-header-actions">
+          <button class="reader-font-btn" id="readerFontDec" title="Smaller font">A-</button>
+          <button class="reader-font-btn" id="readerFontInc" title="Larger font">A+</button>
+          <a id="readerExternalLink" href="" target="_blank" rel="noopener noreferrer" class="reader-font-btn" title="Open original">↗</a>
+          <button class="modal-close-btn" id="closeReaderBtn">✕</button>
+        </div>
+      </div>
+      <h1 class="reader-title" id="readerTitle"></h1>
+      <div class="reader-body" id="readerBody"></div>
+    </div>
+  </div>
+
+  <!-- SAVE BOOKMARK MODAL -->
+  <div class="modal-overlay" id="saveResultModal">
+    <div class="small-modal-content">
+      <div class="small-modal-header">
+        <h3>Save to Collection</h3>
+        <button class="modal-close-btn" id="closeSaveResultModal">✕</button>
+      </div>
+      <div class="small-modal-body">
+        <p class="save-item-title" id="saveItemTitle" style="font-weight: 600; margin-bottom: 12px;"></p>
+        <select class="save-collection-select" id="saveCollectionSelect" style="width: 100%; padding: 8px 12px; border-radius: 8px; margin-bottom: 14px;">
+          <option value="default">Default Collection</option>
+        </select>
+        <button class="auth-submit-btn" id="confirmSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=52"></script>
 </body>
 </html>
