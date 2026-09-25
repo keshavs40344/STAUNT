@@ -56,14 +56,14 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val NEW_TAB_URL = "file:///android_asset/newtab.html"
         // Configuration-driven STAUNT Search endpoint:
-        // Reads "staunt.search.url" system property or defaults to local development gateway (10.0.2.2 for Android emulator)
+        // Reads "staunt.search.url" system property or defaults to production Vercel frontend
         val STAUNT_SEARCH_BASE: String
             get() {
                 val prop = System.getProperty("staunt.search.url")
                 if (!prop.isNullOrBlank()) {
                     return if (prop.endsWith("?q=")) prop else "$prop/?q="
                 }
-                return "http://10.0.2.2:5000/?q="
+                return "https://staunt.vercel.app/?q="
             }
     }
 
@@ -354,6 +354,8 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             allowContentAccess = true
             mediaPlaybackRequiresUserGesture = false
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            javaScriptCanOpenWindowsAutomatically = true
             cacheMode = WebSettings.LOAD_DEFAULT
         }
 

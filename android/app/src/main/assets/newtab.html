@@ -342,7 +342,7 @@
               } else if (isDomain) {
                 target = 'https://' + val;
               } else {
-                const searchBase = window.STAUNT_SEARCH_BASE || 'http://10.0.2.2:5000/?q=';
+                const searchBase = window.STAUNT_SEARCH_BASE || 'https://staunt.vercel.app/?q=';
                 target = searchBase + encodeURIComponent(val);
               }
             }

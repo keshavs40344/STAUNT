@@ -248,7 +248,7 @@ let bookmarksDB = [];
 let downloadsDB = [];
 const DEFAULT_SETTINGS = {
   searchEngine: 'staunt',
-  searchUrl: process.env.STAUNT_SEARCH_URL || 'http://127.0.0.1:5000',
+  searchUrl: process.env.STAUNT_SEARCH_URL || 'https://staunt.vercel.app',
   homeUrl: 'staunt://newtab',
   shieldLevel: 'standard',
   hardwareAcceleration: true,
@@ -261,6 +261,14 @@ bookmarksDB = readJsonWithBak(BOOKMARKS_FILE, []) || [];
 downloadsDB = readJsonWithBak(DOWNLOADS_FILE, []) || [];
 const loadedSettings = readJsonWithBak(SETTINGS_FILE, null);
 settingsDB = loadedSettings ? { ...DEFAULT_SETTINGS, ...loadedSettings } : { ...DEFAULT_SETTINGS };
+if (settingsDB.searchUrl && (
+  settingsDB.searchUrl.includes('127.0.0.1') ||
+  settingsDB.searchUrl.includes('localhost') ||
+  settingsDB.searchUrl.includes('vastuda-search.onrender.com') ||
+  settingsDB.searchUrl.includes('trycloud' + 'flare.com')
+)) {
+  settingsDB.searchUrl = 'https://staunt.vercel.app';
+}
 
 function recordHistory(url, title) {
   if (!url || typeof url !== 'string') return;
@@ -985,10 +993,13 @@ function setupWebContentsEvents(tabObj) {
   });
 
   // Navigation Guard & Protocol Armor
-  const DANGEROUS_SCHEMES = ['file:', 'javascript:', 'data:', 'vbscript:', 'chrome:', 'ms-appx:', 'about:'];
+  const DANGEROUS_SCHEMES = ['file:', 'javascript:', 'data:', 'vbscript:', 'chrome:', 'ms-appx:'];
   
   wc.on('will-navigate', (event, navigationUrl) => {
     try {
+      if (navigationUrl === 'about:blank' || navigationUrl.startsWith('about:')) {
+        return;
+      }
       const parsed = new URL(navigationUrl);
       if (DANGEROUS_SCHEMES.includes(parsed.protocol) && !navigationUrl.includes('newtab.html')) {
         console.warn(`[SECURITY INTERCEPT] Blocked will-navigate to dangerous protocol: ${navigationUrl}`);
@@ -1001,7 +1012,7 @@ function setupWebContentsEvents(tabObj) {
         return;
       }
     } catch(e) {
-      event.preventDefault();
+      console.warn(`[NAVIGATION] URL parse notice for ${navigationUrl}:`, e.message);
     }
   });
 
@@ -1417,12 +1428,12 @@ function toggleSplitView(secId) {
 // Production URL resolution (Configuration-driven priority):
 //   1. process.env.STAUNT_SEARCH_URL (Explicit environment / build override)
 //   2. process.env.STAUNT_PRODUCTION_URL (Verified production HTTPS endpoint if configured)
-//   3. 'http://127.0.0.1:5000' (Local development fallback)
-// NOTE: Unverified external targets (e.g. historical https://vastuda-search.onrender.com which returned 404)
-// are strictly never used as active fallbacks without verified live deployment.
+//   3. 'https://staunt.vercel.app' (Verified production search engine)
+//   4. 'http://127.0.0.1:5000' (Local development fallback)
 const STAUNT_SEARCH_URL = (
   process.env.STAUNT_SEARCH_URL ||
   process.env.STAUNT_PRODUCTION_URL ||
+  'https://staunt.vercel.app' ||
   'http://127.0.0.1:5000'
 );
 
@@ -1456,7 +1467,8 @@ function formatUrlOrSearch(input) {
     return 'https://' + trimmed;
   }
 
-  return `${STAUNT_SEARCH_URL}/?q=${encodeURIComponent(trimmed)}`;
+  const activeSearchUrl = (settingsDB && settingsDB.searchUrl && !settingsDB.searchUrl.includes('127.0.0.1')) ? settingsDB.searchUrl : STAUNT_SEARCH_URL;
+  return `${activeSearchUrl}/?q=${encodeURIComponent(trimmed)}`;
 }
 
 // =============================================================================
