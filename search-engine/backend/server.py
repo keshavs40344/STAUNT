@@ -46,17 +46,17 @@ TEMPLATES_DIR = os.path.join(SEARCH_ENGINE_DIR, "templates")
 STATIC_DIR = os.path.join(SEARCH_ENGINE_DIR, "static")
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 
-# --- SECRET KEY: secure random fallback if not explicitly provided ---
-_secret_key = os.getenv("SECRET_KEY", "").strip()
-if not _secret_key:
-    import secrets as _secrets
-    _secret_key = _secrets.token_hex(32)
-    _is_local = os.getenv("FLASK_ENV", "production").lower() in ("development", "dev", "local")
-    if _is_local:
-        logger.warning("[SECURITY] SECRET_KEY not set; using random ephemeral key (dev mode). Set SECRET_KEY env var for production.")
+# --- SECRET KEY: safe retrieval via config with production error logging ---
+try:
+    from config import get_secret_key
+    app.secret_key = get_secret_key(STAUNT_ROOT)
+except Exception as _e:
+    logger.error(f"[CONFIG] Error loading secret key from config: {_e}")
+    _raw_key = os.getenv("SECRET_KEY", "").strip()
+    if _raw_key:
+        app.secret_key = _raw_key
     else:
-        logger.warning("[SECURITY] SECRET_KEY env var not set. Generated random cryptographically secure key for worker process. Set SECRET_KEY in deployment environment variables for persistent session state across restarts.")
-app.secret_key = _secret_key
+        app.secret_key = hashlib.sha256(f"staunt-sovereign-{STAUNT_ROOT}".encode("utf-8")).hexdigest()
 
 ASSETS_DIR = os.path.join(STAUNT_ROOT, "releases")
 
@@ -309,9 +309,23 @@ def handle_not_found(e):
 
 @app.errorhandler(500)
 def handle_server_error(e):
-    logger.error(f"Internal server error on {request.path}: {e}")
-    if request.path.startswith("/api/"):
-        return jsonify({"error": "Internal server error", "status": 500}), 500
+    import traceback
+    tb = traceback.format_exc()
+    logger.error(f"[500_INTERNAL_SERVER_ERROR] {request.method} {request.path}: {e}\n{tb}")
+    if request.path.startswith("/api/") or request.path == "/health":
+        return jsonify({"error": "Internal server error", "status": 500, "path": request.path}), 500
+    return render_template("index.html"), 500
+
+@app.errorhandler(Exception)
+def handle_unhandled_exception(e):
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e
+    import traceback
+    tb = traceback.format_exc()
+    logger.error(f"[UNHANDLED_EXCEPTION] Crash on {request.method} {request.path}: {e}\n{tb}")
+    if request.path.startswith("/api/") or request.path == "/health":
+        return jsonify({"error": "Internal server error", "status": 500, "path": request.path}), 500
     return render_template("index.html"), 500
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
