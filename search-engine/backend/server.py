@@ -37,6 +37,7 @@ import indexer
 import crawler
 import query_engine
 import spell_checker
+import entity_engine
 from search_validator import (
     normalize_url, validate_result, deduplicate_results, safe_snippet
 )
@@ -1190,6 +1191,31 @@ def api_search():
     # Non-blocking destination intelligence check
     destination_data = get_destination_intel(query)
 
+    # Multi-source Entity Resolution (Wikidata + Wikipedia + verified public web signals)
+    entity_data = None
+    entity_news = None
+    entity_videos = None
+    try:
+        is_cand, _ = entity_engine.is_entity_candidate(query)
+        if is_cand:
+            entity_data = entity_engine.resolve_entity_profile(query)
+            if entity_data:
+                # Concurrently / safely fetch 2-3 news and 2-3 videos for the entity SERP
+                try:
+                    news_res = search_core.search_news_mode(query)
+                    if news_res and news_res.get("results"):
+                        entity_news = news_res["results"][:3]
+                except Exception:
+                    pass
+                try:
+                    vid_res = search_core.search_videos_mode(query)
+                    if vid_res and vid_res.get("videos"):
+                        entity_videos = vid_res["videos"][:3]
+                except Exception:
+                    pass
+    except Exception as _e:
+        logger.warning(f"Entity engine resolution error: {_e}")
+
     # Hybrid Search: Local FTS5 Index + Bounded High-Speed Multi-Provider Retriever
     retrieve_count = max(page * page_size, 10)
     search_data = search_core.search_with_hybrid_ranking(
@@ -1232,6 +1258,9 @@ def api_search():
         "provider": search_data.get("provider", "hybrid_vastuda"),
         "instant_answer": None,
         "destination": destination_data,
+        "entity": entity_data,
+        "news": entity_news,
+        "videos": entity_videos,
         "did_you_mean": did_you_mean,
         "spell_correction": spell_info,
         "pagination": {
@@ -1268,6 +1297,15 @@ def api_search():
 def api_intent():
     query = request.args.get("q", "").strip()
     return jsonify(search_core.classify_query_intent(query))
+
+
+@app.route("/api/entity", methods=["GET"])
+def api_entity():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify({"query": "", "entity": None})
+    profile = entity_engine.resolve_entity_profile(query)
+    return jsonify({"query": query, "entity": profile})
 
 
 @app.route("/api/discover", methods=["GET"])

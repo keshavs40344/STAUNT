@@ -137,7 +137,17 @@ class MainActivity : AppCompatActivity() {
                 if (u == NEW_TAB_URL || u.contains("newtab.html")) {
                     etUrl.setText("")
                 } else {
-                    etUrl.setText(u)
+                    try {
+                        val uri = android.net.Uri.parse(u)
+                        val q = uri.getQueryParameter("q")
+                        if ((u.contains("staunt.vercel.app") || u.contains("staunt.onrender.com")) && !q.isNullOrBlank()) {
+                            etUrl.setText(q)
+                        } else {
+                            etUrl.setText(u)
+                        }
+                    } catch (e: Exception) {
+                        etUrl.setText(u)
+                    }
                 }
                 updateSecurityIcon(u)
                 hideTabSwitcher()
@@ -367,7 +377,17 @@ class MainActivity : AppCompatActivity() {
                 if (url == NEW_TAB_URL || url.contains("newtab.html")) {
                     etUrl.setText("")
                 } else {
-                    etUrl.setText(url)
+                    try {
+                        val uri = android.net.Uri.parse(url)
+                        val q = uri.getQueryParameter("q")
+                        if ((url.contains("staunt.vercel.app") || url.contains("staunt.onrender.com")) && !q.isNullOrBlank()) {
+                            etUrl.setText(q)
+                        } else {
+                            etUrl.setText(url)
+                        }
+                    } catch (e: Exception) {
+                        etUrl.setText(url)
+                    }
                 }
                 updateSecurityIcon(url)
                 progressBar.visibility = View.VISIBLE

@@ -115,13 +115,30 @@
       });
     }
 
+    function getOmniboxDisplay(url) {
+      if (!url || url.includes('newtab.html') || url === 'staunt://newtab' || url === 'about:newtab' || url === 'about:blank') {
+        return { display: 'Search or enter website name', editValue: '' };
+      }
+      try {
+        const u = new URL(url);
+        const q = u.searchParams.get("q");
+        if ((u.hostname.includes("staunt.vercel.app") || u.hostname.includes("staunt.onrender.com") || u.pathname.includes("/search")) && q) {
+          return { display: q, editValue: q };
+        }
+        return { display: u.hostname.replace(/^www\./, ''), editValue: url };
+      } catch (e) {
+        return { display: url, editValue: url };
+      }
+    }
+
     // ================= OMNIBOX INTERACTION (DESKTOP) =================
     if (desktopCapsule && desktopInput) {
       desktopCapsule.addEventListener('click', () => {
         desktopCapsule.classList.add('focused');
         desktopDisplay.classList.add('hidden');
         desktopInput.classList.remove('hidden');
-        desktopInput.value = (activeTab?.url && !activeTab.url.includes('newtab.html') && activeTab.url !== 'staunt://newtab') ? activeTab.url : '';
+        const { editValue } = getOmniboxDisplay(activeTab?.url);
+        desktopInput.value = editValue;
         desktopInput.focus();
         desktopInput.select();
       });
@@ -151,7 +168,8 @@
         mobileCapsule.classList.add('focused');
         mobileDisplay.classList.add('hidden');
         mobileInput.classList.remove('hidden');
-        mobileInput.value = (activeTab?.url && !activeTab.url.includes('newtab.html') && activeTab.url !== 'staunt://newtab') ? activeTab.url : '';
+        const { editValue } = getOmniboxDisplay(activeTab?.url);
+        mobileInput.value = editValue;
         mobileInput.focus();
         mobileInput.select();
       });
@@ -182,22 +200,9 @@
 
     function updateDisplays(tab) {
       if (!tab) return;
-      let display = 'Search or enter website name';
-      let mobileDisp = 'Search';
-
-      if (tab.url && !tab.url.includes('newtab.html') && tab.url !== 'staunt://newtab') {
-        try {
-          const u = new URL(tab.url);
-          display = u.hostname.replace(/^www\./, '');
-          mobileDisp = display;
-        } catch(e) {
-          display = tab.url;
-          mobileDisp = tab.url;
-        }
-      }
-
+      const { display } = getOmniboxDisplay(tab.url);
       if (desktopDisplay) desktopDisplay.textContent = display;
-      if (mobileDisplay) mobileDisplay.textContent = mobileDisp;
+      if (mobileDisplay) mobileDisplay.textContent = (display === 'Search or enter website name') ? 'Search' : display;
     }
 
     // ================= MOBILE RESILIENT VIEWPORT & SWIPE GESTURES =================
@@ -218,7 +223,7 @@
 
       allTabs.forEach((tab) => {
         const card = document.createElement('div');
-        card.className = `tab-card \${tab.id === activeTab?.id ? 'active' : ''}`;
+        card.className = `tab-card ${tab.id === activeTab?.id ? 'active' : ''}`;
         
         let domain = 'Start Page';
         try {
@@ -227,18 +232,18 @@
           }
         } catch(e) {}
 
-        card.innerHTML = \`
+        card.innerHTML = `
           <div class="tab-card-header">
             <div class="tab-card-info">
-              <img class="tab-card-favicon" src="\${tab.favicon || 'https://www.google.com/favicon.ico'}" onerror="this.src='https://www.google.com/favicon.ico'" />
-              <span class="tab-card-title">\${tab.title || domain}</span>
+              <img class="tab-card-favicon" src="${tab.favicon || 'https://www.google.com/favicon.ico'}" onerror="this.src='https://www.google.com/favicon.ico'" />
+              <span class="tab-card-title">${tab.title || domain}</span>
             </div>
             <button class="tab-card-close" title="Close Tab">&times;</button>
           </div>
           <div class="tab-card-body">
-            <span>\${domain}</span>
+            <span>${domain}</span>
           </div>
-        \`;
+        `;
 
         card.querySelector('.tab-card-close').addEventListener('click', (e) => {
           e.stopPropagation();

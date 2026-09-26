@@ -25,8 +25,13 @@ import time
 import hashlib
 import logging
 import urllib.parse
-from search_engine import db
-from search_engine import search_validator
+try:
+    from search_engine import db
+    from search_engine import search_validator
+except ImportError:
+    import db
+    import search_validator
+
 try:
     from search_engine import query_engine
 except ImportError:
@@ -723,7 +728,10 @@ def apply_domain_diversity(ranked_items: list, max_per_domain: int = 2, max_resu
     for item in adjusted:
         d = item.get("domain") or ""
         cnt = final_counts.get(d, 0)
-        if cnt >= max_per_domain and len(final_results) < max_results and len(domain_best_scores) > 1:
+        # Wikipedia cap: max 1 result per query so other authoritative domains appear
+        is_wiki = "wikipedia.org" in d or "wikimedia.org" in d
+        allowed_count = 1 if is_wiki else max_per_domain
+        if cnt >= allowed_count and len(final_results) < max_results and len(domain_best_scores) > 1:
             continue
         final_counts[d] = cnt + 1
         final_results.append(item)
@@ -734,6 +742,13 @@ def apply_domain_diversity(ranked_items: list, max_per_domain: int = 2, max_resu
     if len(final_results) < max_results:
         for item in adjusted:
             if item not in final_results:
+                d = item.get("domain") or ""
+                cnt = final_counts.get(d, 0)
+                is_wiki = "wikipedia.org" in d or "wikimedia.org" in d
+                allowed_count = 1 if is_wiki else max_per_domain
+                if cnt >= allowed_count and len(domain_best_scores) > 1:
+                    continue
+                final_counts[d] = cnt + 1
                 final_results.append(item)
                 if len(final_results) >= max_results:
                     break

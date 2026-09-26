@@ -12,7 +12,10 @@ import os
 import re
 import time
 import logging
-from search_engine import db, indexer
+try:
+    from search_engine import db, indexer
+except ImportError:
+    import db, indexer
 
 logger = logging.getLogger("VASTUDA_SpellChecker")
 

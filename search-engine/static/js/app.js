@@ -93,6 +93,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const researchMethodology = document.getElementById("researchMethodology");
   const researchLimitations = document.getElementById("researchLimitations");
 
+  // Entity Profile Card Elements
+  const entityProfileCard = document.getElementById("entityProfileCard");
+  const entityAvatarWrap = document.getElementById("entityAvatarWrap");
+  const entityAvatar = document.getElementById("entityAvatar");
+  const entityName = document.getElementById("entityName");
+  const entityRole = document.getElementById("entityRole");
+  const entityConfidence = document.getElementById("entityConfidence");
+  const entityBio = document.getElementById("entityBio");
+  const entityWebsiteBtn = document.getElementById("entityWebsiteBtn");
+  const entityWikiBtn = document.getElementById("entityWikiBtn");
+  const entityProfilesSection = document.getElementById("entityProfilesSection");
+  const entityProfilesGrid = document.getElementById("entityProfilesGrid");
+  const entityMediaClusters = document.getElementById("entityMediaClusters");
+  const entityNewsCluster = document.getElementById("entityNewsCluster");
+  const entityNewsList = document.getElementById("entityNewsList");
+  const entityVideosCluster = document.getElementById("entityVideosCluster");
+  const entityVideosList = document.getElementById("entityVideosList");
+
   const webResultsSection = document.getElementById("webResultsSection") || document.getElementById("searchResultsList");
   const codeSection = document.getElementById("codeSection");
   const docsSection = document.getElementById("docsSection");
@@ -672,6 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (instantAnswerCard) instantAnswerCard.style.display = "none";
     if (destinationCard) destinationCard.style.display = "none";
     if (destHeroImgWrap) destHeroImgWrap.style.display = "none";
+    if (entityProfileCard) entityProfileCard.style.display = "none";
     if (visualStripContainer) visualStripContainer.style.display = "none";
     if (aiOverviewCard) aiOverviewCard.style.display = "none";
     if (researchCard) researchCard.style.display = "none";
@@ -757,7 +776,111 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Category Renderers ---
 
-  // 1. ALL Category (Web + Instant Answer + Destination + AI Overview)
+  // Helper: Production Entity & Person SERP Renderer
+  function renderEntityProfileCard(entity, news, videos) {
+    if (!entityProfileCard) return;
+    if (!entity || !entity.name) {
+      entityProfileCard.style.display = "none";
+      return;
+    }
+
+    if (entityName) entityName.textContent = entity.name;
+    if (entityRole) entityRole.textContent = entity.role || "Notable Figure";
+    if (entityConfidence) entityConfidence.textContent = `✓ ${entity.confidence || 'Verified'}`;
+    if (entityBio) entityBio.textContent = entity.description || "";
+
+    // Avatar
+    if (entity.image && entityAvatar && entityAvatarWrap) {
+      entityAvatar.src = entity.image;
+      entityAvatarWrap.style.display = "block";
+      entityAvatar.onerror = () => { if (entityAvatarWrap) entityAvatarWrap.style.display = "none"; };
+    } else if (entityAvatarWrap) {
+      entityAvatarWrap.style.display = "none";
+    }
+
+    // Official website button
+    if (entity.official_website && entityWebsiteBtn) {
+      entityWebsiteBtn.href = entity.official_website;
+      entityWebsiteBtn.style.display = "inline-flex";
+    } else if (entityWebsiteBtn) {
+      entityWebsiteBtn.style.display = "none";
+    }
+
+    // Wikipedia button
+    if (entity.wikipedia_url && entityWikiBtn) {
+      entityWikiBtn.href = entity.wikipedia_url;
+      entityWikiBtn.style.display = "inline-flex";
+    } else if (entityWikiBtn) {
+      entityWikiBtn.style.display = "none";
+    }
+
+    // Social Profiles
+    const profiles = entity.profiles || [];
+    if (profiles.length > 0 && entityProfilesSection && entityProfilesGrid) {
+      entityProfilesGrid.innerHTML = profiles.map(p => {
+        let icon = "🔗";
+        if (p.platform === "x") icon = "𝕏";
+        else if (p.platform === "linkedin") icon = "in";
+        else if (p.platform === "instagram") icon = "📸";
+        else if (p.platform === "youtube") icon = "▶";
+        else if (p.platform === "github") icon = "⌨";
+        else if (p.platform === "facebook") icon = "f";
+
+        return `
+          <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" class="entity-profile-chip" title="${escapeHtml(p.title || p.platform)}: ${escapeHtml(p.handle || '')}">
+            <span class="platform-icon">${icon}</span>
+            <span>${escapeHtml(p.title || p.platform)}</span>
+            ${p.handle ? `<span class="handle-text">${escapeHtml(p.handle)}</span>` : ''}
+          </a>
+        `;
+      }).join("");
+      entityProfilesSection.style.display = "block";
+    } else if (entityProfilesSection) {
+      entityProfilesSection.style.display = "none";
+    }
+
+    // Media Clusters (News & Videos)
+    const hasNews = news && news.length > 0;
+    const hasVideos = videos && videos.length > 0;
+    if ((hasNews || hasVideos) && entityMediaClusters) {
+      entityMediaClusters.style.display = "grid";
+
+      if (hasNews && entityNewsCluster && entityNewsList) {
+        entityNewsList.innerHTML = news.slice(0, 3).map(n => `
+          <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer" class="entity-cluster-item">
+            <div class="entity-cluster-text">
+              <div class="entity-cluster-headline">${escapeHtml(n.title)}</div>
+              <div class="entity-cluster-sub">${escapeHtml(n.domain || 'News')} • ${escapeHtml(n.published_date || '')}</div>
+            </div>
+          </a>
+        `).join("");
+        entityNewsCluster.style.display = "block";
+      } else if (entityNewsCluster) {
+        entityNewsCluster.style.display = "none";
+      }
+
+      if (hasVideos && entityVideosCluster && entityVideosList) {
+        entityVideosList.innerHTML = videos.slice(0, 3).map(v => `
+          <a href="${escapeHtml(v.url)}" target="_blank" rel="noopener noreferrer" class="entity-cluster-item">
+            ${v.thumbnail ? `<img src="${escapeHtml(v.thumbnail)}" class="entity-cluster-thumb" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'" />` : ''}
+            <div class="entity-cluster-text">
+              <div class="entity-cluster-headline">${escapeHtml(v.title)}</div>
+              <div class="entity-cluster-sub">${escapeHtml(v.channel || 'Video')}</div>
+            </div>
+          </a>
+        `).join("");
+        entityVideosCluster.style.display = "block";
+      } else if (entityVideosCluster) {
+        entityVideosCluster.style.display = "none";
+      }
+    } else if (entityMediaClusters) {
+      entityMediaClusters.style.display = "none";
+    }
+
+    entityProfileCard.style.display = "block";
+  }
+
+  // 1. ALL Category (Web + Instant Answer + Destination + AI Overview + Entity)
   function renderAllCategory(data, query) {
     // Instant Math
     if (data.instant_answer && instantAnswerCard) {
@@ -770,6 +893,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (data.destination && destinationCard) {
       populateDestinationCard(data.destination);
       destinationCard.style.display = "block";
+    }
+
+    // Production Entity & Person SERP Card
+    if (data.entity) {
+      renderEntityProfileCard(data.entity, data.news, data.videos);
+    } else if (entityProfileCard) {
+      entityProfileCard.style.display = "none";
     }
 
     // Visual Discovery Strip (All Tab)

@@ -263,6 +263,41 @@
           </div>
         </div>
 
+        <!-- Production Entity & Person SERP Card -->
+        <div class="entity-profile-card" id="entityProfileCard" style="display: none;">
+          <div class="entity-main-header">
+            <div class="entity-avatar-wrap" id="entityAvatarWrap" style="display: none;">
+              <img class="entity-avatar" id="entityAvatar" src="" alt="Profile Image" referrerpolicy="no-referrer" />
+            </div>
+            <div class="entity-info-col">
+              <div class="entity-name-row">
+                <h2 class="entity-name" id="entityName"></h2>
+                <span class="entity-role-badge" id="entityRole"></span>
+                <span class="entity-confidence-badge" id="entityConfidence"></span>
+              </div>
+              <p class="entity-bio" id="entityBio"></p>
+              <div class="entity-links-row" id="entityLinksRow">
+                <a href="#" target="_blank" rel="noopener noreferrer" class="entity-btn site-btn" id="entityWebsiteBtn" style="display: none;">Official Website ↗</a>
+                <a href="#" target="_blank" rel="noopener noreferrer" class="entity-btn wiki-btn" id="entityWikiBtn" style="display: none;">Wikipedia ↗</a>
+              </div>
+            </div>
+          </div>
+          <div class="entity-profiles-section" id="entityProfilesSection" style="display: none;">
+            <div class="entity-profiles-label">Verified Profiles & Web Presence</div>
+            <div class="entity-profiles-grid" id="entityProfilesGrid"></div>
+          </div>
+          <div class="entity-media-clusters" id="entityMediaClusters" style="display: none;">
+            <div class="entity-cluster-box" id="entityNewsCluster" style="display: none;">
+              <div class="entity-cluster-title">Recent News</div>
+              <div id="entityNewsList"></div>
+            </div>
+            <div class="entity-cluster-box" id="entityVideosCluster" style="display: none;">
+              <div class="entity-cluster-title">Featured Videos</div>
+              <div id="entityVideosList"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Web Search Results List -->
         <div class="web-results search-results-list" id="webResultsSection"></div>
         <div class="search-results-list" id="searchResultsList" style="display: none;"></div>
