@@ -34,10 +34,10 @@ adapter = requests.adapters.HTTPAdapter(pool_connections=25, pool_maxsize=25, ma
 http_session.mount("https://", adapter)
 http_session.mount("http://", adapter)
 
-# Strict per-request socket timeouts (in seconds, Phase 5.3: connect 1.0s, read 2.5s)
-TAVILY_TIMEOUT = (1.0, 2.5)   # (connect 1.0s, read 2.5s) -> total 3.5s
-DDG_TIMEOUT = (0.8, 1.2)      # (connect 0.8s, read 1.2s)
-WIKI_TIMEOUT = (1.0, 2.0)     # (connect 1.0s, read 2.0s)
+# Strict per-request socket timeouts (in seconds)
+TAVILY_TIMEOUT = (2.5, 3.5)
+DDG_TIMEOUT = (3.0, 4.0)
+WIKI_TIMEOUT = (3.5, 4.0)
 
 # Persistent non-blocking thread pool for concurrent provider execution
 ASYNC_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=16)
@@ -216,7 +216,10 @@ def search_wikipedia_fallback(query, max_results=6):
     """Zero-auth fallback search using Wikipedia API when commercial providers fail or bot-check."""
     try:
         url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(query)}&format=json&srlimit={max_results}"
-        resp = http_session.get(url, headers={"User-Agent": "VASTUDA-SearchEngine/1.0"}, timeout=(1.0, 1.5))
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 (StauntSearch; https://staunt.vercel.app)"
+        }
+        resp = http_session.get(url, headers=headers, timeout=WIKI_TIMEOUT)
         if resp.status_code == 200:
             data = resp.json()
             results = []
@@ -258,19 +261,21 @@ def execute_web_query(query, max_results=8, topic="general", include_images=True
     tav_images = []
     ddg_results = []
 
-    tav_future = ASYNC_POOL.submit(
-        search_tavily_raw, query, "basic", max_results, topic, include_images, time_range
-    )
-    ddg_future = ASYNC_POOL.submit(
+    active_futures = []
+    if TAVILY_API_KEY:
+        active_futures.append(ASYNC_POOL.submit(
+            search_tavily_raw, query, "basic", max_results, topic, include_images, time_range
+        ))
+    active_futures.append(ASYNC_POOL.submit(
         search_duckduckgo_raw, query, max_results, time_range
-    )
+    ))
 
     # High-speed bounded wait: return as soon as first provider completes with results.
-    # Primary wait: 1.2s (Tavily typically responds in 800–1100ms; DDG cut to 1.2s max)
+    # Primary wait: 3.5s (allows full TLS + HTTP response without premature abort)
     done, not_done = concurrent.futures.wait(
-        [tav_future, ddg_future],
-        timeout=1.2,
-        return_when=concurrent.futures.FIRST_COMPLETED
+        active_futures,
+        timeout=3.5,
+        return_when=concurrent.futures.FIRST_COMPLETED if len(active_futures) > 1 else concurrent.futures.ALL_COMPLETED
     )
     for f in done:
         try:
@@ -285,9 +290,8 @@ def execute_web_query(query, max_results=8, topic="general", include_images=True
             pass
 
     # Backup: if primary returned < 4 results and other is pending, wait briefly
-    # 0.3s — enough for a fast Tavily response; not enough to allow DDG to drag us
     if (len(tav_results) + len(ddg_results)) < 4 and not_done:
-        done_rest, _ = concurrent.futures.wait(not_done, timeout=0.3)
+        done_rest, _ = concurrent.futures.wait(not_done, timeout=1.0)
         for f in done_rest:
             try:
                 res = f.result(timeout=0.05)
