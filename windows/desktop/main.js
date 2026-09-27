@@ -1701,6 +1701,7 @@ ipcMain.on('stop-find-in-page', (e) => {
   const tab = tabs.get(activeTabId);
   if (tab && tab.view && tab.view.webContents) {
     tab.view.webContents.stopFindInPage('clearSelection');
+    tab.view.webContents.focus();
   }
 });
 
