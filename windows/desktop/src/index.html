@@ -2054,6 +2054,14 @@
           } else {
             omnibox.value = '';
           }
+          if (findBar && findBar.classList.contains('active')) {
+            const q = findInput ? findInput.value.trim() : '';
+            if (q && typeof api.findInPage === 'function') {
+              api.findInPage(q, true);
+            } else if (findCount) {
+              findCount.textContent = '0/0';
+            }
+          }
           renderTabs();
         });
       }
@@ -2141,7 +2149,13 @@
       if (typeof api.onDownloadComplete === 'function') {
         api.onDownloadComplete((data) => {
           if (data && data.fileName) {
-            showDownloadToast(`Download complete: ${data.fileName}`, 5000);
+            if (data.state === 'cancelled') {
+              showDownloadToast(`Download cancelled: ${data.fileName}`, 4000);
+            } else if (data.state === 'interrupted') {
+              showDownloadToast(`Download failed: ${data.fileName}`, 5000);
+            } else {
+              showDownloadToast(`Download complete: ${data.fileName}`, 5000);
+            }
           }
         });
       }

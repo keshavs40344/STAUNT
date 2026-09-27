@@ -1012,6 +1012,11 @@ function setupWebContentsEvents(tabObj) {
         return;
       }
       const parsed = new URL(navigationUrl);
+      if (parsed.protocol === 'mailto:' || parsed.protocol === 'tel:' || parsed.protocol === 'sms:') {
+        event.preventDefault();
+        shell.openExternal(navigationUrl).catch(() => {});
+        return;
+      }
       if (DANGEROUS_SCHEMES.includes(parsed.protocol) && !navigationUrl.includes('newtab.html')) {
         console.warn(`[SECURITY INTERCEPT] Blocked will-navigate to dangerous protocol: ${navigationUrl}`);
         event.preventDefault();
@@ -1055,6 +1060,18 @@ function setupWebContentsEvents(tabObj) {
     }
   });
 
+  wc.on('did-start-loading', () => {
+    tabObj.isLoading = true;
+    notifyTabUpdated(tabObj);
+  });
+
+  wc.on('did-stop-loading', () => {
+    tabObj.isLoading = false;
+    tabObj.canGoBack = wc.canGoBack();
+    tabObj.canGoForward = wc.canGoForward();
+    notifyTabUpdated(tabObj);
+  });
+
   wc.on('did-start-navigation', (e, url, isInPlace, isMainFrame) => {
     if (isMainFrame) {
       tabObj.url = url;
@@ -1076,6 +1093,7 @@ function setupWebContentsEvents(tabObj) {
   });
 
   wc.on('did-finish-load', () => {
+    tabObj.isLoading = false;
     tabObj.url = wc.getURL();
     tabObj.canGoBack = wc.canGoBack();
     tabObj.canGoForward = wc.canGoForward();
@@ -1086,6 +1104,8 @@ function setupWebContentsEvents(tabObj) {
 
   // Actionable Network Error Recovery Card (Zero Blank Screen)
   wc.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    tabObj.isLoading = false;
+    notifyTabUpdated(tabObj);
     if (errorCode === -3 || !isMainFrame) return; // Ignore intentional user aborts/redirects
     console.warn(`[NAVIGATION ERROR] Code: ${errorCode} (${errorDescription}) for ${validatedURL}`);
     
@@ -1206,6 +1226,7 @@ function serializeTab(tab) {
     isMuted: tab.isMuted,
     canGoBack: tab.canGoBack,
     canGoForward: tab.canGoForward,
+    isLoading: Boolean(tab.isLoading),
     zoomLevel: tab.zoomLevel || 0
   };
 }

@@ -123,4 +123,12 @@ class StauntWebViewClient(
             view.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
         }
     }
+
+    override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+        try {
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+            view.destroy()
+        } catch (_: Exception) {}
+        return true
+    }
 }
