@@ -29,8 +29,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 32px 20px;
+      justify-content: flex-start;
+      padding: 56px 20px 48px;
+      overflow-y: auto;
+      box-sizing: border-box;
     }
 
     /* Subtle Dynamic Time & Contextual Date */
@@ -307,7 +309,10 @@
     </div>
   </section>
 
+  <script src="search_client.js"></script>
   <script>
+    const searchClient = new NativeSearchClient();
+
     function updateClock() {
       const now = new Date();
       let hours = now.getHours();
@@ -343,21 +348,8 @@
         if (e.key === 'Enter') {
           const val = searchInput.value.trim();
           if (val) {
-            let target = val;
-            if (!/^https?:\/\//i.test(val) && !val.startsWith('staunt://') && !val.startsWith('file://')) {
-              const isLocalhost = /^localhost(:\d+)?(\/.*)?$/i.test(val);
-              const isIpv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\d+)?(\/.*)?$/.test(val);
-              const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(val) && !val.includes(' ');
-
-              if (isLocalhost || isIpv4) {
-                target = 'http://' + val;
-              } else if (isDomain) {
-                target = 'https://' + val;
-              } else {
-                target = 'https://staunt.vercel.app/?q=' + encodeURIComponent(val);
-              }
-            }
-            window.location.href = target;
+            const classification = searchClient.classifyInput(val);
+            window.location.href = classification.url;
           }
         }
       });

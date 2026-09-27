@@ -57,8 +57,8 @@
       border-bottom: 0.5px solid var(--border-subtle);
       display: flex;
       align-items: center;
-      padding: 0 10px;
-      gap: 8px;
+      padding: 0 0 0 10px;
+      gap: 6px;
       z-index: 10000;
       /* Draggable window region for frameless window */
       -webkit-app-region: drag;
@@ -69,15 +69,22 @@
       -webkit-app-region: no-drag;
     }
 
-    /* Window Controls (macOS Traffic Lights) */
+    /* Window Controls (macOS Traffic Lights - hidden by default on Windows) */
     .window-controls {
-      display: flex;
+      display: none;
       align-items: center;
       gap: 7px;
       padding-left: 2px;
       padding-right: 4px;
       flex-shrink: 0;
     }
+    body.platform-darwin .window-controls {
+      display: flex;
+    }
+    body.platform-darwin .win-caption-controls {
+      display: none;
+    }
+
     .traffic-light {
       width: 12px;
       height: 12px;
@@ -100,11 +107,11 @@
       display: flex;
       align-items: center;
       height: var(--header-height);
-      margin-left: 6px;
+      margin-left: 4px;
       flex-shrink: 0;
     }
     .win-caption-btn {
-      width: 44px;
+      width: 46px;
       height: var(--header-height);
       display: flex;
       align-items: center;
@@ -181,7 +188,8 @@
       gap: 4px;
       overflow-x: auto;
       max-width: 380px;
-      flex-shrink: 1;
+      min-width: 100px;
+      flex-shrink: 0;
     }
     #tab-rail::-webkit-scrollbar { display: none; }
 
@@ -257,6 +265,7 @@
       flex: 1;
       min-width: 180px;
       max-width: 580px;
+      margin: 0 4px;
     }
     .omnibox-box {
       width: 100%;
@@ -350,6 +359,7 @@
       align-items: center;
       gap: 5px;
       flex-shrink: 0;
+      margin-left: auto;
     }
 
     /* Shield Badge */
@@ -364,7 +374,13 @@
       color: #30d158;
       font-size: 10.5px;
       font-weight: 600;
-      cursor: default;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .shield-badge:hover {
+      background: rgba(48, 209, 88, 0.2);
+      border-color: rgba(48, 209, 88, 0.5);
     }
     .shield-badge svg { width: 11px; height: 11px; }
 
@@ -379,12 +395,78 @@
       border: none;
       color: var(--text-muted);
       cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
     }
     .action-icon-btn:hover {
       background: rgba(255, 255, 255, 0.08);
       color: var(--text-main);
     }
+    .action-icon-btn.active {
+      color: var(--accent-purple) !important;
+      background: rgba(139, 92, 246, 0.2) !important;
+    }
     .action-icon-btn svg { width: 14px; height: 14px; }
+
+    /* Floating Find in Page Bar */
+    .find-bar {
+      position: fixed;
+      top: calc(var(--header-height) + 8px);
+      right: 20px;
+      height: 38px;
+      background: rgba(20, 22, 34, 0.97);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 0.5px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      padding: 0 8px;
+      gap: 6px;
+      z-index: 10005;
+      font-size: 12px;
+    }
+    .find-bar.active {
+      display: flex;
+    }
+    .find-input {
+      background: rgba(255, 255, 255, 0.08);
+      border: 0.5px solid rgba(255, 255, 255, 0.14);
+      border-radius: 5px;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 8px;
+      outline: none;
+      width: 170px;
+      font-family: var(--font-stack);
+    }
+    .find-input:focus {
+      border-color: var(--border-focus);
+    }
+    .find-count {
+      color: var(--text-muted);
+      font-size: 11px;
+      min-width: 36px;
+      text-align: center;
+    }
+    .find-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      transition: background 0.1s ease, color 0.1s ease;
+    }
+    .find-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
 
     /* Progress Line */
     #desktop-progress {
@@ -1025,7 +1107,6 @@
       </div>
     </div>
   </div>
-  </header>
 
   <!-- Settings / Clear Data Modal -->
   <div class="modal-overlay" id="settingsModal">
@@ -1088,6 +1169,15 @@
     <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="downloadToastText">Downloading file...</div>
   </div>
 
+  <!-- Floating Find in Page Bar -->
+  <div class="find-bar no-drag" id="findBar">
+    <input type="text" class="find-input" id="findInput" placeholder="Find in page..." autocomplete="off" spellcheck="false" />
+    <span class="find-count" id="findCount">0/0</span>
+    <button class="find-btn" id="btnFindPrev" title="Previous match (Shift+Enter)">▲</button>
+    <button class="find-btn" id="btnFindNext" title="Next match (Enter)">▼</button>
+    <button class="find-btn" id="btnFindClose" title="Close (Escape)">✕</button>
+  </div>
+
   <!-- Progress Bar Line -->
   <div id="desktop-progress"></div>
 
@@ -1104,6 +1194,13 @@
       if (!api) {
         console.warn('[STAUNT DESKTOP] IPC bridge not found.');
         return;
+      }
+
+      // Synchronize Host OS platform class
+      if (api.platform === 'darwin') {
+        document.body.classList.add('platform-darwin');
+      } else {
+        document.body.classList.add('platform-win32');
       }
 
       // DOM References
@@ -1247,9 +1344,121 @@
 
       // Tools & Settings
       document.getElementById('btnDevTools').addEventListener('click', () => api.toggleDevTools());
-      document.getElementById('btnSplitView').addEventListener('click', () => api.toggleSplitView());
+      const btnSplitView = document.getElementById('btnSplitView');
+      if (btnSplitView) {
+        btnSplitView.addEventListener('click', () => api.toggleSplitView());
+      }
+      if (typeof api.onSplitViewUpdated === 'function') {
+        api.onSplitViewUpdated((data) => {
+          if (btnSplitView && data) {
+            const isSplit = Boolean(data.isSplit || data.isActive);
+            btnSplitView.classList.toggle('active', isSplit);
+            btnSplitView.title = isSplit ? 'Exit Split View' : 'Split View';
+          }
+        });
+      }
+
+      const shieldPill = document.getElementById('shieldPill');
+      if (shieldPill) {
+        shieldPill.addEventListener('click', () => {
+          openSettingsModal();
+          const sel = document.getElementById('settingShieldLevel');
+          if (sel) sel.focus();
+        });
+      }
+
       if (btnSettings) {
         btnSettings.addEventListener('click', () => openSettingsModal());
+      }
+
+      // Floating In-Page Find Bar
+      const findBar = document.getElementById('findBar');
+      const findInput = document.getElementById('findInput');
+      const findCount = document.getElementById('findCount');
+      const btnFindPrev = document.getElementById('btnFindPrev');
+      const btnFindNext = document.getElementById('btnFindNext');
+      const btnFindClose = document.getElementById('btnFindClose');
+
+      function openFindBar() {
+        if (!findBar) return;
+        findBar.classList.add('active');
+        if (findInput) {
+          findInput.focus();
+          findInput.select();
+          const q = findInput.value.trim();
+          if (q && typeof api.findInPage === 'function') {
+            api.findInPage(q, true);
+          }
+        }
+      }
+
+      function closeFindBar() {
+        if (!findBar) return;
+        findBar.classList.remove('active');
+        if (typeof api.stopFindInPage === 'function') {
+          api.stopFindInPage();
+        }
+        if (findCount) findCount.textContent = '0/0';
+      }
+
+      if (findInput) {
+        findInput.addEventListener('input', () => {
+          const q = findInput.value.trim();
+          if (q && typeof api.findInPage === 'function') {
+            api.findInPage(q, true);
+          } else if (typeof api.stopFindInPage === 'function') {
+            api.stopFindInPage();
+            if (findCount) findCount.textContent = '0/0';
+          }
+        });
+
+        findInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const q = findInput.value.trim();
+            if (q && typeof api.findInPage === 'function') {
+              api.findInPage(q, !e.shiftKey);
+            }
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeFindBar();
+          }
+        });
+      }
+
+      if (btnFindNext) {
+        btnFindNext.addEventListener('click', () => {
+          const q = findInput ? findInput.value.trim() : '';
+          if (q && typeof api.findInPage === 'function') api.findInPage(q, true);
+        });
+      }
+
+      if (btnFindPrev) {
+        btnFindPrev.addEventListener('click', () => {
+          const q = findInput ? findInput.value.trim() : '';
+          if (q && typeof api.findInPage === 'function') api.findInPage(q, false);
+        });
+      }
+
+      if (btnFindClose) {
+        btnFindClose.addEventListener('click', closeFindBar);
+      }
+
+      if (typeof api.onFindResult === 'function') {
+        api.onFindResult((result) => {
+          if (findCount && result) {
+            if (result.matches !== undefined) {
+              findCount.textContent = `${result.activeMatchOrdinal || 0}/${result.matches}`;
+            }
+          }
+        });
+      }
+
+      if (typeof api.onToggleFindBar === 'function') {
+        api.onToggleFindBar(() => {
+          if (findBar && findBar.classList.contains('active')) closeFindBar();
+          else openFindBar();
+        });
       }
 
       // Bookmark Star Logic
@@ -1307,7 +1516,7 @@
         document.getElementById('menuItemBookmarks')?.addEventListener('click', () => { closeMenu(); openBookmarksModal(); });
         document.getElementById('menuItemSavePage')?.addEventListener('click', () => { closeMenu(); if (typeof api.savePage === 'function') api.savePage(); });
         document.getElementById('menuItemPrint')?.addEventListener('click', () => { closeMenu(); if (typeof api.printToPDF === 'function') api.printToPDF(); });
-        document.getElementById('menuItemFind')?.addEventListener('click', () => { closeMenu(); omnibox.focus(); omnibox.select(); });
+        document.getElementById('menuItemFind')?.addEventListener('click', () => { closeMenu(); openFindBar(); });
         document.getElementById('menuItemSettings')?.addEventListener('click', () => { closeMenu(); openSettingsModal(); });
         document.getElementById('menuItemClearData')?.addEventListener('click', () => { closeMenu(); openSettingsModal(); });
         document.getElementById('menuItemDevTools')?.addEventListener('click', () => { closeMenu(); api.toggleDevTools(); });
@@ -2073,10 +2282,9 @@
           if (zoomLevelDisplay) zoomLevelDisplay.textContent = '100%';
         }
         // Ctrl+F -> Find in Page
-        else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'f') {
+        else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'f' || e.key === 'F')) {
           e.preventDefault();
-          omnibox.focus();
-          omnibox.select();
+          openFindBar();
         }
         // F12 -> DevTools
         else if (e.key === 'F12') {
@@ -2088,7 +2296,7 @@
           e.preventDefault();
           openSettingsModal();
         }
-        // Escape -> Close all modals and menus
+        // Escape -> Close all modals, menus, and find bar
         else if (e.key === 'Escape') {
           if (threeDotMenu) threeDotMenu.classList.remove('active');
           closeSettingsModal();
@@ -2096,6 +2304,7 @@
           closeBookmarksModal();
           closeDownloadsModal();
           closeAboutModal();
+          closeFindBar();
           hideSuggestions();
         }
       });

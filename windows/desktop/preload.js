@@ -14,6 +14,7 @@ function sanitizeNumber(val, fallback = 0) {
 }
 
 const secureAPI = Object.freeze({
+  platform: process.platform,
   // Tabs Lifecycle API
   createTab: (url, opts) => {
     const cleanUrl = sanitizeString(url, 2048) || 'staunt://newtab';
