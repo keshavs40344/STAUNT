@@ -33,7 +33,12 @@
 
   class NativeSearchClient {
     constructor(config = {}) {
-      this.config = Object.freeze({ ...SEARCH_CONFIG, ...config });
+      const normalized = { ...config };
+      if (config.apiBaseUrl) normalized.SEARCH_API_BASE_URL = config.apiBaseUrl;
+      if (config.webUrl) normalized.SEARCH_WEB_URL = config.webUrl;
+      if (config.connectTimeoutMs) normalized.CONNECT_TIMEOUT_MS = config.connectTimeoutMs;
+      if (config.readTimeoutMs) normalized.READ_TIMEOUT_MS = config.readTimeoutMs;
+      this.config = Object.freeze({ ...SEARCH_CONFIG, ...normalized });
     }
 
     /**

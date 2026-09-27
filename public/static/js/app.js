@@ -1,10 +1,8 @@
 // VASTUDA — Independent AI Discovery & Neural Web Engine Client Logic
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Centralized Backend Resolution: Route Vercel Frontend Traffic to Render Backend
-  const RENDER_BACKEND_URL = "https://staunt.onrender.com";
-  const isVercel = window.location.hostname.endsWith(".vercel.app") || window.location.hostname === "staunt.vercel.app";
-  const API_BASE = (window.STAUNT_BACKEND_URL !== undefined) ? window.STAUNT_BACKEND_URL : (isVercel ? RENDER_BACKEND_URL : "");
+  // Centralized Backend Resolution: Route traffic to active verified backend (same origin for Vercel/local)
+  const API_BASE = (window.STAUNT_BACKEND_URL !== undefined) ? window.STAUNT_BACKEND_URL : "";
 
   async function apiFetch(path, options) {
     if (API_BASE && typeof path === "string" && path.startsWith("/api/")) {

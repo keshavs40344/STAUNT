@@ -39,7 +39,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"
@@ -53,5 +55,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Staunt Browser"
     }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
   }
 }

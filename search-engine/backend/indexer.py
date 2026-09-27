@@ -740,18 +740,22 @@ def apply_domain_diversity(ranked_items: list, max_per_domain: int = 2, max_resu
 
     # If limit not met due to diversity filters, append remaining items
     if len(final_results) < max_results:
+        seen_urls = {r.get("url") for r in final_results if r.get("url")}
         for item in adjusted:
-            if item not in final_results:
-                d = item.get("domain") or ""
-                cnt = final_counts.get(d, 0)
-                is_wiki = "wikipedia.org" in d or "wikimedia.org" in d
-                allowed_count = 1 if is_wiki else max_per_domain
-                if cnt >= allowed_count and len(domain_best_scores) > 1:
-                    continue
-                final_counts[d] = cnt + 1
-                final_results.append(item)
-                if len(final_results) >= max_results:
-                    break
+            u = item.get("url")
+            if u in seen_urls:
+                continue
+            d = item.get("domain") or ""
+            cnt = final_counts.get(d, 0)
+            is_wiki = "wikipedia.org" in d or "wikimedia.org" in d
+            allowed_count = 1 if is_wiki else max_per_domain
+            if cnt >= allowed_count and len(domain_best_scores) > 1:
+                continue
+            final_counts[d] = cnt + 1
+            final_results.append(item)
+            seen_urls.add(u)
+            if len(final_results) >= max_results:
+                break
 
     return final_results
 
