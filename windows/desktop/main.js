@@ -12,6 +12,17 @@ const {
   attachShieldToWebContents,
   isCriticalWhitelisted
 } = require('./src/adblocker-core');
+const NativeSearchClient = require('./src/search_client');
+const nativeSearchClient = new NativeSearchClient();
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 // =============================================================================
 // ROBUST WINDOW STATE PERSISTENCE (Fixes Progressive Window Shrinking Bug)
@@ -1078,12 +1089,24 @@ function setupWebContentsEvents(tabObj) {
     if (errorCode === -3 || !isMainFrame) return; // Ignore intentional user aborts/redirects
     console.warn(`[NAVIGATION ERROR] Code: ${errorCode} (${errorDescription}) for ${validatedURL}`);
     
+    // Check if this was a search request failure
+    const searchQuery = nativeSearchClient.extractSearchQuery(validatedURL);
+    const isSearchFailure = Boolean(searchQuery);
+
+    const titleText = isSearchFailure ? 'Search service unavailable' : "This site can't be reached";
+    const descText = isSearchFailure 
+      ? 'Unable to reach STAUNT Search. Please check your internet connection and try again.' 
+      : 'The server could not be reached, or the connection timed out.';
+    const queryDisplay = isSearchFailure 
+      ? `<div style="margin-bottom:12px;font-size:14px;color:#60a5fa;background:rgba(96,165,250,0.1);padding:6px 12px;border-radius:6px;display:inline-block;">Query: &ldquo;${escapeHtml(searchQuery)}&rdquo;</div>` 
+      : '';
+
     const errorHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Connection Error • Staunt Browser</title>
+        <title>${escapeHtml(titleText)} • Staunt Browser</title>
         <style>
           body { margin: 0; background: #0c0e14; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
           .card { text-align: center; max-width: 480px; padding: 32px; }
@@ -1100,14 +1123,15 @@ function setupWebContentsEvents(tabObj) {
       </head>
       <body>
         <div class="card">
-          <div class="icon">🌐</div>
-          <h1>This site can't be reached</h1>
-          <p>The server could not be reached, or the connection timed out.</p>
-          <div class="code">${errorDescription} (${errorCode})</div>
+          <div class="icon">${isSearchFailure ? '🔍' : '🌐'}</div>
+          <h1>${escapeHtml(titleText)}</h1>
+          ${queryDisplay}
+          <p>${escapeHtml(descText)}</p>
+          <div class="code">${escapeHtml(errorDescription)} (${errorCode})</div>
           <div class="btn-group">
-            <button onclick="location.reload()">🔄 Try Again</button>
+            <button onclick="location.reload()">🔄 Retry</button>
             <button class="sec" onclick="history.back()">⬅ Go Back</button>
-            <button class="sec" onclick="location.href='${STAUNT_SEARCH_URL}/?q=${encodeURIComponent(validatedURL)}'">🔍 Search on STAUNT</button>
+            ${!isSearchFailure ? `<button class="sec" onclick="location.href='${STAUNT_SEARCH_URL}/?q=${encodeURIComponent(validatedURL)}'">🔍 Search on STAUNT</button>` : ''}
           </div>
         </div>
       </body>
@@ -1452,23 +1476,8 @@ function formatUrlOrSearch(input) {
     return newTabUrl;
   }
 
-  if (/^https?:\/\//i.test(trimmed) || /^file:\/\//i.test(trimmed) || trimmed.startsWith('staunt://')) {
-    return trimmed;
-  }
-
-  const isLocalhost = /^localhost(:\d+)?(\/.*)?$/i.test(trimmed);
-  const isIpv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\d+)?(\/.*)?$/.test(trimmed);
-  const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(trimmed) && !trimmed.includes(' ');
-
-  if (isLocalhost || isIpv4) {
-    return 'http://' + trimmed;
-  }
-  if (isDomain) {
-    return 'https://' + trimmed;
-  }
-
-  const activeSearchUrl = (settingsDB && settingsDB.searchUrl && !settingsDB.searchUrl.includes('127.0.0.1')) ? settingsDB.searchUrl : STAUNT_SEARCH_URL;
-  return `${activeSearchUrl}/?q=${encodeURIComponent(trimmed)}`;
+  const classification = nativeSearchClient.classifyInput(trimmed);
+  return classification.url;
 }
 
 // =============================================================================

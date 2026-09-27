@@ -1226,8 +1226,48 @@ def api_search():
     preview_images = search_core.fetch_wikimedia_images(query, limit=6)
 
     # Final validation & deduplication of results
-    validated_results = deduplicate_results(
-        [r for r in search_data.get("results", []) if validate_result(r)]
+    base_results = [r for r in search_data.get("results", []) if validate_result(r)]
+
+    # If entity resolved, inject authoritative verified web profiles & official website
+    if entity_data:
+        entity_candidates = []
+        if entity_data.get("official_website"):
+            u = entity_data["official_website"]
+            parsed_d = urllib.parse.urlparse(u).netloc.lower().lstrip("www.")
+            entity_candidates.append({
+                "url": u,
+                "title": f"{entity_data.get('name', query)} — Official Website",
+                "snippet": f"The official website of {entity_data.get('name', query)}.",
+                "domain": parsed_d,
+                "score": 98.0
+            })
+        for prof in entity_data.get("profiles", []):
+            pu = prof.get("url")
+            if pu:
+                pd = urllib.parse.urlparse(pu).netloc.lower().lstrip("www.")
+                entity_candidates.append({
+                    "url": pu,
+                    "title": f"{entity_data.get('name', query)} on {prof.get('title', prof.get('platform', 'Web'))}",
+                    "snippet": f"Official {prof.get('title', prof.get('platform', 'Web'))} profile of {entity_data.get('name', query)} ({entity_data.get('role', '')}).",
+                    "domain": pd,
+                    "score": 92.0
+                })
+        if entity_data.get("wikipedia_url"):
+            wu = entity_data["wikipedia_url"]
+            wd = urllib.parse.urlparse(wu).netloc.lower().lstrip("www.")
+            entity_candidates.append({
+                "url": wu,
+                "title": f"{entity_data.get('name', query)} — Wikipedia",
+                "snippet": f"Biography, career, achievements, and background of {entity_data.get('name', query)}.",
+                "domain": wd,
+                "score": 90.0
+            })
+        base_results = entity_candidates + base_results
+
+    validated_results = indexer.apply_domain_diversity(
+        deduplicate_results(base_results),
+        max_per_domain=2,
+        max_results=max(retrieve_count, 10)
     )
 
     # Slice for requested pagination window

@@ -95,20 +95,10 @@ class MainActivity : AppCompatActivity() {
 
         etUrl.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_GO || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
-                var url = etUrl.text.toString().trim()
-                if (url.isNotEmpty()) {
-                    if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("file://")) {
-                        val isLocalhost = url.startsWith("localhost") || url.startsWith("127.0.0.1") || url.startsWith("10.0.2.2")
-                        val isDomain = url.contains(".") && !url.contains(" ")
-                        if (isLocalhost) {
-                            url = "http://$url"
-                        } else if (isDomain) {
-                            url = "https://$url"
-                        } else {
-                            url = STAUNT_SEARCH_BASE + android.net.Uri.encode(url)
-                        }
-                    }
-                    tabManager.getActiveTab()?.webView?.loadUrl(url)
+                val input = etUrl.text.toString().trim()
+                if (input.isNotEmpty()) {
+                    val classification = NativeSearchClient.classifyInput(input)
+                    tabManager.getActiveTab()?.webView?.loadUrl(classification.url)
                 }
                 true
             } else false
@@ -134,20 +124,13 @@ class MainActivity : AppCompatActivity() {
             onTabSelected = { tab ->
                 tabManager.switchTab(tab.id)
                 val u = tab.webView.url ?: ""
-                if (u == NEW_TAB_URL || u.contains("newtab.html")) {
+                val searchQ = NativeSearchClient.extractSearchQuery(u)
+                if (searchQ != null) {
+                    etUrl.setText(searchQ)
+                } else if (u == NEW_TAB_URL || u.contains("newtab.html")) {
                     etUrl.setText("")
                 } else {
-                    try {
-                        val uri = android.net.Uri.parse(u)
-                        val q = uri.getQueryParameter("q")
-                        if ((u.contains("staunt.vercel.app") || u.contains("staunt.onrender.com")) && !q.isNullOrBlank()) {
-                            etUrl.setText(q)
-                        } else {
-                            etUrl.setText(u)
-                        }
-                    } catch (e: Exception) {
-                        etUrl.setText(u)
-                    }
+                    etUrl.setText(u)
                 }
                 updateSecurityIcon(u)
                 hideTabSwitcher()
@@ -374,20 +357,13 @@ class MainActivity : AppCompatActivity() {
             adBlockEngine,
             historyDb,
             onPageStarted = { url ->
-                if (url == NEW_TAB_URL || url.contains("newtab.html")) {
+                val searchQ = NativeSearchClient.extractSearchQuery(url)
+                if (searchQ != null) {
+                    etUrl.setText(searchQ)
+                } else if (url == NEW_TAB_URL || url.contains("newtab.html")) {
                     etUrl.setText("")
                 } else {
-                    try {
-                        val uri = android.net.Uri.parse(url)
-                        val q = uri.getQueryParameter("q")
-                        if ((url.contains("staunt.vercel.app") || url.contains("staunt.onrender.com")) && !q.isNullOrBlank()) {
-                            etUrl.setText(q)
-                        } else {
-                            etUrl.setText(url)
-                        }
-                    } catch (e: Exception) {
-                        etUrl.setText(url)
-                    }
+                    etUrl.setText(url)
                 }
                 updateSecurityIcon(url)
                 progressBar.visibility = View.VISIBLE

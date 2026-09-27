@@ -173,11 +173,25 @@ def resolve_entity_profile(query: str, session: requests.Session = None) -> dict
         # Determine primary role / occupation
         role = ""
         occ_claims = claims.get("P106", [])
+        matched_roles = []
         for oc in occ_claims:
             occ_id = oc.get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("id")
             if occ_id in OCCUPATION_MAP:
-                role = OCCUPATION_MAP[occ_id]
-                break
+                matched_roles.append(OCCUPATION_MAP[occ_id])
+        if matched_roles:
+            priority_roles = ["Chief Executive Officer", "Business Executive", "Politician", "Cricketer", "Footballer"]
+            chosen = None
+            for p in priority_roles:
+                if p in matched_roles:
+                    chosen = p
+                    break
+            role = chosen or matched_roles[0]
+        elif description:
+            desc_l = description.lower()
+            if "ceo" in desc_l or "chief executive" in desc_l:
+                role = "Chief Executive Officer"
+            elif "executive" in desc_l:
+                role = "Business Executive"
 
         # Image from Wikimedia
         image_url = None
@@ -288,6 +302,43 @@ def resolve_entity_profile(query: str, session: requests.Session = None) -> dict
                     "title": "Facebook",
                     "url": f"https://www.facebook.com/{fb_id.strip()}",
                     "handle": fb_id.strip(),
+                    "confidence": "Official"
+                })
+
+        # ESPNcricinfo (cricket player profile)
+        if "P2697" in claims:
+            cric_id = claims["P2697"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
+            if cric_id:
+                slug = urllib.parse.quote(label.lower().replace(" ", "-"))
+                profiles.append({
+                    "platform": "espncricinfo",
+                    "title": "ESPNcricinfo",
+                    "url": f"https://www.espncricinfo.com/player/{slug}-{cric_id}",
+                    "handle": str(cric_id),
+                    "confidence": "Official"
+                })
+
+        # IMDb
+        if "P345" in claims:
+            imdb_id = claims["P345"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
+            if imdb_id and isinstance(imdb_id, str):
+                profiles.append({
+                    "platform": "imdb",
+                    "title": "IMDb",
+                    "url": f"https://www.imdb.com/name/{imdb_id.strip()}/",
+                    "handle": imdb_id.strip(),
+                    "confidence": "Official"
+                })
+
+        # Encyclopædia Britannica
+        if "P1417" in claims:
+            brit_id = claims["P1417"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
+            if brit_id and isinstance(brit_id, str):
+                profiles.append({
+                    "platform": "britannica",
+                    "title": "Encyclopædia Britannica",
+                    "url": f"https://www.britannica.com/{brit_id.strip()}",
+                    "handle": brit_id.strip(),
                     "confidence": "Official"
                 })
 
