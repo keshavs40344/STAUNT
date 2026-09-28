@@ -1913,17 +1913,10 @@ ipcMain.handle('get-suggestions', async (e, query) => {
   const bookmarkMatches = bookmarksDB
     .filter(b => (b.title && b.title.toLowerCase().includes(trimmed.toLowerCase())) ||
                  (b.url && b.url.toLowerCase().includes(trimmed.toLowerCase())))
-    .slice(0, 2)
+    .slice(0, 3)
     .map(b => ({ text: b.title || b.url, url: b.url, type: 'bookmark' }));
 
-  // Match from local history
-  const historyMatches = historyDB
-    .filter(h => (h.title && h.title.toLowerCase().includes(trimmed.toLowerCase())) ||
-                 (h.url && h.url.toLowerCase().includes(trimmed.toLowerCase())))
-    .slice(0, 3)
-    .map(h => ({ text: h.title || h.url, url: h.url, type: 'history' }));
-
-  // Query local STAUNT search engine /api/suggest
+  // Query STAUNT search engine /api/suggest
   let remoteSuggestions = [];
   try {
     const controller = new AbortController();
@@ -1944,7 +1937,7 @@ ipcMain.handle('get-suggestions', async (e, query) => {
 
   const seen = new Set();
   const results = [];
-  for (const item of [...bookmarkMatches, ...historyMatches, ...remoteSuggestions]) {
+  for (const item of [...bookmarkMatches, ...remoteSuggestions]) {
     const key = (item.text || '').toLowerCase();
     if (key && !seen.has(key)) {
       seen.add(key);

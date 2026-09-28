@@ -1009,6 +1009,14 @@
         <span>About Staunt</span>
       </div>
     </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="menuItemExit">
+      <div class="menu-item-left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Exit</span>
+      </div>
+      <span class="menu-shortcut">Alt+F4</span>
+    </div>
   </div>
 
   <!-- History Modal -->
@@ -1506,6 +1514,7 @@
         document.getElementById('menuItemClearData')?.addEventListener('click', () => { closeMenu(); openSettingsModal(); });
         document.getElementById('menuItemDevTools')?.addEventListener('click', () => { closeMenu(); api.toggleDevTools(); });
         document.getElementById('menuItemAbout')?.addEventListener('click', () => { closeMenu(); openAboutModal(); });
+        document.getElementById('menuItemExit')?.addEventListener('click', () => { closeMenu(); if (typeof api.closeWindow === 'function') api.closeWindow(); });
 
         document.getElementById('btnZoomIn')?.addEventListener('click', () => adjustZoom(0.5));
         document.getElementById('btnZoomOut')?.addEventListener('click', () => adjustZoom(-0.5));
@@ -1527,9 +1536,11 @@
           try {
             const currentSettings = await api.getSettings();
             if (currentSettings) {
+              const engineSelect = document.getElementById('settingSearchEngine');
               const homeInput = document.getElementById('settingHomeUrl');
               const restoreCheck = document.getElementById('settingRestoreTabs');
               const shieldSelect = document.getElementById('settingShieldLevel');
+              if (engineSelect && currentSettings.searchEngine) engineSelect.value = currentSettings.searchEngine;
               if (homeInput && currentSettings.homeUrl) homeInput.value = currentSettings.homeUrl;
               if (restoreCheck) restoreCheck.checked = Boolean(currentSettings.restoreTabsOnStartup);
               if (shieldSelect && currentSettings.shieldLevel) shieldSelect.value = currentSettings.shieldLevel;
@@ -1548,11 +1559,13 @@
         });
       }
       document.getElementById('btnSaveSettings')?.addEventListener('click', async () => {
+        const engineSelect = document.getElementById('settingSearchEngine');
         const homeInput = document.getElementById('settingHomeUrl');
         const restoreCheck = document.getElementById('settingRestoreTabs');
         const shieldSelect = document.getElementById('settingShieldLevel');
         if (typeof api.saveSettings === 'function') {
           await api.saveSettings({
+            searchEngine: engineSelect ? engineSelect.value : 'staunt',
             homeUrl: (homeInput ? homeInput.value.trim() : '') || 'staunt://newtab',
             restoreTabsOnStartup: restoreCheck ? restoreCheck.checked : false,
             shieldLevel: shieldSelect ? shieldSelect.value : 'standard'
