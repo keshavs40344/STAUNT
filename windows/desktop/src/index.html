@@ -1133,6 +1133,15 @@
           </select>
         </div>
         <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 0;"></div>
+        <div style="font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px;">Downloads Location</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input type="text" class="modal-select" id="settingDownloadPath" readonly style="cursor: default; font-size: 11.5px; text-overflow: ellipsis; padding: 6px 10px;" placeholder="Default Downloads Folder" />
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-cancel" id="btnChooseDownloadDir" style="padding: 5px 12px; font-size: 11.5px; color: #fff;">Choose Folder...</button>
+            <button type="button" class="btn-cancel" id="btnResetDownloadDir" style="padding: 5px 12px; font-size: 11.5px; color: var(--text-muted);">Reset to Default</button>
+          </div>
+        </div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 0;"></div>
         <div style="font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px;">Clear Browsing Data</div>
         <div class="modal-row">
           <label class="modal-label" for="timeRangeSelect">Time Range</label>
@@ -1540,10 +1549,19 @@
               const homeInput = document.getElementById('settingHomeUrl');
               const restoreCheck = document.getElementById('settingRestoreTabs');
               const shieldSelect = document.getElementById('settingShieldLevel');
+              const downloadPathInput = document.getElementById('settingDownloadPath');
               if (engineSelect && currentSettings.searchEngine) engineSelect.value = currentSettings.searchEngine;
               if (homeInput && currentSettings.homeUrl) homeInput.value = currentSettings.homeUrl;
               if (restoreCheck) restoreCheck.checked = Boolean(currentSettings.restoreTabsOnStartup);
               if (shieldSelect && currentSettings.shieldLevel) shieldSelect.value = currentSettings.shieldLevel;
+              if (downloadPathInput) {
+                if (currentSettings.downloadPath) {
+                  downloadPathInput.value = currentSettings.downloadPath;
+                } else if (typeof api.getDefaultDownloadsDir === 'function') {
+                  const defaultPath = await api.getDefaultDownloadsDir();
+                  downloadPathInput.value = defaultPath || 'Default Downloads Folder';
+                }
+              }
             }
           } catch (e) {}
         }
@@ -1558,17 +1576,42 @@
           if (e.target === settingsModal) closeSettingsModal();
         });
       }
+
+      document.getElementById('btnChooseDownloadDir')?.addEventListener('click', async () => {
+        if (typeof api.selectDownloadDir === 'function') {
+          const res = await api.selectDownloadDir();
+          if (res && !res.canceled && res.path) {
+            const downloadPathInput = document.getElementById('settingDownloadPath');
+            if (downloadPathInput) downloadPathInput.value = res.path;
+            showDownloadToast('Download location updated', 2000);
+          }
+        }
+      });
+
+      document.getElementById('btnResetDownloadDir')?.addEventListener('click', async () => {
+        if (typeof api.resetDownloadDir === 'function') {
+          const res = await api.resetDownloadDir();
+          if (res && res.path) {
+            const downloadPathInput = document.getElementById('settingDownloadPath');
+            if (downloadPathInput) downloadPathInput.value = res.path;
+            showDownloadToast('Download location reset to default', 2000);
+          }
+        }
+      });
+
       document.getElementById('btnSaveSettings')?.addEventListener('click', async () => {
         const engineSelect = document.getElementById('settingSearchEngine');
         const homeInput = document.getElementById('settingHomeUrl');
         const restoreCheck = document.getElementById('settingRestoreTabs');
         const shieldSelect = document.getElementById('settingShieldLevel');
+        const downloadPathInput = document.getElementById('settingDownloadPath');
         if (typeof api.saveSettings === 'function') {
           await api.saveSettings({
             searchEngine: engineSelect ? engineSelect.value : 'staunt',
             homeUrl: (homeInput ? homeInput.value.trim() : '') || 'staunt://newtab',
             restoreTabsOnStartup: restoreCheck ? restoreCheck.checked : false,
-            shieldLevel: shieldSelect ? shieldSelect.value : 'standard'
+            shieldLevel: shieldSelect ? shieldSelect.value : 'standard',
+            downloadPath: downloadPathInput ? downloadPathInput.value.trim() : ''
           });
           showDownloadToast('Settings saved successfully', 2500);
         }

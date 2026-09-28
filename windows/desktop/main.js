@@ -263,7 +263,8 @@ const DEFAULT_SETTINGS = {
   homeUrl: 'staunt://newtab',
   shieldLevel: 'standard',
   hardwareAcceleration: true,
-  restoreTabsOnStartup: false
+  restoreTabsOnStartup: false,
+  downloadPath: ''
 };
 let settingsDB = { ...DEFAULT_SETTINGS };
 
@@ -698,7 +699,21 @@ function createMainWindow() {
     const downloadId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     const totalBytes = item.getTotalBytes();
     let fileName = item.getFilename();
-    const saveDir = app.getPath('downloads');
+    let saveDir = app.getPath('downloads');
+    if (typeof settingsDB.downloadPath === 'string' && settingsDB.downloadPath.trim()) {
+      const candidateDir = path.normalize(settingsDB.downloadPath.trim());
+      try {
+        if (fs.existsSync(candidateDir) && fs.statSync(candidateDir).isDirectory()) {
+          saveDir = candidateDir;
+        } else {
+          // If custom directory no longer exists, reset and fallback cleanly
+          settingsDB.downloadPath = '';
+          atomicWriteJson(SETTINGS_FILE, settingsDB);
+        }
+      } catch (_) {
+        saveDir = app.getPath('downloads');
+      }
+    }
     let targetPath = path.join(saveDir, fileName);
 
     if (fs.existsSync(targetPath)) {
@@ -1976,10 +1991,54 @@ ipcMain.handle('save-settings', (e, newSettings) => {
     if (typeof newSettings.restoreTabsOnStartup === 'boolean') {
       validated.restoreTabsOnStartup = newSettings.restoreTabsOnStartup;
     }
+    if (typeof newSettings.downloadPath === 'string') {
+      const trimmed = newSettings.downloadPath.trim();
+      if (trimmed === '') {
+        validated.downloadPath = '';
+      } else {
+        const norm = path.normalize(trimmed);
+        if (path.isAbsolute(norm) && fs.existsSync(norm) && fs.statSync(norm).isDirectory()) {
+          validated.downloadPath = norm;
+        }
+      }
+    }
     settingsDB = { ...settingsDB, ...validated };
     atomicWriteJson(SETTINGS_FILE, settingsDB);
   }
   return { success: true, settings: settingsDB };
+});
+
+ipcMain.handle('select-download-dir', async (e) => {
+  if (!verifyIpcSender(e)) return { canceled: true, path: '' };
+  const currentPath = (settingsDB.downloadPath && fs.existsSync(settingsDB.downloadPath)) 
+    ? settingsDB.downloadPath 
+    : app.getPath('downloads');
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Download Folder',
+    defaultPath: currentPath,
+    properties: ['openDirectory', 'createDirectory']
+  });
+  if (!result.canceled && result.filePaths.length > 0) {
+    const selected = path.normalize(result.filePaths[0]);
+    if (fs.existsSync(selected) && fs.statSync(selected).isDirectory()) {
+      settingsDB.downloadPath = selected;
+      atomicWriteJson(SETTINGS_FILE, settingsDB);
+      return { canceled: false, path: selected };
+    }
+  }
+  return { canceled: true, path: settingsDB.downloadPath || app.getPath('downloads') };
+});
+
+ipcMain.handle('reset-download-dir', (e) => {
+  if (!verifyIpcSender(e)) return { success: false, path: app.getPath('downloads') };
+  settingsDB.downloadPath = '';
+  atomicWriteJson(SETTINGS_FILE, settingsDB);
+  return { success: true, path: app.getPath('downloads') };
+});
+
+ipcMain.handle('get-default-downloads-dir', (e) => {
+  if (!verifyIpcSender(e)) return '';
+  return app.getPath('downloads');
 });
 
 ipcMain.on('save-page', (e) => {

@@ -164,6 +164,9 @@ const secureAPI = Object.freeze({
   // Settings API
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  selectDownloadDir: () => ipcRenderer.invoke('select-download-dir'),
+  resetDownloadDir: () => ipcRenderer.invoke('reset-download-dir'),
+  getDefaultDownloadsDir: () => ipcRenderer.invoke('get-default-downloads-dir'),
 
   // Layout & Shell State
   setSidebarState: (isCollapsed) => {
