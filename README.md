@@ -85,15 +85,22 @@ STAUNT/
 
 ---
 
-## 📦 Official Releases & Checksums
+## 📦 Current Release (STAUNT 2.0.0)
 
-All official binary packages are cataloged in `releases/releases.json`:
+**Latest Release:** September 2026  
+**Status:** General Availability (Public Release)
 
 | Platform | Filename | Size | SHA-256 Hash |
 | :--- | :--- | :--- | :--- |
-| **Windows** | `STAUNT-Windows-Setup.exe` | 83,706,273 bytes | `79be7475a7ccd7752f942d0763eeb966b56c6f52414eabd1de730cf2aa4d1f32` |
-| **Windows** | `STAUNT-Windows-Portable.zip` | 83,713,684 bytes | `768a33c24cf8f3cca7c67216b45d9cf6076bc50d52faed002a4cb0d0cd41aa6c` |
-| **Android** | `STAUNT-Android.apk` | 2,220,762 bytes | `128f03c9b4e58dfbc1ed3a90b725b0ab61d241e71cc6f0e4d7fa79193d91c9cf` |
+| **Windows x64** | `STAUNT-2.0.0-Windows-x64-Setup.exe` | 83,218,284 bytes | `95643b006889ae97db83121c499fb5beaea6b8d4bf010e1cdd3bd9690d366333` |
+| **Android** | `STAUNT-2.0.0-Android.apk` | 2,277,262 bytes | `ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f` |
+
+### Release Documentation
+* **[Release Notes](release/RELEASE_NOTES.md)**: Full changelog, supported capabilities, and verified browser features.
+* **[Installation Guide](release/INSTALLATION.md)**: Step-by-step installation instructions and checksum verification for Windows & Android.
+* **[Privacy & Data Architecture](release/PRIVACY.md)**: Zero-telemetry policy, local storage layout, and network communication disclosure.
+* **[Known Limitations](release/KNOWN_LIMITATIONS.md)**: Verified boundaries including unsigned Windows installer and Android Scoped Storage behavior.
+* **[Checksums](release/SHA256SUMS.txt)**: Direct SHA-256 checksums file.
 
 ---
 

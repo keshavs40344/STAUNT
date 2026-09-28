@@ -38,3 +38,7 @@ desktop.ini
 scratch/
 backups/
 tmp/
+
+# Release Binaries (distributed via GitHub Releases)
+release/*.exe
+release/*.apk

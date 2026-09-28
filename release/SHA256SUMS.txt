@@ -1,0 +1,2 @@
+95643b006889ae97db83121c499fb5beaea6b8d4bf010e1cdd3bd9690d366333  STAUNT-2.0.0-Windows-x64-Setup.exe
+ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f  STAUNT-2.0.0-Android.apk

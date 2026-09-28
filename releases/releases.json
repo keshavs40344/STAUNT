@@ -1,26 +1,18 @@
 [
   {
-    "platform": "Windows",
-    "filename": "STAUNT-Windows-Setup.exe",
-    "version": "1.0.0",
-    "size_bytes": 83706273,
-    "sha256": "79be7475a7ccd7752f942d0763eeb966b56c6f52414eabd1de730cf2aa4d1f32",
-    "release_date": "2026-09-21"
-  },
-  {
-    "platform": "Windows",
-    "filename": "STAUNT-Windows-Portable.zip",
-    "version": "1.0.0",
-    "size_bytes": 83713684,
-    "sha256": "768a33c24cf8f3cca7c67216b45d9cf6076bc50d52faed002a4cb0d0cd41aa6c",
-    "release_date": "2026-09-21"
+    "platform": "Windows x64",
+    "filename": "STAUNT-2.0.0-Windows-x64-Setup.exe",
+    "version": "2.0.0",
+    "size_bytes": 83218284,
+    "sha256": "95643b006889ae97db83121c499fb5beaea6b8d4bf010e1cdd3bd9690d366333",
+    "release_date": "2026-09-28"
   },
   {
     "platform": "Android",
-    "filename": "STAUNT-Android.apk",
-    "version": "1.0.0",
-    "size_bytes": 2220762,
-    "sha256": "128f03c9b4e58dfbc1ed3a90b725b0ab61d241e71cc6f0e4d7fa79193d91c9cf",
-    "release_date": "2026-09-21"
+    "filename": "STAUNT-2.0.0-Android.apk",
+    "version": "2.0.0",
+    "size_bytes": 2277262,
+    "sha256": "ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f",
+    "release_date": "2026-09-28"
   }
 ]
