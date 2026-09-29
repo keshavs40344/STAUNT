@@ -92,7 +92,7 @@ STAUNT/
 
 | Platform | Filename | Size | SHA-256 Hash |
 | :--- | :--- | :--- | :--- |
-| **Windows x64** | `STAUNT-2.0.0-Windows-x64-Setup.exe` | 83,218,284 bytes | `95643b006889ae97db83121c499fb5beaea6b8d4bf010e1cdd3bd9690d366333` |
+| **Windows x64** | `STAUNT-2.0.0-Windows-x64-Setup.exe` | 83,219,252 bytes | `c30ff799012600a3f964d02402c15d80605e0678e0b3d69ebaea1d223b8a22c7` |
 | **Android** | `STAUNT-2.0.0-Android.apk` | 2,277,262 bytes | `ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f` |
 
 ### Release Documentation

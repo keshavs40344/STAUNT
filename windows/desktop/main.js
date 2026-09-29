@@ -864,17 +864,29 @@ function createMainWindow() {
 // =============================================================================
 // PRECISION VIEW BOUNDS MANAGER (x: 0, y: 44, width: w, height: h - 44)
 // =============================================================================
+let isModalOpen = false;
+
 function updateLayoutBounds() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+
+  const activeTab = tabs.get(activeTabId);
+  const secondaryTab = tabs.get(secondaryTabId);
+
+  if (isModalOpen) {
+    if (activeTab && activeTab.view && activeTab.view.setBounds) {
+      activeTab.view.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+    }
+    if (secondaryTab && secondaryTab.view && secondaryTab.view.setBounds) {
+      secondaryTab.view.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+    }
+    return;
+  }
 
   const bounds = mainWindow.getContentBounds();
   const availableWidth = Math.max(bounds.width, 100);
   const availableHeight = Math.max(bounds.height - TOOLBAR_HEIGHT, 100);
   const startX = 0;
   const startY = TOOLBAR_HEIGHT;
-
-  const activeTab = tabs.get(activeTabId);
-  const secondaryTab = tabs.get(secondaryTabId);
 
   if (!isSplitViewActive || !secondaryTab) {
     if (activeTab && activeTab.view && activeTab.view.setBounds) {
@@ -1837,6 +1849,188 @@ ipcMain.on('show-tab-context-menu', (e, tabId) => {
     }
   ]);
   contextMenu.popup({ window: mainWindow });
+});
+
+ipcMain.on('set-modal-open', (e, open) => {
+  if (!verifyIpcSender(e)) return;
+  isModalOpen = Boolean(open);
+  updateLayoutBounds();
+});
+
+ipcMain.on('show-more-menu', (e, pos) => {
+  if (!verifyIpcSender(e)) return;
+
+  const currentTab = tabs.get(activeTabId);
+  const zoomPct = currentTab ? Math.round(100 * Math.pow(1.2, currentTab.zoomLevel || 0)) : 100;
+
+  const moreMenu = Menu.buildFromTemplate([
+    {
+      label: 'New Tab',
+      accelerator: 'CmdOrCtrl+T',
+      click: () => createTab('staunt://newtab')
+    },
+    {
+      label: 'New Window',
+      accelerator: 'CmdOrCtrl+N',
+      click: () => createMainWindow()
+    },
+    {
+      label: 'New Incognito Window',
+      accelerator: 'CmdOrCtrl+Shift+N',
+      click: () => createTab('staunt://newtab', { isIncognito: true })
+    },
+    { type: 'separator' },
+    {
+      label: 'History',
+      accelerator: 'CmdOrCtrl+H',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-history-modal');
+        }
+      }
+    },
+    {
+      label: 'Downloads',
+      accelerator: 'CmdOrCtrl+J',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-downloads-modal');
+        }
+      }
+    },
+    {
+      label: 'Bookmarks',
+      accelerator: 'CmdOrCtrl+Shift+O',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-bookmarks-modal');
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: `Zoom (${zoomPct}%)`,
+      submenu: [
+        {
+          label: 'Zoom In',
+          accelerator: 'CmdOrCtrl+Plus',
+          click: () => adjustZoom(0.5)
+        },
+        {
+          label: 'Zoom Out',
+          accelerator: 'CmdOrCtrl+-',
+          click: () => adjustZoom(-0.5)
+        },
+        {
+          label: 'Reset Zoom (100%)',
+          accelerator: 'CmdOrCtrl+0',
+          click: () => resetZoom()
+        },
+        { type: 'separator' },
+        {
+          label: 'Toggle Fullscreen',
+          accelerator: 'F11',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.setFullScreen(!mainWindow.isFullScreen());
+            }
+          }
+        }
+      ]
+    },
+    {
+      label: 'Save Page As...',
+      accelerator: 'CmdOrCtrl+S',
+      click: () => saveCurrentPage()
+    },
+    {
+      label: 'Print...',
+      accelerator: 'CmdOrCtrl+P',
+      click: () => {
+        const tab = tabs.get(activeTabId);
+        if (tab && tab.view && tab.view.webContents) {
+          tab.view.webContents.printToPDF({}).then(({ data }) => {
+            dialog.showSaveDialog(mainWindow, {
+              title: 'Save PDF',
+              defaultPath: 'webpage.pdf',
+              filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+            }).then(r => {
+              if (r && r.filePath) {
+                fs.writeFile(r.filePath, data, () => {
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('download-complete', { fileName: path.basename(r.filePath) });
+                  }
+                });
+              }
+            });
+          }).catch(err => console.error(err));
+        }
+      }
+    },
+    {
+      label: 'Find in Page...',
+      accelerator: 'CmdOrCtrl+F',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('toggle-find-bar');
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Settings',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-settings-modal');
+        }
+      }
+    },
+    {
+      label: 'Clear Browsing Data',
+      accelerator: 'CmdOrCtrl+Shift+Delete',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-clear-data-modal');
+        }
+      }
+    },
+    {
+      label: 'Developer Tools',
+      accelerator: 'F12',
+      click: () => {
+        const tab = tabs.get(activeTabId);
+        if (tab && tab.view && tab.view.webContents) {
+          tab.view.webContents.toggleDevTools();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'About Staunt',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-about-modal');
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Exit',
+      accelerator: 'Alt+F4',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.close();
+        }
+      }
+    }
+  ]);
+
+  const popupOpts = { window: mainWindow };
+  if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+    popupOpts.x = Math.round(pos.x);
+    popupOpts.y = Math.round(pos.y);
+  }
+  moreMenu.popup(popupOpts);
 });
 
 // 5. Downloads & Vault Handlers

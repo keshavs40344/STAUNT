@@ -20,7 +20,7 @@ Before running the executable, verify that the downloaded binary is authentic an
    ```
 3. Confirm that the output matches:
    ```
-   95643B006889AE97DB83121C499FB5BEAEA6B8D4BF010E1CDD3BD9690D366333
+   C30FF799012600A3F964D02402C15D80605E0678E0B3D69EBAEA1D223B8A22C7
    ```
 
 ### Step 3: Run the Installer

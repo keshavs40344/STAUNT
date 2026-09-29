@@ -1495,20 +1495,41 @@
         });
       }
 
+      function syncModalState() {
+        const anyModalActive = Boolean(
+          (settingsModal && settingsModal.classList.contains('active')) ||
+          (historyModal && historyModal.classList.contains('active')) ||
+          (bookmarksModal && bookmarksModal.classList.contains('active')) ||
+          (downloadsModal && downloadsModal.classList.contains('active')) ||
+          (aboutModal && aboutModal.classList.contains('active'))
+        );
+        if (typeof api.setModalOpen === 'function') {
+          api.setModalOpen(anyModalActive);
+        }
+      }
+
       // Three-Dot Floating Menu
-      if (btnMenu && threeDotMenu) {
+      if (btnMenu) {
         btnMenu.addEventListener('click', (e) => {
           e.stopPropagation();
-          threeDotMenu.classList.toggle('active');
+          const rect = btnMenu.getBoundingClientRect();
+          if (typeof api.showMoreMenu === 'function') {
+            api.showMoreMenu({
+              x: Math.round(rect.right),
+              y: Math.round(rect.bottom + 2)
+            });
+          } else if (threeDotMenu) {
+            threeDotMenu.classList.toggle('active');
+          }
         });
 
         document.addEventListener('click', (e) => {
-          if (!e.target.closest('#threeDotMenu') && !e.target.closest('#btnDeskMenu')) {
+          if (threeDotMenu && (!e.target || !e.target.closest || (!e.target.closest('#threeDotMenu') && !e.target.closest('#btnDeskMenu')))) {
             threeDotMenu.classList.remove('active');
           }
         });
 
-        const closeMenu = () => threeDotMenu.classList.remove('active');
+        const closeMenu = () => { if (threeDotMenu) threeDotMenu.classList.remove('active'); };
 
         document.getElementById('menuItemNewTab')?.addEventListener('click', () => { closeMenu(); api.createTab('staunt://newtab'); });
         document.getElementById('menuItemNewWindow')?.addEventListener('click', () => { closeMenu(); if (typeof api.createWindow === 'function') api.createWindow(); });
@@ -1541,6 +1562,7 @@
       async function openSettingsModal() {
         if (!settingsModal) return;
         settingsModal.classList.add('active');
+        syncModalState();
         if (typeof api.getSettings === 'function') {
           try {
             const currentSettings = await api.getSettings();
@@ -1568,6 +1590,7 @@
       }
       function closeSettingsModal() {
         if (settingsModal) settingsModal.classList.remove('active');
+        syncModalState();
       }
       if (btnModalClose) btnModalClose.addEventListener('click', closeSettingsModal);
       if (btnCancelClear) btnCancelClear.addEventListener('click', closeSettingsModal);
@@ -1636,6 +1659,7 @@
       async function openHistoryModal() {
         if (!historyModal) return;
         historyModal.classList.add('active');
+        syncModalState();
         if (typeof api.getHistory === 'function') {
           currentHistoryData = await api.getHistory() || [];
           renderHistoryItems(currentHistoryData);
@@ -1643,6 +1667,7 @@
       }
       function closeHistoryModal() {
         if (historyModal) historyModal.classList.remove('active');
+        syncModalState();
       }
       function renderHistoryItems(items) {
         if (!historyScrollList) return;
@@ -1663,7 +1688,7 @@
             <button class="entry-delete-btn" title="Remove from history">✕</button>
           `;
           row.addEventListener('click', (e) => {
-            if (e.target.closest('.entry-delete-btn')) return;
+            if (e.target && e.target.closest && e.target.closest('.entry-delete-btn')) return;
             closeHistoryModal();
             api.navigateTo(item.url);
           });
@@ -1695,6 +1720,7 @@
       async function openBookmarksModal() {
         if (!bookmarksModal) return;
         bookmarksModal.classList.add('active');
+        syncModalState();
         if (typeof api.getBookmarks === 'function') {
           currentBookmarksData = await api.getBookmarks() || [];
           renderBookmarksItems(currentBookmarksData);
@@ -1702,6 +1728,7 @@
       }
       function closeBookmarksModal() {
         if (bookmarksModal) bookmarksModal.classList.remove('active');
+        syncModalState();
       }
       function renderBookmarksItems(items) {
         if (!bookmarksScrollList) return;
@@ -1721,7 +1748,7 @@
             <button class="entry-delete-btn" title="Delete bookmark">✕</button>
           `;
           row.addEventListener('click', (e) => {
-            if (e.target.closest('.entry-delete-btn')) return;
+            if (e.target && e.target.closest && e.target.closest('.entry-delete-btn')) return;
             closeBookmarksModal();
             api.navigateTo(item.url);
           });
@@ -1761,6 +1788,7 @@
       async function openDownloadsModal() {
         if (!downloadsModal) return;
         downloadsModal.classList.add('active');
+        syncModalState();
         if (typeof api.getDownloads === 'function') {
           const items = await api.getDownloads() || [];
           renderDownloadsItems(items);
@@ -1768,6 +1796,7 @@
       }
       function closeDownloadsModal() {
         if (downloadsModal) downloadsModal.classList.remove('active');
+        syncModalState();
       }
       function renderDownloadsItems(items) {
         if (!downloadsScrollList) return;
@@ -1815,9 +1844,11 @@
       // About Modal
       function openAboutModal() {
         if (aboutModal) aboutModal.classList.add('active');
+        syncModalState();
       }
       function closeAboutModal() {
         if (aboutModal) aboutModal.classList.remove('active');
+        syncModalState();
       }
       btnAboutClose?.addEventListener('click', closeAboutModal);
       btnCloseAboutModal?.addEventListener('click', closeAboutModal);
@@ -1826,6 +1857,16 @@
       if (typeof api.onShowBookmarks === 'function') {
         api.onShowBookmarks(() => openBookmarksModal());
       }
+      if (typeof api.onOpenSettingsModal === 'function') api.onOpenSettingsModal(openSettingsModal);
+      if (typeof api.onOpenHistoryModal === 'function') api.onOpenHistoryModal(openHistoryModal);
+      if (typeof api.onOpenBookmarksModal === 'function') api.onOpenBookmarksModal(openBookmarksModal);
+      if (typeof api.onOpenDownloadsModal === 'function') api.onOpenDownloadsModal(openDownloadsModal);
+      if (typeof api.onOpenClearDataModal === 'function') api.onOpenClearDataModal(() => {
+        openSettingsModal();
+        const sel = document.getElementById('timeRangeSelect');
+        if (sel) sel.focus();
+      });
+      if (typeof api.onOpenAboutModal === 'function') api.onOpenAboutModal(openAboutModal);
 
       // Download Toast Helper
       function showDownloadToast(msg, duration = 4000) {
@@ -1961,7 +2002,7 @@
       }
 
       document.addEventListener('click', (e) => {
-        if (!e.target.closest('.omnibox-container')) {
+        if (!e.target || !e.target.closest || !e.target.closest('.omnibox-container')) {
           hideSuggestions();
         }
       });

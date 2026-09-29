@@ -185,6 +185,18 @@ const secureAPI = Object.freeze({
     ipcRenderer.send('show-about');
   },
 
+  showMoreMenu: (pos) => {
+    const p = (pos && typeof pos === 'object') ? {
+      x: sanitizeNumber(pos.x, 0),
+      y: sanitizeNumber(pos.y, 0)
+    } : null;
+    ipcRenderer.send('show-more-menu', p);
+  },
+
+  setModalOpen: (isOpen) => {
+    ipcRenderer.send('set-modal-open', Boolean(isOpen));
+  },
+
   // Native Window Controls (Supports both win-* and window-* aliases)
   minimizeWindow: () => ipcRenderer.send('win-min'),
   maximizeWindow: () => ipcRenderer.send('win-max'),
@@ -212,7 +224,13 @@ const secureAPI = Object.freeze({
   onDownloadComplete: (cb) => { if (typeof cb === 'function') ipcRenderer.on('download-complete', (e, d) => cb(d)); },
   onBookmarkStatusChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('bookmark-status-changed', (e, d) => cb(d)); },
   onShowBookmarks: (cb) => { if (typeof cb === 'function') ipcRenderer.on('show-bookmarks', () => cb()); },
-  onToggleFindBar: (cb) => { if (typeof cb === 'function') ipcRenderer.on('toggle-find-bar', () => cb()); }
+  onToggleFindBar: (cb) => { if (typeof cb === 'function') ipcRenderer.on('toggle-find-bar', () => cb()); },
+  onOpenSettingsModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-settings-modal', () => cb()); },
+  onOpenHistoryModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-history-modal', () => cb()); },
+  onOpenBookmarksModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-bookmarks-modal', () => cb()); },
+  onOpenDownloadsModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-downloads-modal', () => cb()); },
+  onOpenClearDataModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-clear-data-modal', () => cb()); },
+  onOpenAboutModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-about-modal', () => cb()); }
 });
 
 // Expose both namespaces (stauntAPI & stauntSecureBridge)
