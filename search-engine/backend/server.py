@@ -794,39 +794,47 @@ def research_page():
     return render_template("research.html")
 
 
-GITHUB_RELEASE_BASE = "https://raw.githubusercontent.com/keshavs40344/STAUNT/main/releases"
+GITHUB_RELEASE_BASE = "https://github.com/keshavs40344/STAUNT/releases/download/v2.0.0"
 
 @app.route("/download/windows")
 def download_windows():
     if os.environ.get("VERCEL"):
-        return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-Windows-Setup.exe", code=302)
-    for name in ["STAUNT-Windows-Setup.exe", "Staunt-Browser-Setup.exe", "Staunt Browser Ultra Setup 2.0.0.exe"]:
-        p = os.path.join(ASSETS_DIR, name)
-        if os.path.exists(p):
-            return send_file(p, as_attachment=True, download_name="STAUNT-Windows-Setup.exe")
-    return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-Windows-Setup.exe", code=302)
+        return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-2.0.0-Windows-x64-Setup.exe", code=302)
+    for name in ["STAUNT-2.0.0-Windows-x64-Setup.exe", "STAUNT-Windows-Setup.exe", "Staunt-Browser-Setup.exe", "Staunt Browser Ultra Setup 2.0.0.exe"]:
+        for root_dir in [ASSETS_DIR, os.path.join(STAUNT_ROOT, "release")]:
+            p = os.path.join(root_dir, name)
+            if os.path.exists(p):
+                return send_file(p, as_attachment=True, download_name="STAUNT-2.0.0-Windows-x64-Setup.exe", mimetype="application/x-msdownload")
+    return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-2.0.0-Windows-x64-Setup.exe", code=302)
 
 
 @app.route("/download/windows-portable")
 def download_windows_portable():
     if os.environ.get("VERCEL"):
-        return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-Windows-Portable.zip", code=302)
+        return redirect("https://raw.githubusercontent.com/keshavs40344/STAUNT/main/releases/STAUNT-Windows-Portable.zip", code=302)
     for name in ["STAUNT-Windows-Portable.zip", "Staunt-Browser-Windows-Setup.zip"]:
         p = os.path.join(ASSETS_DIR, name)
         if os.path.exists(p):
             return send_file(p, as_attachment=True, download_name="STAUNT-Windows-Portable.zip")
-    return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-Windows-Portable.zip", code=302)
+    return redirect("https://raw.githubusercontent.com/keshavs40344/STAUNT/main/releases/STAUNT-Windows-Portable.zip", code=302)
 
 
 @app.route("/download/android")
 def download_android():
     if os.environ.get("VERCEL"):
-        return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-Android.apk", code=302)
-    for name in ["STAUNT-Android.apk", "staunt-browser-release.apk", "Staunt-Browser-Mobile.apk"]:
-        p = os.path.join(ASSETS_DIR, name)
-        if os.path.exists(p):
-            return send_file(p, as_attachment=True, download_name="STAUNT-Android.apk")
-    return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-Android.apk", code=302)
+        return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-2.0.0-Android.apk", code=302)
+    for name in ["STAUNT-2.0.0-Android.apk", "STAUNT-Android.apk", "staunt-browser-release.apk"]:
+        for root_dir in [ASSETS_DIR, os.path.join(STAUNT_ROOT, "release")]:
+            p = os.path.join(root_dir, name)
+            if os.path.exists(p):
+                return send_file(p, as_attachment=True, download_name="STAUNT-2.0.0-Android.apk", mimetype="application/vnd.android.package-archive")
+    return redirect(f"{GITHUB_RELEASE_BASE}/STAUNT-2.0.0-Android.apk", code=302)
+
+
+@app.route("/download")
+@app.route("/download-guide")
+def download_page():
+    return render_template("download.html")
 
 
 @app.route("/api/releases", methods=["GET"])

@@ -5,7 +5,8 @@
     "version": "2.0.0",
     "size_bytes": 83219252,
     "sha256": "c30ff799012600a3f964d02402c15d80605e0678e0b3d69ebaea1d223b8a22c7",
-    "release_date": "2026-09-28"
+    "release_date": "2026-09-28",
+    "download_url": "https://github.com/keshavs40344/STAUNT/releases/download/v2.0.0/STAUNT-2.0.0-Windows-x64-Setup.exe"
   },
   {
     "platform": "Android",
@@ -13,6 +14,7 @@
     "version": "2.0.0",
     "size_bytes": 2277262,
     "sha256": "ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f",
-    "release_date": "2026-09-28"
+    "release_date": "2026-09-28",
+    "download_url": "https://github.com/keshavs40344/STAUNT/releases/download/v2.0.0/STAUNT-2.0.0-Android.apk"
   }
 ]

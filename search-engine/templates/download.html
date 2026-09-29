@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Download STAUNT Browser — Sovereign, Fast & Private</title>
+  <meta name="description" content="Download official STAUNT Browser for Windows and Android. Built-in ad-blocking, local session persistence, and zero telemetry.">
+  <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .download-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    .download-hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .download-hero h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: var(--text-main, #ffffff);
+    }
+    .download-hero p {
+      font-size: 1.05rem;
+      color: var(--text-muted, #94a3b8);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    .platform-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 56px;
+    }
+    .platform-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .platform-card:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-2px);
+    }
+    .platform-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .platform-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8b5cf6;
+      flex-shrink: 0;
+    }
+    .platform-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-main, #ffffff);
+    }
+    .platform-version {
+      font-size: 0.85rem;
+      color: var(--text-muted, #94a3b8);
+    }
+    .platform-features {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 24px;
+      font-size: 0.92rem;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.7;
+    }
+    .platform-features li::before {
+      content: "✓ ";
+      color: #10b981;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .download-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 13px 20px;
+      border-radius: 12px;
+      background: #8b5cf6;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .download-action-btn:hover {
+      background: #7c3aed;
+      transform: translateY(-1px);
+    }
+    .download-action-btn.android {
+      background: #10b981;
+    }
+    .download-action-btn.android:hover {
+      background: #059669;
+    }
+    .file-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted, #94a3b8);
+      margin-top: 10px;
+    }
+    .guide-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    .guide-section h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-main, #ffffff);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .guide-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 18px 0;
+      font-size: 0.92rem;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.6;
+    }
+    .guide-step {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.2);
+      color: #8b5cf6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .notice-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 14px;
+      font-size: 0.86rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+    .checksum-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 0.84rem;
+    }
+    .checksum-table th, .checksum-table td {
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+    }
+    .checksum-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main, #ffffff);
+    }
+    .checksum-code {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #a78bfa;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="download-container">
+    <div style="margin-bottom: 24px;">
+      <a href="/" style="display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted, #94a3b8); text-decoration: none; font-size: 0.9rem;">
+        ← Back to Search
+      </a>
+    </div>
+
+    <div class="download-hero">
+      <h1>Get STAUNT Browser</h1>
+      <p>Sovereign, lightweight, tracker-free web browsing for desktop and mobile. Zero telemetry, built-in ad-blocking, and local session vault.</p>
+    </div>
+
+    <!-- Platform Cards -->
+    <div class="platform-cards-grid">
+      <!-- Windows Card -->
+      <div class="platform-card">
+        <div>
+          <div class="platform-header">
+            <div class="platform-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.95-1.801"/></svg>
+            </div>
+            <div>
+              <div class="platform-title">Windows x64</div>
+              <div class="platform-version">v2.0.0 • 64-bit NSIS Installer</div>
+            </div>
+          </div>
+          <ul class="platform-features">
+            <li>Hardened Electron 33 / Chromium 130 runtime</li>
+            <li>Multi-tab interface with split-screen view</li>
+            <li>Built-in ad & tracker blocking (Ghostery engine)</li>
+            <li>Custom downloads directory with auto-fallback</li>
+            <li>Local history vault and bookmarks</li>
+          </ul>
+        </div>
+        <div>
+          <a href="/download/windows" class="download-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download for Windows
+          </a>
+          <div class="file-meta-row">
+            <span>STAUNT-2.0.0-Windows-x64-Setup.exe</span>
+            <span>79.3 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Android Card -->
+      <div class="platform-card">
+        <div>
+          <div class="platform-header">
+            <div class="platform-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.086 12 8.086s-3.5902.3251-5.1368.8637L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
+            </div>
+            <div>
+              <div class="platform-title">Android</div>
+              <div class="platform-version">v2.0.0 • Standalone APK (API 26+)</div>
+            </div>
+          </div>
+          <ul class="platform-features">
+            <li>Native Kotlin performance for phones & tablets</li>
+            <li>Grid tab switcher with real-time previews</li>
+            <li>Integrated Scoped Storage download manager</li>
+            <li>Native regex-based ad-blocking</li>
+            <li>Private incognito browsing mode</li>
+          </ul>
+        </div>
+        <div>
+          <a href="/download/android" class="download-action-btn android">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Android APK
+          </a>
+          <div class="file-meta-row">
+            <span>STAUNT-2.0.0-Android.apk</span>
+            <span>2.17 MB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Android Installation & Security Guide -->
+    <div class="guide-section">
+      <h2>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color: #10b981;"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.086 12 8.086s-3.5902.3251-5.1368.8637L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
+        Android Installation & Security Guide
+      </h2>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <div class="step-num">1</div>
+          <div>Tap the <strong>Download Android APK</strong> button above to download <code>STAUNT-2.0.0-Android.apk</code>.</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">2</div>
+          <div>Open the downloaded file from your notification bar or your device's <strong>Files / Downloads</strong> app.</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">3</div>
+          <div>If prompted with <em>"For your security, your phone is not allowed to install unknown apps from this source"</em>, tap <strong>Settings</strong> and toggle on <strong>Allow from this source</strong> for your browser/file manager.</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">4</div>
+          <div>Return to the installer and tap <strong>Install</strong>. Once completed, tap <strong>Open</strong> to launch STAUNT.</div>
+        </div>
+      </div>
+      <div class="notice-box">
+        <strong>Why does Android show a security warning?</strong><br>
+        Android displays this standard notice for all applications downloaded directly as an APK rather than from Google Play Store. STAUNT contains zero telemetry and runs strictly in its sandboxed application space. You can verify the authentic package hash before installation using the checksum table below.
+      </div>
+    </div>
+
+    <!-- Windows Installation & SmartScreen Guide -->
+    <div class="guide-section">
+      <h2>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color: #8b5cf6;"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.95-1.801"/></svg>
+        Windows Installation & SmartScreen Notice
+      </h2>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <div class="step-num">1</div>
+          <div>Download <code>STAUNT-2.0.0-Windows-x64-Setup.exe</code> and double-click to run.</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">2</div>
+          <div>If Microsoft Defender SmartScreen displays <em>"Windows protected your PC — unrecognized app"</em>: click <strong>More info</strong>, then click <strong>Run anyway</strong>.</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">3</div>
+          <div>Follow the setup wizard to complete installation. Desktop and Start Menu shortcuts will be created automatically.</div>
+        </div>
+      </div>
+      <div class="notice-box">
+        <strong>Why does SmartScreen show an unrecognized app warning?</strong><br>
+        STAUNT is an independent open-source release without an expensive commercial Authenticode EV certificate. SmartScreen shows this prompt for newly released builds until cryptographic reputation is established on Microsoft servers. Always verify the SHA-256 hash below.
+      </div>
+    </div>
+
+    <!-- Cryptographic Checksum Table -->
+    <div class="guide-section">
+      <h2>Cryptographic SHA-256 Checksums</h2>
+      <p style="font-size: 0.88rem; color: var(--text-muted, #94a3b8); margin-bottom: 12px;">Verify file authenticity in PowerShell with <code>Get-FileHash -Algorithm SHA256 filename</code> or Linux/Mac with <code>sha256sum filename</code>:</p>
+      <table class="checksum-table">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Size</th>
+            <th>SHA-256 Hash</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>STAUNT-2.0.0-Windows-x64-Setup.exe</strong></td>
+            <td>83,219,252 bytes</td>
+            <td class="checksum-code">c30ff799012600a3f964d02402c15d80605e0678e0b3d69ebaea1d223b8a22c7</td>
+          </tr>
+          <tr>
+            <td><strong>STAUNT-2.0.0-Android.apk</strong></td>
+            <td>2,277,262 bytes</td>
+            <td class="checksum-code">ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

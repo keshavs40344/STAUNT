@@ -114,7 +114,7 @@ run_test("Legal Privacy Policy", "/privacy", val_privacy)
 def val_download_win(status, body, headers):
     loc = headers.get("Location", "")
     ct = headers.get("Content-Type", "")
-    if status in (301, 302, 307, 308) and "STAUNT-Windows-Setup.exe" in loc:
+    if status in (301, 302, 307, 308) and ("STAUNT-Windows-Setup.exe" in loc or "STAUNT-2.0.0-Windows-x64-Setup.exe" in loc):
         return True, f"Redirects to binary: {loc}"
     if status == 200 and ("application/octet-stream" in ct or "application/x-msdownload" in ct or len(body) > 1000000):
         return True, f"Streams binary directly (length: {len(body)})"
@@ -125,7 +125,7 @@ run_test("Windows Binary Download", "/download/windows", val_download_win, follo
 def val_download_apk(status, body, headers):
     loc = headers.get("Location", "")
     ct = headers.get("Content-Type", "")
-    if status in (301, 302, 307, 308) and "STAUNT-Android.apk" in loc:
+    if status in (301, 302, 307, 308) and ("STAUNT-Android.apk" in loc or "STAUNT-2.0.0-Android.apk" in loc):
         return True, f"Redirects to binary: {loc}"
     if status == 200 and ("application/vnd.android.package-archive" in ct or "application/octet-stream" in ct or len(body) > 1000000):
         return True, f"Streams binary directly (length: {len(body)})"
@@ -138,7 +138,7 @@ def val_releases(status, body, headers):
         return False, f"Expected 200, got {status}"
     try:
         data = json.loads(body)
-        if isinstance(data, list) and len(data) >= 3:
+        if isinstance(data, list) and len(data) >= 2:
             return True, f"Found {len(data)} releases in manifest"
         return False, f"Unexpected data format: {data}"
     except Exception as e:

@@ -59,7 +59,7 @@
       align-items: center;
       padding: 0 0 0 10px;
       gap: 6px;
-      z-index: 10000;
+      z-index: 30000;
       /* Draggable window region for frameless window */
       -webkit-app-region: drag;
     }
@@ -109,6 +109,8 @@
       height: var(--header-height);
       margin-left: 4px;
       flex-shrink: 0;
+      -webkit-app-region: no-drag !important;
+      z-index: 30005;
     }
     .win-caption-btn {
       width: 46px;
@@ -123,6 +125,7 @@
       transition: background 0.12s ease, color 0.12s ease;
       outline: none;
       padding: 0;
+      -webkit-app-region: no-drag !important;
     }
     .win-caption-btn svg {
       pointer-events: none;
@@ -486,7 +489,7 @@
     /* Settings & Clear Data Modal */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: var(--header-height); left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.65);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -1281,12 +1284,19 @@
         else api.maximizeWindow();
       });
 
-      if (winBtnMin) winBtnMin.addEventListener('click', () => api.minimizeWindow());
-      if (winBtnMax) winBtnMax.addEventListener('click', () => {
+      if (winBtnMin) winBtnMin.addEventListener('click', (e) => {
+        e.stopPropagation();
+        api.minimizeWindow();
+      });
+      if (winBtnMax) winBtnMax.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (typeof api.toggleMaximize === 'function') api.toggleMaximize();
         else api.maximizeWindow();
       });
-      if (winBtnClose) winBtnClose.addEventListener('click', () => api.closeWindow());
+      if (winBtnClose) winBtnClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        api.closeWindow();
+      });
 
       // Double-click custom titlebar to toggle maximize / restore
       const desktopTopBar = document.getElementById('desktop-topbar');

@@ -3,7 +3,7 @@
   "redirects": [
     {
       "source": "/download/windows",
-      "destination": "https://raw.githubusercontent.com/keshavs40344/STAUNT/main/releases/STAUNT-Windows-Setup.exe",
+      "destination": "https://github.com/keshavs40344/STAUNT/releases/download/v2.0.0/STAUNT-2.0.0-Windows-x64-Setup.exe",
       "permanent": false
     },
     {
@@ -13,7 +13,7 @@
     },
     {
       "source": "/download/android",
-      "destination": "https://raw.githubusercontent.com/keshavs40344/STAUNT/main/releases/STAUNT-Android.apk",
+      "destination": "https://github.com/keshavs40344/STAUNT/releases/download/v2.0.0/STAUNT-2.0.0-Android.apk",
       "permanent": false
     }
   ],
