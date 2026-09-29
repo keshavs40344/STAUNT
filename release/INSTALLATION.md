@@ -46,7 +46,7 @@ Windows displays this notice for newly released or independently compiled applic
 ### Step 1: Download the APK
 Download the Android release package:
 * File: `STAUNT-2.0.0-Android.apk` (or `Staunt Browser 2.0.0.apk`)
-* Size: ~2.17 MB (2,277,262 bytes)
+* Size: ~2.25 MB (2,364,332 bytes)
 * Minimum Requirements: Android 8.0 (API 26) or higher.
 
 ### Step 2: Verify Checksum (Recommended)
@@ -56,7 +56,7 @@ sha256sum STAUNT-2.0.0-Android.apk
 ```
 Confirm the hash matches:
 ```
-ad8f1097e07c1eee690f2a43b89345832b19476cce48a3595addbdddf99a528f
+04c54718b7881cff9d29006deefc659696d2d01b93c592b09fbfe0affc9eead8
 ```
 
 ### Step 3: Sideload & Install the APK

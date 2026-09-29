@@ -42,3 +42,12 @@ tmp/
 # Release Binaries (distributed via GitHub Releases)
 release/*.exe
 release/*.apk
+
+# Keystores & Signing Secrets
+*.keystore
+*.jks
+*.p12
+*keystore_env*
+*.key
+*.cert
+*.idsig

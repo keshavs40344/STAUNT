@@ -17,12 +17,20 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_PATH")
-            if (!keystorePath.isNullOrEmpty() && file(keystorePath).exists()) {
-                storeFile = file(keystorePath)
+            val envPath = System.getenv("KEYSTORE_PATH")
+            val defaultPath = "${System.getProperty("user.home")}/.android/staunt-release.keystore"
+            val keystoreFile = when {
+                !envPath.isNullOrEmpty() && file(envPath).exists() -> file(envPath)
+                file(defaultPath).exists() -> file(defaultPath)
+                else -> null
+            }
+            if (keystoreFile != null) {
+                storeFile = keystoreFile
+                keyAlias = System.getenv("KEY_ALIAS") ?: "staunt-release"
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }
@@ -31,9 +39,24 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            val keystorePath = System.getenv("KEYSTORE_PATH")
-            if (!keystorePath.isNullOrEmpty() && file(keystorePath).exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile == null || !releaseSigning.storeFile!!.exists()) {
+                throw org.gradle.api.GradleException(
+                    "Release build aborted: Keystore file not found. Ensure KEYSTORE_PATH or ~/.android/staunt-release.keystore is present."
+                )
+            }
+            signingConfig = releaseSigning
+        }
+    }
+
+    gradle.taskGraph.whenReady {
+        if (allTasks.any { it.name.contains("Release", ignoreCase = true) }) {
+            val storePass = System.getenv("KEYSTORE_PASSWORD")
+            val keyPass = System.getenv("KEY_PASSWORD")
+            if (storePass.isNullOrEmpty() || keyPass.isNullOrEmpty()) {
+                throw org.gradle.api.GradleException(
+                    "Release build aborted: Required signing credentials missing. Set KEYSTORE_PASSWORD and KEY_PASSWORD environment variables."
+                )
             }
         }
     }
