@@ -3,9 +3,9 @@
     "platform": "Windows x64",
     "filename": "STAUNT-2.0.0-Windows-x64-Setup.exe",
     "version": "2.0.0",
-    "size_bytes": 83219252,
-    "sha256": "c30ff799012600a3f964d02402c15d80605e0678e0b3d69ebaea1d223b8a22c7",
-    "release_date": "2026-09-28",
+    "size_bytes": 83220366,
+    "sha256": "0a82170929fb91037ac8e90dca9ac729d0f82c780a8a32f21dd502eb368912d7",
+    "release_date": "2026-09-29",
     "download_url": "https://github.com/keshavs40344/STAUNT/releases/download/v2.0.0/STAUNT-2.0.0-Windows-x64-Setup.exe"
   },
   {

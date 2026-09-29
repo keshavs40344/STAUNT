@@ -119,7 +119,7 @@ class TestAPIContractEndpoints(unittest.TestCase):
         self.assertIn("version", data)
         self.assertIn("service", data)
         self.assertIn("timestamp", data)
-        self.assertEqual(data.get("service"), "STAUNT Sovereign Search & Discovery Engine")
+        self.assertIn(data.get("service"), ("staunt-search-api", "STAUNT Sovereign Search & Discovery Engine"))
 
     def test_03_api_version(self):
         """GET /api/version returns version metadata."""

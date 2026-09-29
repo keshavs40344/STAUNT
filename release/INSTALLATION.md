@@ -9,7 +9,7 @@ This document provides step-by-step instructions for installing and verifying ST
 ### Step 1: Download the Installer
 Download the official 64-bit setup package:
 * File: `STAUNT-2.0.0-Windows-x64-Setup.exe` (or `Staunt Browser Ultra Setup 2.0.0.exe`)
-* Size: ~79.3 MB (83,218,284 bytes)
+* Size: ~79.3 MB (83,220,366 bytes)
 
 ### Step 2: Verify Checksum (Recommended)
 Before running the executable, verify that the downloaded binary is authentic and untampered:
@@ -20,7 +20,7 @@ Before running the executable, verify that the downloaded binary is authentic an
    ```
 3. Confirm that the output matches:
    ```
-   C30FF799012600A3F964D02402C15D80605E0678E0B3D69EBAEA1D223B8A22C7
+   0A82170929FB91037AC8E90DCA9AC729D0F82C780A8A32F21DD502EB368912D7
    ```
 
 ### Step 3: Run the Installer

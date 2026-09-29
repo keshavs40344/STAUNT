@@ -18,7 +18,7 @@ tests = [
     ("/download/windows", 302, lambda r: "STAUNT" in r.headers.get("Location", "") and "Setup.exe" in r.headers.get("Location", "")),
     ("/download/android", 302, lambda r: "STAUNT" in r.headers.get("Location", "") and ".apk" in r.headers.get("Location", "")),
     ("/download/windows-portable", 302, lambda r: "STAUNT-Windows-Portable.zip" in r.headers.get("Location", "")),
-    ("/download", 200, lambda r: "STAUNT-2.0.0-Android.apk" in r.text and "c30ff799" in r.text),
+    ("/download", 200, lambda r: "STAUNT-2.0.0-Android.apk" in r.text and "0a821709" in r.text),
     ("/api/releases", 200, lambda r: "STAUNT-2.0.0-Windows-x64-Setup.exe" in r.text),
     ("/api/search?q=120*45", 200, lambda r: "5400" in r.text),
     ("/api/version", 200, lambda r: "version" in r.text),
