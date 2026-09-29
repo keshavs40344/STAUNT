@@ -1230,8 +1230,15 @@ def api_search():
         query, max_results=retrieve_count, time_range=time_filter, debug=debug_mode
     )
 
-    # Fetch visual preview images (Wikimedia high-res public images)
-    preview_images = search_core.fetch_wikimedia_images(query, limit=6)
+    # Fetch visual preview images for All category with relevance gating
+    raw_previews = search_core.fetch_wikimedia_images(query, limit=6)
+    query_tokens = [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) >= 2]
+    preview_images = []
+    if raw_previews and (query_tokens or entity_data):
+        for img in raw_previews:
+            t = (img.get("title") or "").lower()
+            if entity_data or any(tok in t for tok in query_tokens):
+                preview_images.append(img)
 
     # Final validation & deduplication of results
     base_results = [r for r in search_data.get("results", []) if validate_result(r)]

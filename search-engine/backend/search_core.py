@@ -367,21 +367,129 @@ def call_groq(prompt, system_prompt="You are VASTUDA's elite AI engine. Be conci
 def fetch_wikimedia_images(query, limit=8):
     images = []
     try:
-        # Direct generator search on Wikipedia for related high-res images
         search_url = f"https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch={urllib.parse.quote(query)}&gsrlimit={limit}&prop=pageimages&pithumbsize=800&piprop=thumbnail|original&format=json"
-        resp = http_session.get(search_url, headers={"User-Agent": "VASTUDA/1.0"}, timeout=(1.0, 1.5))
+        resp = http_session.get(search_url, headers={"User-Agent": "STAUNT/2.0 (contact@staunt.vercel.app)"}, timeout=(1.5, 3.0))
         if resp.status_code == 200:
             pages = resp.json().get("query", {}).get("pages", {})
             for p in pages.values():
                 thumb = p.get("thumbnail", {}).get("source") or p.get("original", {}).get("source")
                 if thumb and not thumb.endswith(".svg.png"):
                     page_title = p.get("title", "")
-                    # Skip generic placeholder images
                     if page_title and page_title.lower() not in ("file:", "main page"):
-                        images.append({"url": thumb, "title": page_title, "source": "wikimedia"})
+                        src_url = f"https://en.wikipedia.org/wiki/{urllib.parse.quote(page_title.replace(' ', '_'))}"
+                        img_dict = validate_image({
+                            "url": thumb,
+                            "thumbnail": p.get("thumbnail", {}).get("source", thumb),
+                            "title": page_title,
+                            "source": "wikipedia",
+                            "source_url": src_url
+                        })
+                        if img_dict:
+                            images.append(img_dict)
     except Exception as e:
-        logger.warning(f"Wikimedia image search error: {e}")
+        logger.warning(f"Wikimedia Wikipedia image search error: {e}")
     return images
+
+
+def fetch_wikimedia_commons_images(query, limit=8):
+    images = []
+    try:
+        search_url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch={urllib.parse.quote(query)}&gsrlimit={limit}&prop=imageinfo&iiprop=url|size&format=json"
+        resp = http_session.get(search_url, headers={"User-Agent": "STAUNT/2.0 (contact@staunt.vercel.app)"}, timeout=(1.5, 3.0))
+        if resp.status_code == 200:
+            pages = resp.json().get("query", {}).get("pages", {})
+            for p in pages.values():
+                raw_title = p.get("title", "").replace("File:", "").strip()
+                ii = p.get("imageinfo", [{}])[0]
+                img_url = ii.get("url")
+                if img_url and not img_url.lower().endswith((".pdf", ".ogg", ".ogv", ".webm", ".djvu", ".svg.png")):
+                    page_title = p.get("title", "")
+                    src_url = f"https://commons.wikimedia.org/wiki/{urllib.parse.quote(page_title.replace(' ', '_'))}"
+                    img_dict = validate_image({
+                        "url": img_url,
+                        "thumbnail": img_url,
+                        "title": raw_title or page_title,
+                        "source": "wikimedia_commons",
+                        "source_url": src_url
+                    })
+                    if img_dict:
+                        images.append(img_dict)
+    except Exception as e:
+        logger.warning(f"Wikimedia Commons image search error: {e}")
+    return images
+
+
+def extract_web_media_images(query, max_results=8):
+    """
+    Extracts authentic public media images associated with top authoritative web results
+    (e.g., GitHub profile avatars, YouTube video thumbnails, verified entity assets).
+    Never fabricates stock placeholders.
+    """
+    images = []
+    seen = set()
+    query_tokens = [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) >= 2]
+    try:
+        web_data = execute_web_query(query, max_results=max_results)
+        for r in web_data.get("results", []):
+            u = r.get("url", "")
+            title = r.get("title", "")
+            if not u:
+                continue
+
+            # 1. GitHub user or organisation avatar
+            gh_match = re.match(r"^https?://(?:www\.)?github\.com/([a-zA-Z0-9_-]+)/?$", u, re.I)
+            if gh_match:
+                user = gh_match.group(1)
+                user_clean = user.lower()
+                if user_clean not in ("features", "pricing", "about", "join", "login", "topics", "trending", "explore", "settings"):
+                    # Strict relevance gate: user or title must overlap with query tokens
+                    is_relevant = (
+                        not query_tokens or
+                        user_clean in query_tokens or
+                        any(t in user_clean for t in query_tokens) or
+                        any(t in title.lower() for t in query_tokens)
+                    )
+                    if is_relevant:
+                        avatar_url = f"https://github.com/{user}.png"
+                        if avatar_url not in seen:
+                            seen.add(avatar_url)
+                            item = validate_image({
+                                "url": avatar_url,
+                                "thumbnail": avatar_url,
+                                "title": f"{user} — GitHub Profile",
+                                "source": "github",
+                                "source_url": u
+                            })
+                            if item:
+                                images.append(item)
+
+            # 2. YouTube video thumbnail
+            yt_match = re.search(r"(?:v=|youtu\.be/|embed/)([a-zA-Z0-9_-]{11})", u, re.I)
+            if yt_match:
+                vid = yt_match.group(1)
+                clean_title = re.sub(r"\s*-\s*YouTube$", "", title, flags=re.I)
+                # Strict relevance gate: video title must overlap with query tokens
+                is_relevant = (
+                    not query_tokens or
+                    any(t in clean_title.lower() for t in query_tokens)
+                )
+                if is_relevant:
+                    thumb_url = f"https://img.youtube.com/vi/{vid}/hqdefault.jpg"
+                    if thumb_url not in seen:
+                        seen.add(thumb_url)
+                        item = validate_image({
+                            "url": thumb_url,
+                            "thumbnail": thumb_url,
+                            "title": clean_title or "YouTube Video",
+                            "source": "youtube",
+                            "source_url": u
+                        })
+                        if item:
+                            images.append(item)
+    except Exception as e:
+        logger.warning(f"Web media image extraction error: {e}")
+    return images
+
 
 
 # CATEGORY: AI Search (Ultra-Concise, Controlled Reasoning)
@@ -520,22 +628,55 @@ def search_news_mode(query, time_range=None):
     return payload
 
 
-# CATEGORY: Images Search (Multi-source: Wikimedia + Tavily)
+# CATEGORY: Images Search (Multi-source: Wikimedia Commons + Wikipedia + Web Media + Tavily)
 def search_images_mode(query):
     cached = get_cached(f"images:{query.lower()}")
     if cached:
         return cached
 
-    # 1. Fetch Wikimedia public domain high-res images
-    wiki_images = fetch_wikimedia_images(query, limit=8)
+    # Concurrent multi-source execution
+    futures = {
+        "wiki": ASYNC_POOL.submit(fetch_wikimedia_images, query, 8),
+        "commons": ASYNC_POOL.submit(fetch_wikimedia_commons_images, query, 8),
+        "tavily": ASYNC_POOL.submit(search_tavily_raw, query, 12, include_images=True),
+        "web_media": ASYNC_POOL.submit(extract_web_media_images, query, 8)
+    }
 
-    # 2. Fetch Tavily web images
-    tav_data = search_tavily_raw(query, max_results=12, include_images=True)
-    tav_images = tav_data.get("images", []) if tav_data else []
+    raw_candidates = []
+    
+    # 1. Wikimedia Wikipedia images
+    try:
+        wiki_images = futures["wiki"].result(timeout=2.2) or []
+        raw_candidates.extend(wiki_images)
+    except Exception as e:
+        logger.warning(f"Wiki images retrieval timeout/error: {e}")
 
+    # 2. Wikimedia Commons public domain media
+    try:
+        commons_images = futures["commons"].result(timeout=2.2) or []
+        raw_candidates.extend(commons_images)
+    except Exception as e:
+        logger.warning(f"Commons images retrieval timeout/error: {e}")
+
+    # 3. Tavily web images (if API key configured)
+    try:
+        tav_data = futures["tavily"].result(timeout=2.5)
+        if tav_data and tav_data.get("images"):
+            raw_candidates.extend(tav_data["images"])
+    except Exception as e:
+        logger.warning(f"Tavily images retrieval timeout/error: {e}")
+
+    # 4. Web media extraction (e.g. GitHub avatars, YouTube video thumbs)
+    try:
+        web_media = futures["web_media"].result(timeout=3.0) or []
+        raw_candidates.extend(web_media)
+    except Exception as e:
+        logger.warning(f"Web media retrieval timeout/error: {e}")
+
+    # Deduplicate and validate
     all_images = []
     seen = set()
-    for img in (wiki_images + tav_images):
+    for img in raw_candidates:
         valid_img = validate_image(img)
         if valid_img:
             img_url = valid_img["url"]
@@ -543,31 +684,40 @@ def search_images_mode(query):
                 seen.add(img_url)
                 all_images.append(valid_img)
 
-    # 3. Score images by query-term relevance in title
-    query_tokens = set(query.lower().split())
+    # Score images by query-term relevance in title
+    query_tokens = [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) >= 2]
     def relevance_score(img):
         title = (img.get("title") or "").lower()
         if not title:
             return 0
-        return sum(1 for t in query_tokens if t in title)
+        score = 0
+        for t in query_tokens:
+            if t in title:
+                score += 2
+        # Exact match bonus
+        if query.lower() in title:
+            score += 3
+        return score
 
-    # Partition: images with relevant titles first, then untitled/irrelevant
-    titled = [img for img in all_images if relevance_score(img) > 0]
-    untitled = [img for img in all_images if relevance_score(img) == 0]
-    titled.sort(key=relevance_score, reverse=True)
+    # Partition: relevant title matches first, followed by general matches
+    if query_tokens:
+        scored = sorted(all_images, key=relevance_score, reverse=True)
+    else:
+        scored = all_images
 
-    # Prefer titled images; append untitled only if we have few titled results
-    ranked = titled + untitled
-    ranked = ranked[:20]  # Cap at 20 results
+    ranked = scored[:24]
 
     payload = {
         "category": "images",
         "query": query,
         "images": ranked,
-        "provider": "multisource"
+        "total": len(ranked),
+        "provider": "multisource",
+        "status": "ok" if ranked else "empty"
     }
     set_cached(f"images:{query.lower()}", payload)
     return payload
+
 
 
 # CATEGORY: Video Search

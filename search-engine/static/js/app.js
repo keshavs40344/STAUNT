@@ -117,6 +117,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const videosSection = document.getElementById("videosSection");
   const imagesSection = document.getElementById("imagesSection");
   const emptyState = document.getElementById("emptyState");
+  const emptyIcon = document.getElementById("emptyIcon");
+  const emptyTitle = document.getElementById("emptyTitle");
+  const emptyDesc = document.getElementById("emptyDesc");
+  const emptySwitchAllBtn = document.getElementById("emptySwitchAllBtn");
+  const emptyRetryBtn = document.getElementById("emptyRetryBtn");
+  const emptyTipsCard = document.getElementById("emptyTipsCard");
+  const relatedQueriesCard = document.getElementById("relatedQueriesCard");
   const relatedQueriesList = document.getElementById("relatedQueriesList");
 
   // Modals
@@ -175,7 +182,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeLightboxBtn = document.getElementById("closeLightboxBtn");
   const lightboxImg = document.getElementById("lightboxImg");
   const lightboxTitle = document.getElementById("lightboxTitle");
+  const lightboxDomain = document.getElementById("lightboxDomain");
   const lightboxVisitBtn = document.getElementById("lightboxVisitBtn");
+  const lightboxRawImgBtn = document.getElementById("lightboxRawImgBtn");
 
   // --- Theme Management ---
   const savedTheme = localStorage.getItem("vastuda_theme") || "dark";
@@ -747,7 +756,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (category === "news") {
         renderNewsCategory(data);
       } else if (category === "images") {
-        renderImagesCategory(data);
+        renderImagesCategory(data, query);
       } else if (category === "videos") {
         renderVideosCategory(data);
       } else if (category === "docs") {
@@ -763,16 +772,53 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Update sidebar related queries
-      updateRelatedQueries(query);
+      updateRelatedQueries(query, data);
 
     } catch (err) {
       console.error("Search failed:", err);
-      if (webResultsSection) webResultsSection.innerHTML = `<p style="color:var(--text-secondary); padding: 20px;">Search request failed. Please check connection.</p>`;
+      showEmptyState(category, query, true, "Search request failed. Please check your network connection and try again.");
       if (resultsCountNotice) resultsCountNotice.textContent = "";
     }
   }
 
   // --- Category Renderers ---
+
+  // Category-Aware Empty & Error State Helper
+  function showEmptyState(category, query, isError = false, errorMsg = "") {
+    if (!emptyState) return;
+    emptyState.style.display = "block";
+    const cleanQ = (query || "").trim();
+
+    if (emptyIcon) emptyIcon.textContent = isError ? "⚠️" : "🔍";
+    if (emptyTitle) {
+      if (isError) {
+        emptyTitle.textContent = "Service temporarily unavailable";
+      } else if (category === "images") {
+        emptyTitle.textContent = cleanQ ? `No images found for "${cleanQ}"` : "No images found";
+      } else if (category === "videos") {
+        emptyTitle.textContent = cleanQ ? `No videos found for "${cleanQ}"` : "No videos found";
+      } else if (category === "news") {
+        emptyTitle.textContent = cleanQ ? `No news articles found for "${cleanQ}"` : "No news articles found";
+      } else {
+        emptyTitle.textContent = cleanQ ? `No search results found for "${cleanQ}"` : "No search results found";
+      }
+    }
+    if (emptyDesc) {
+      if (isError) {
+        emptyDesc.textContent = errorMsg || "We were unable to reach search providers right now. Please try again in a few moments.";
+      } else if (category === "images") {
+        emptyDesc.textContent = "No public image results matched your search term. You can search across All results or try broader keywords.";
+      } else {
+        emptyDesc.textContent = "Try checking your spelling, using more general keywords, or exploring other categories.";
+      }
+    }
+    if (emptySwitchAllBtn) {
+      emptySwitchAllBtn.style.display = (category && category !== "all") ? "inline-flex" : "none";
+    }
+    if (emptyTipsCard) {
+      emptyTipsCard.style.display = isError ? "none" : "block";
+    }
+  }
 
   // Helper: Production Entity & Person SERP Renderer
   function renderEntityProfileCard(entity, news, videos) {
@@ -905,7 +951,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (previewImages.length > 0 && visualStripContainer && visualStripScroll) {
       visualStripScroll.innerHTML = previewImages.slice(0, 6).map(img => `
         <div class="visual-strip-item" title="${escapeHtml(img.title || query)}">
-          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.title || query)}" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" />
+          <img src="${escapeHtml(img.thumbnail || img.url)}" alt="${escapeHtml(img.title || query)}" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" />
         </div>
       `).join("");
       visualStripContainer.style.display = "block";
@@ -915,7 +961,18 @@ document.addEventListener("DOMContentLoaded", () => {
           const img = previewImages[idx];
           if (lightboxImg) lightboxImg.src = img.url;
           if (lightboxTitle) lightboxTitle.textContent = img.title || query;
-          if (lightboxVisitBtn) lightboxVisitBtn.href = img.url;
+          let domain = img.domain || "web";
+          if (!domain || domain === "web") {
+            try { domain = new URL(img.source_url || img.url).hostname.replace("www.", ""); } catch(e) {}
+          }
+          if (lightboxDomain) lightboxDomain.textContent = domain;
+          if (lightboxVisitBtn) {
+            lightboxVisitBtn.href = img.source_url || img.url;
+            lightboxVisitBtn.textContent = img.source_url ? "Visit Source Page ↗" : "View Source ↗";
+          }
+          if (lightboxRawImgBtn) {
+            lightboxRawImgBtn.href = img.url;
+          }
           if (lightboxModal) lightboxModal.classList.add("open");
         });
       });
@@ -926,6 +983,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Render Web Results
     const results = data.results || [];
     if (results.length > 0 && webResultsSection) {
+      if (emptyState) emptyState.style.display = "none";
       webResultsSection.style.display = "flex";
       results.forEach(item => {
         webResultsSection.appendChild(createWebResultCard(item));
@@ -939,8 +997,8 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchAiOverview(query, results);
       }
 
-    } else if (!data.instant_answer && !data.destination && previewImages.length === 0) {
-      if (emptyState) emptyState.style.display = "block";
+    } else if (!data.instant_answer && !data.destination && previewImages.length === 0 && results.length === 0) {
+      showEmptyState("all", query);
     }
 
   }
@@ -1011,40 +1069,58 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 5. Images Category (Phase 6)
-  function renderImagesCategory(data) {
+  function renderImagesCategory(data, query) {
     imagesSection.style.display = "grid";
     imagesSection.innerHTML = "";
     const images = data.images || [];
     if (images.length > 0) {
+      if (emptyState) emptyState.style.display = "none";
       images.forEach(img => {
         const item = document.createElement("div");
         item.className = "image-card-box";
         
-        let domain = "web";
-        try {
-          domain = new URL(img.url).hostname.replace("www.", "");
-        } catch(e) {}
+        let domain = img.domain || "web";
+        if (!domain || domain === "web") {
+          try {
+            domain = new URL(img.source_url || img.url).hostname.replace("www.", "");
+          } catch(e) {}
+        }
+
+        const sourceLabel = img.source ? img.source.replace("_", " ") : domain;
+        const displayThumb = img.thumbnail || img.url;
 
         item.innerHTML = `
           <div class="image-thumb-wrap">
-            <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.title || 'Image')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.image-card-box').style.display='none'" />
+            <img src="${escapeHtml(displayThumb)}" alt="${escapeHtml(img.title || 'Image')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.image-card-box').style.display='none'" />
           </div>
           <div class="image-card-meta">
             <div class="image-card-title" title="${escapeHtml(img.title || 'Image')}">${escapeHtml(img.title || 'Image')}</div>
-            <div class="image-card-source">${escapeHtml(domain)}</div>
+            <div class="image-card-source">
+              <span class="dest-stat-pill" style="font-size: 0.68rem; text-transform: uppercase; padding: 2px 6px;">${escapeHtml(sourceLabel)}</span>
+              <span>${escapeHtml(domain)}</span>
+            </div>
           </div>
         `;
 
         item.addEventListener("click", () => {
-          lightboxImg.src = img.url;
-          lightboxTitle.textContent = img.title || "Image Preview";
-          lightboxVisitBtn.href = img.url;
-          lightboxModal.classList.add("open");
+          if (lightboxImg) lightboxImg.src = img.url;
+          if (lightboxTitle) lightboxTitle.textContent = img.title || "Image Preview";
+          if (lightboxDomain) lightboxDomain.textContent = domain;
+          if (lightboxVisitBtn) {
+            lightboxVisitBtn.href = img.source_url || img.url;
+            lightboxVisitBtn.textContent = img.source_url ? "Visit Source Page ↗" : "View Source ↗";
+          }
+          if (lightboxRawImgBtn) {
+            lightboxRawImgBtn.href = img.url;
+          }
+          if (lightboxModal) lightboxModal.classList.add("open");
         });
         imagesSection.appendChild(item);
       });
     } else {
-      emptyState.style.display = "block";
+      imagesSection.style.display = "none";
+      const isErr = (data.status === "error" || Boolean(data.error));
+      showEmptyState("images", query, isErr, data.message || data.error);
     }
   }
 
@@ -1363,15 +1439,48 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Sidebar Related Queries
-  function updateRelatedQueries(query) {
-    if (!relatedQueriesList) return;
-    const suggestions = [
-      `${query} guide`,
-      `${query} latest news`,
-      `best ${query} 2026`,
-      `${query} vs alternatives`
-    ];
-    relatedQueriesList.innerHTML = suggestions.map(q => `
+  async function updateRelatedQueries(query, data) {
+    if (!relatedQueriesCard || !relatedQueriesList) return;
+
+    // 1. Math / Calculation queries: suppress related queries completely
+    if (data && (data.instant_answer || data.provider === "local_calculator")) {
+      relatedQueriesCard.style.display = "none";
+      return;
+    }
+
+    const cleanQ = (query || "").trim();
+    if (!cleanQ || cleanQ.length < 2) {
+      relatedQueriesCard.style.display = "none";
+      return;
+    }
+
+    // 2. Fetch genuine search suggestions from /api/suggest
+    let suggestions = [];
+    try {
+      const resp = await apiFetch(`/api/suggest?q=${encodeURIComponent(cleanQ)}`);
+      if (resp.ok) {
+        const raw = await resp.json();
+        const list = Array.isArray(raw) ? raw : (raw.suggestions || []);
+        suggestions = list.filter(s => typeof s === "string" && s.trim().toLowerCase() !== cleanQ.toLowerCase());
+      }
+    } catch (e) {
+      console.warn("Related queries suggest error:", e);
+    }
+
+    // 3. Fallback to entity / domain context if suggestions are empty
+    if (suggestions.length === 0) {
+      if (data && data.entity && data.entity.name) {
+        suggestions.push(`${data.entity.name} profile`, `${data.entity.name} official`);
+      }
+    }
+
+    if (suggestions.length === 0) {
+      relatedQueriesCard.style.display = "none";
+      return;
+    }
+
+    relatedQueriesCard.style.display = "block";
+    relatedQueriesList.innerHTML = suggestions.slice(0, 6).map(q => `
       <div class="related-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</div>
     `).join("");
 
@@ -1422,6 +1531,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Lightbox Close
   safeOn(closeLightboxBtn, "click", () => lightboxModal.classList.remove("open"));
+
+  // Empty State Actions
+  safeOn(emptySwitchAllBtn, "click", () => {
+    const q = (headerInput && headerInput.value.trim()) || (homeInput && homeInput.value.trim()) || currentSearchQuery;
+    if (q) {
+      executeSearch(q, "all");
+    }
+  });
+
+  safeOn(emptyRetryBtn, "click", () => {
+    const q = (headerInput && headerInput.value.trim()) || (homeInput && homeInput.value.trim()) || currentSearchQuery;
+    if (q) {
+      executeSearch(q, activeTab || "all");
+    }
+  });
 
   // Close modals on overlay click
   document.querySelectorAll(".modal-overlay").forEach(overlay => {

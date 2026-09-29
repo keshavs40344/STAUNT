@@ -313,11 +313,23 @@
         <div class="shopping-results" id="shoppingSection" style="display: none;"></div>
         <div class="jobs-results" id="jobsSection" style="display: none;"></div>
 
-        <!-- Empty State -->
+        <!-- Empty State (Refined with quick actions & category awareness) -->
         <div class="empty-state" id="emptyState" style="display: none;">
-          <div class="empty-icon">🔍</div>
-          <h3 class="empty-title">No search results found</h3>
-          <p class="empty-desc">Try checking your spelling or use more general keywords.</p>
+          <div class="empty-icon" id="emptyIcon">🔍</div>
+          <h3 class="empty-title" id="emptyTitle">No search results found</h3>
+          <p class="empty-desc" id="emptyDesc">Try checking your spelling or use more general keywords.</p>
+          <div class="empty-actions" id="emptyActions">
+            <button class="empty-action-btn primary" id="emptySwitchAllBtn" type="button" style="display: none;">Search in All Results</button>
+            <button class="empty-action-btn" id="emptyRetryBtn" type="button">Retry Search</button>
+          </div>
+          <div class="empty-tips-card" id="emptyTipsCard">
+            <div class="empty-tips-title">Search suggestions</div>
+            <ul class="empty-tips-list">
+              <li>Ensure all words are spelled correctly.</li>
+              <li>Try more general or alternate keywords.</li>
+              <li>Switch to <strong>All</strong> to view broad web results and profiles.</li>
+            </ul>
+          </div>
         </div>
 
         <!-- Pagination Controls -->
@@ -361,10 +373,18 @@
   <div class="modal-overlay" id="lightboxModal">
     <div class="lightbox-content">
       <button class="modal-close-btn lightbox-close-btn" id="closeLightboxBtn">✕</button>
-      <img id="lightboxImg" src="" alt="Full view" />
+      <div class="lightbox-image-wrap">
+        <img id="lightboxImg" src="" alt="Full view" />
+      </div>
       <div class="lightbox-footer">
-        <span id="lightboxTitle">Image</span>
-        <a id="lightboxVisitBtn" href="" target="_blank" rel="noopener noreferrer" class="auth-submit-btn" style="width: auto; padding: 6px 18px; text-decoration: none;">Visit Source</a>
+        <div class="lightbox-meta">
+          <span class="lightbox-title" id="lightboxTitle">Image Preview</span>
+          <span class="lightbox-domain" id="lightboxDomain"></span>
+        </div>
+        <div class="lightbox-actions">
+          <a id="lightboxVisitBtn" href="" target="_blank" rel="noopener noreferrer" class="lightbox-action-btn primary">Visit Source Page ↗</a>
+          <a id="lightboxRawImgBtn" href="" target="_blank" rel="noopener noreferrer" class="lightbox-action-btn secondary">View Full Image</a>
+        </div>
       </div>
     </div>
   </div>

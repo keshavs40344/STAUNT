@@ -289,15 +289,43 @@ def validate_image(image_item) -> dict | None:
     if isinstance(image_item, str):
         url = normalize_url(image_item)
         if url and is_safe_public_url(url):
-            return {"url": url, "title": "", "source": "web"}
+            domain = urllib.parse.urlsplit(url).netloc.lower().lstrip("www.")
+            return {
+                "url": url,
+                "thumbnail": url,
+                "title": "",
+                "source": "web",
+                "source_url": "",
+                "domain": domain
+            }
         return None
 
     if isinstance(image_item, dict):
         url = normalize_url(image_item.get("url", ""))
         if url and is_safe_public_url(url):
+            # Validate source_url (page hosting the image)
+            raw_source_url = image_item.get("source_url") or image_item.get("page_url") or image_item.get("link", "")
+            norm_source_url = normalize_url(raw_source_url) if raw_source_url else ""
+            if norm_source_url and not is_safe_public_url(norm_source_url):
+                norm_source_url = ""
+
+            # Validate thumbnail URL if present
+            raw_thumb = image_item.get("thumbnail") or image_item.get("thumb_url", "")
+            norm_thumb = normalize_url(raw_thumb) if raw_thumb else ""
+            if norm_thumb and not is_safe_public_url(norm_thumb):
+                norm_thumb = ""
+
+            # Determine domain
+            ref_url = norm_source_url or url
+            domain = urllib.parse.urlsplit(ref_url).netloc.lower().lstrip("www.")
+
             return {
                 "url": url,
+                "thumbnail": norm_thumb or url,
                 "title": clean_text_artifacts(image_item.get("title", "")),
-                "source": image_item.get("source", "web")
+                "source": clean_text_artifacts(image_item.get("source", "web")),
+                "source_url": norm_source_url,
+                "domain": domain
             }
     return None
+

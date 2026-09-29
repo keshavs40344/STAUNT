@@ -1348,9 +1348,16 @@ header.app-header {
   flex-direction: column;
   align-items: center;
 }
+.lightbox-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 74vh;
+  max-width: 100%;
+}
 .lightbox-content img {
   max-width: 100%;
-  max-height: 76vh;
+  max-height: 74vh;
   border-radius: var(--radius-md);
   object-fit: contain;
   box-shadow: var(--shadow-lg);
@@ -1363,15 +1370,69 @@ header.app-header {
   border: none;
   color: #fff;
   cursor: pointer;
+  font-size: 1.2rem;
 }
 .lightbox-footer {
-  margin-top: 16px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   color: #fff;
   font-size: 0.95rem;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.lightbox-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 60%;
+}
+.lightbox-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lightbox-domain {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+.lightbox-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lightbox-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lightbox-action-btn.primary {
+  background: var(--accent, #6366f1);
+  color: #ffffff;
+  border: 1px solid transparent;
+}
+.lightbox-action-btn.primary:hover {
+  background: var(--accent-hover, #4f46e5);
+}
+.lightbox-action-btn.secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.lightbox-action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Modals */
@@ -2314,23 +2375,92 @@ header.app-header {
   font-style: italic;
 }
 
-/* Empty State */
+/* Empty State (Upgraded hierarchy & compactness) */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 36px 24px;
+  max-width: 540px;
+  margin: 24px auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 .empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  opacity: 0.9;
 }
 .empty-title {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 6px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
 }
 .empty-desc {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.empty-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.empty-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+}
+.empty-action-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-focus);
+}
+.empty-action-btn.primary {
+  background: var(--accent, #6366f1);
+  color: #ffffff;
+  border-color: transparent;
+}
+.empty-action-btn.primary:hover {
+  background: var(--accent-hover, #4f46e5);
+}
+.empty-tips-card {
+  text-align: left;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-subtle);
+}
+.empty-tips-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.empty-tips-list {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding-left: 18px;
+  margin: 0;
+}
+.empty-tips-list li {
+  margin-bottom: 4px;
 }
 
 /* Privacy Badges in Sidebar */
