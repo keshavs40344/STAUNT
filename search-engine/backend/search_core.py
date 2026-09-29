@@ -375,7 +375,10 @@ def fetch_wikimedia_images(query, limit=8):
             for p in pages.values():
                 thumb = p.get("thumbnail", {}).get("source") or p.get("original", {}).get("source")
                 if thumb and not thumb.endswith(".svg.png"):
-                    images.append({"url": thumb, "title": p.get("title", query), "source": "wikimedia"})
+                    page_title = p.get("title", "")
+                    # Skip generic placeholder images
+                    if page_title and page_title.lower() not in ("file:", "main page"):
+                        images.append({"url": thumb, "title": page_title, "source": "wikimedia"})
     except Exception as e:
         logger.warning(f"Wikimedia image search error: {e}")
     return images
@@ -540,10 +543,27 @@ def search_images_mode(query):
                 seen.add(img_url)
                 all_images.append(valid_img)
 
+    # 3. Score images by query-term relevance in title
+    query_tokens = set(query.lower().split())
+    def relevance_score(img):
+        title = (img.get("title") or "").lower()
+        if not title:
+            return 0
+        return sum(1 for t in query_tokens if t in title)
+
+    # Partition: images with relevant titles first, then untitled/irrelevant
+    titled = [img for img in all_images if relevance_score(img) > 0]
+    untitled = [img for img in all_images if relevance_score(img) == 0]
+    titled.sort(key=relevance_score, reverse=True)
+
+    # Prefer titled images; append untitled only if we have few titled results
+    ranked = titled + untitled
+    ranked = ranked[:20]  # Cap at 20 results
+
     payload = {
         "category": "images",
         "query": query,
-        "images": all_images,
+        "images": ranked,
         "provider": "multisource"
     }
     set_cached(f"images:{query.lower()}", payload)

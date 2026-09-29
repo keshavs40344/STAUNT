@@ -1561,6 +1561,7 @@
       // Settings Modal
       async function openSettingsModal() {
         if (!settingsModal) return;
+        if (settingsModal.classList.contains('active')) return;
         settingsModal.classList.add('active');
         syncModalState();
         if (typeof api.getSettings === 'function') {

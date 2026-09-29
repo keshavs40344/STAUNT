@@ -218,6 +218,83 @@
     .delete-btn:hover {
       background: #ff453a;
     }
+
+    /* Add Shortcut Tile */
+    .add-shortcut-tile {
+      cursor: pointer;
+    }
+    .add-shortcut-tile:hover .squircle {
+      border-color: rgba(255,255,255,0.45) !important;
+      background: rgba(255,255,255,0.12) !important;
+    }
+
+    /* Shortcut Modal */
+    .shortcut-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .shortcut-modal {
+      background: #1c1c1e;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 24px;
+      width: 340px;
+      max-width: 90vw;
+    }
+    .shortcut-modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+    }
+    .shortcut-modal input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 14px;
+      font-family: var(--system-font);
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .shortcut-modal input:focus {
+      border-color: #8b5cf6;
+    }
+    .shortcut-modal-error {
+      color: #ff453a;
+      font-size: 12px;
+      min-height: 18px;
+      margin-bottom: 8px;
+    }
+    .shortcut-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .shortcut-modal-actions button {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: var(--text-main);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .shortcut-modal-actions button.primary {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+      color: #fff;
+    }
+    .shortcut-modal-actions button:hover {
+      opacity: 0.85;
+    }
   </style>
 </head>
 <body>
@@ -306,8 +383,32 @@
         <span class="tile-label">X</span>
       </a>
 
+      <!-- Add Shortcut -->
+      <div class="favorite-tile add-shortcut-tile" id="addShortcutTile">
+        <div class="squircle" style="background: rgba(255,255,255,0.08); border: 1.5px dashed rgba(255,255,255,0.25);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+        <span class="tile-label" style="color: var(--text-muted);">Add shortcut</span>
+      </div>
     </div>
   </section>
+
+  <!-- Add Shortcut Modal -->
+  <div class="shortcut-modal-overlay" id="shortcutModal" style="display:none;">
+    <div class="shortcut-modal">
+      <div class="shortcut-modal-title">Add shortcut</div>
+      <input type="text" id="shortcutName" placeholder="Name" autocomplete="off" />
+      <input type="text" id="shortcutUrl" placeholder="URL (e.g. https://example.com)" autocomplete="off" />
+      <div class="shortcut-modal-error" id="shortcutError"></div>
+      <div class="shortcut-modal-actions">
+        <button id="shortcutCancel">Cancel</button>
+        <button id="shortcutSave" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script src="search_client.js"></script>
   <script>
@@ -330,6 +431,54 @@
     updateClock();
     setInterval(updateClock, 10000);
 
+    const FAVORITES_KEY = 'staunt_favorites';
+    const FAV_COLORS = ['#e74c3c','#8e44ad','#2980b9','#27ae60','#f39c12','#d35400','#1abc9c','#c0392b','#6c5ce7','#00b894'];
+
+    function getStoredFavorites() {
+      try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); } catch(e) { return []; }
+    }
+
+    function saveStoredFavorites(favs) {
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); } catch(e) {}
+    }
+
+    function createFavTile(fav) {
+      const a = document.createElement('a');
+      a.href = fav.url;
+      a.className = 'favorite-tile';
+      a.setAttribute('data-id', fav.id);
+      a.setAttribute('data-custom', 'true');
+      const color = FAV_COLORS[Math.abs(fav.name.charCodeAt(0)) % FAV_COLORS.length];
+      a.innerHTML = `
+        <button class="delete-btn" onclick="removeFav(event, '${fav.id}')">&times;</button>
+        <div class="squircle" style="background: ${color};">
+          <span style="font-size:20px; font-weight:600; color:#fff;">${fav.name.charAt(0).toUpperCase()}</span>
+        </div>
+        <span class="tile-label">${fav.name}</span>
+      `;
+      a.addEventListener('click', (e) => {
+        if (e.target.closest('.delete-btn')) return;
+        e.preventDefault();
+        window.location.href = fav.url;
+      });
+      return a;
+    }
+
+    function loadFavorites() {
+      const grid = document.getElementById('favoritesGrid');
+      const addTile = document.getElementById('addShortcutTile');
+      // Remove previously rendered custom tiles
+      grid.querySelectorAll('[data-custom="true"]').forEach(t => t.remove());
+      const favs = getStoredFavorites();
+      // Insert custom tiles before the first hard-coded tile
+      const firstChild = grid.firstElementChild;
+      favs.forEach(fav => {
+        grid.insertBefore(createFavTile(fav), firstChild);
+      });
+      // Ensure add-shortcut tile is last
+      if (addTile) grid.appendChild(addTile);
+    }
+
     function removeFav(e, id) {
       e.preventDefault();
       e.stopPropagation();
@@ -339,7 +488,60 @@
         tile.style.transform = 'scale(0.8)';
         setTimeout(() => tile.remove(), 200);
       }
+      // Also remove from localStorage
+      const favs = getStoredFavorites().filter(f => f.id !== id);
+      saveStoredFavorites(favs);
     }
+
+    // Add shortcut modal logic
+    const addShortcutTile = document.getElementById('addShortcutTile');
+    const shortcutModal = document.getElementById('shortcutModal');
+    const shortcutName = document.getElementById('shortcutName');
+    const shortcutUrl = document.getElementById('shortcutUrl');
+    const shortcutError = document.getElementById('shortcutError');
+    const shortcutCancel = document.getElementById('shortcutCancel');
+    const shortcutSave = document.getElementById('shortcutSave');
+
+    if (addShortcutTile) {
+      addShortcutTile.addEventListener('click', () => {
+        shortcutName.value = '';
+        shortcutUrl.value = '';
+        shortcutError.textContent = '';
+        shortcutModal.style.display = 'flex';
+        shortcutName.focus();
+      });
+    }
+
+    if (shortcutCancel) {
+      shortcutCancel.addEventListener('click', () => {
+        shortcutModal.style.display = 'none';
+      });
+    }
+
+    if (shortcutModal) {
+      shortcutModal.addEventListener('click', (e) => {
+        if (e.target === shortcutModal) shortcutModal.style.display = 'none';
+      });
+    }
+
+    if (shortcutSave) {
+      shortcutSave.addEventListener('click', () => {
+        const name = shortcutName.value.trim();
+        let url = shortcutUrl.value.trim();
+        if (!name) { shortcutError.textContent = 'Name is required.'; return; }
+        if (!url) { shortcutError.textContent = 'URL is required.'; return; }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        try { new URL(url); } catch(e) { shortcutError.textContent = 'Invalid URL.'; return; }
+        const id = 'custom_' + Date.now();
+        const favs = getStoredFavorites();
+        favs.push({ id, name, url });
+        saveStoredFavorites(favs);
+        loadFavorites();
+        shortcutModal.style.display = 'none';
+      });
+    }
+
+    loadFavorites();
 
     // Direct navigation & STAUNT search routing for New Tab search box
     const searchInput = document.getElementById('newtabSearchInput');
@@ -356,7 +558,7 @@
     }
 
     // Ensure all authentic favorite tiles navigate the tab directly
-    document.querySelectorAll('.favorite-tile').forEach(tile => {
+    document.querySelectorAll('.favorite-tile:not(.add-shortcut-tile)').forEach(tile => {
       tile.addEventListener('click', (e) => {
         if (e.target.closest('.delete-btn')) return;
         e.preventDefault();
