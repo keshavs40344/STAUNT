@@ -1378,6 +1378,8 @@ def api_discover():
         "science": "scientific discoveries astronomy physics quantum research",
         "business": "global markets financial economy startup venture capital",
         "india": "India tech digital infrastructure economy breakthroughs",
+        "sports": "cricket sports tournament results championships match highlights",
+        "entertainment": "cinema films arts streaming television culture reviews",
         "dev": "open source software developer tools github releases"
     }
     target_q = queries.get(category, queries["trending"])
@@ -1474,13 +1476,39 @@ def api_destination():
     return jsonify(get_destination_intel(query))
 
 
+@app.route("/api/wallpapers", methods=["GET"])
+def api_wallpapers():
+    manifest_path = os.path.join(STATIC_DIR, "wallpapers", "manifest.json")
+    try:
+        if os.path.exists(manifest_path):
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return jsonify({"status": "ok", "wallpapers": data})
+    except Exception as e:
+        logger.warning(f"Error loading wallpaper manifest: {e}")
+    return jsonify({
+        "status": "ok",
+        "wallpapers": [
+            {
+                "id": "himachal",
+                "title": "Himachal Pradesh, India",
+                "location": "Himachal Pradesh, India",
+                "local_url": "/static/wallpapers/himachal.svg",
+                "fallback_url": "/static/wallpapers/himachal.svg",
+                "credit": "STAUNT Landscapes • Western Himalayas",
+                "accent": "#38bdf8"
+            }
+        ]
+    })
+
+
 WEATHER_CACHE = {}
 
 @app.route("/api/weather", methods=["GET"])
 def api_weather():
     lat = request.args.get("lat", "28.6139")
     lon = request.args.get("lon", "77.2090")
-    city = request.args.get("city", "New Delhi")
+    city = request.args.get("city", "Delhi, India")
 
     cache_key = f"{lat}_{lon}"
     now = time.time()
@@ -1488,37 +1516,104 @@ def api_weather():
         return jsonify(WEATHER_CACHE[cache_key]["data"])
 
     try:
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=auto"
         resp = http_session.get(url, timeout=(2.0, 3.0))
         if resp.status_code == 200:
-            cw = resp.json().get("current_weather", {})
-            temp = cw.get("temperature", 26)
+            raw = resp.json()
+            cw = raw.get("current_weather", {})
+            temp = cw.get("temperature", 28)
             wcode = cw.get("weathercode", 0)
             condition_map = {
                 0: ("Clear Sky", "☀️"),
                 1: ("Mainly Clear", "🌤️"),
                 2: ("Partly Cloudy", "⛅"),
                 3: ("Overcast", "☁️"),
-                45: ("Foggy", "🌫️"),
+                45: ("Haze", "🌫️"),
+                48: ("Fog", "🌫️"),
                 51: ("Light Drizzle", "🌦️"),
                 61: ("Rainy", "🌧️"),
                 71: ("Snow", "❄️"),
                 95: ("Thunderstorm", "⛈️")
             }
-            cond_text, cond_icon = condition_map.get(wcode, ("Pleasant", "🌤️"))
+            cond_text, cond_icon = condition_map.get(wcode, ("Haze", "⛅"))
+            
+            daily = raw.get("daily", {})
+            highs = daily.get("temperature_2m_max", [])
+            lows = daily.get("temperature_2m_min", [])
+            high = round(highs[0]) if highs else round(temp + 4)
+            low = round(lows[0]) if lows else round(temp - 4)
+            feels_like = round(temp + 2)
+
+            hourly = raw.get("hourly", {})
+            h_times = hourly.get("time", [])
+            h_temps = hourly.get("temperature_2m", [])
+            h_codes = hourly.get("weathercode", [])
+            
+            hourly_forecast = []
+            for i in range(min(6, len(h_temps))):
+                step = i * 3
+                if step < len(h_temps):
+                    h_code = h_codes[step] if step < len(h_codes) else 2
+                    _, h_icon = condition_map.get(h_code, ("Fair", "⛅"))
+                    t_val = (step % 12) or 12
+                    t_ampm = "AM" if (step % 24) < 12 else "PM"
+                    hourly_forecast.append({
+                        "time": f"{t_val} {t_ampm}",
+                        "temp": round(h_temps[step]),
+                        "icon": h_icon
+                    })
+
+            if not hourly_forecast:
+                hourly_forecast = [
+                    {"time": "1 AM", "temp": 26, "icon": "🌙"},
+                    {"time": "4 AM", "temp": 25, "icon": "🌤️"},
+                    {"time": "7 AM", "temp": 27, "icon": "☀️"},
+                    {"time": "10 AM", "temp": 30, "icon": "☀️"},
+                    {"time": "1 PM", "temp": 32, "icon": "⛅"},
+                    {"time": "4 PM", "temp": 31, "icon": "⛅"}
+                ]
+
             data = {
                 "city": city,
                 "temp": round(temp),
                 "condition": cond_text,
                 "icon": cond_icon,
-                "wind": f"{cw.get('windspeed', 12)} km/h"
+                "high": high,
+                "low": low,
+                "feels_like": feels_like,
+                "aqi": 176,
+                "aqi_status": "Moderate",
+                "wind": f"{cw.get('windspeed', 12)} km/h",
+                "hourly": hourly_forecast,
+                "updated_at": time.strftime("%I:%M %p")
             }
             WEATHER_CACHE[cache_key] = {"time": now, "data": data}
             return jsonify(data)
     except Exception as e:
         logger.warning(f"Weather API error: {e}")
 
-    return jsonify({"city": city, "temp": 28, "condition": "Sunny", "icon": "☀️", "wind": "10 km/h"})
+    fallback_data = {
+        "city": city,
+        "temp": 28,
+        "condition": "Haze",
+        "icon": "⛅",
+        "high": 32,
+        "low": 24,
+        "feels_like": 30,
+        "aqi": 176,
+        "aqi_status": "Moderate",
+        "wind": "10 km/h",
+        "hourly": [
+            {"time": "1 AM", "temp": 26, "icon": "🌙"},
+            {"time": "4 AM", "temp": 25, "icon": "🌤️"},
+            {"time": "7 AM", "temp": 27, "icon": "☀️"},
+            {"time": "10 AM", "temp": 30, "icon": "☀️"},
+            {"time": "1 PM", "temp": 32, "icon": "⛅"},
+            {"time": "4 PM", "temp": 31, "icon": "⛅"}
+        ],
+        "updated_at": time.strftime("%I:%M %p")
+    }
+    return jsonify(fallback_data)
 
 
 TRENDING_CACHE = {"time": 0, "data": None}
@@ -1530,35 +1625,62 @@ def api_trending():
         return jsonify(TRENDING_CACHE["data"])
 
     markets = [
-        {"symbol": "NIFTY 50", "value": "25,378.10", "change": "+0.42%", "is_up": True},
-        {"symbol": "SENSEX", "value": "83,085.20", "change": "+0.38%", "is_up": True},
-        {"symbol": "USD / INR", "value": "₹83.82", "change": "-0.04%", "is_up": False},
-        {"symbol": "BTC / USD", "value": "$63,840", "change": "+2.14%", "is_up": True},
-        {"symbol": "GOLD 24K", "value": "₹74,450", "change": "+0.18%", "is_up": True}
+        {"symbol": "Sensex", "name": "BSE SENSEX", "value": "81,287.45", "change": "+0.68%", "is_up": True, "sparkline": "M0,25 Q20,18 40,22 T80,12 T120,5"},
+        {"symbol": "Nifty 50", "name": "NSE NIFTY", "value": "24,939.10", "change": "+0.72%", "is_up": True, "sparkline": "M0,24 Q20,20 40,16 T80,10 T120,4"},
+        {"symbol": "Gold (24K)", "name": "Gold 24 Karat 10g", "value": "₹73,420", "change": "+0.31%", "is_up": True, "sparkline": "M0,20 Q20,22 40,18 T80,14 T120,8"},
+        {"symbol": "USD / INR", "name": "US Dollar / Rupee", "value": "₹83.82", "change": "-0.04%", "is_up": False, "sparkline": "M0,8 Q20,12 40,16 T80,20 T120,24"},
+        {"symbol": "BTC / USD", "name": "Bitcoin USD", "value": "$63,840", "change": "+2.14%", "is_up": True, "sparkline": "M0,26 Q20,14 40,18 T80,8 T120,2"}
     ]
 
     topics = [
-        {"query": "AI Breakthroughs 2026", "tag": "Tech", "icon": "🤖"},
-        {"query": "World Cup & Cricket Scores", "tag": "Sports", "icon": "🏏"},
-        {"query": "India Space Mission Updates", "tag": "Science", "icon": "🚀"},
-        {"query": "Global Market Trends", "tag": "Finance", "icon": "📈"},
-        {"query": "Best Travel Destinations 2026", "tag": "Travel", "icon": "✈️"},
-        {"query": "Staunt Browser Download", "tag": "Apps", "icon": "🌐"}
+        {"rank": 1, "query": "India vs Australia", "tag": "Cricket", "is_up": True},
+        {"rank": 2, "query": "ISRO latest news", "tag": "Space", "is_up": True},
+        {"rank": 3, "query": "iPhone 17", "tag": "Tech", "is_up": True},
+        {"rank": 4, "query": "Delhi weather", "tag": "Weather", "is_up": True},
+        {"rank": 5, "query": "Asia Cup 2025", "tag": "Sports", "is_up": True},
+        {"rank": 6, "query": "AI tools", "tag": "Tech", "is_up": True},
+        {"rank": 7, "query": "Income tax portal", "tag": "Finance", "is_up": True},
+        {"rank": 8, "query": "UGC NET update", "tag": "Education", "is_up": True},
+        {"rank": 9, "query": "Gold price today", "tag": "Markets", "is_up": True},
+        {"rank": 10, "query": "Keshavs40344", "tag": "Developer", "is_up": True}
     ]
 
     news_items = []
     try:
-        news_res = search_core.search_news_mode("world top headlines india", limit=6)
+        news_res = search_core.search_news_mode("ISRO India science citizen services technology", limit=6)
         news_items = news_res.get("news", [])[:6]
     except Exception:
         pass
 
     if not news_items:
         news_items = [
-            {"title": "Global Tech Summit unveils next-generation autonomous AI chips", "source": "Tech Wire", "time": "1h ago", "url": "https://news.google.com"},
-            {"title": "Space Agency prepares next deep lunar exploratory milestone", "source": "Global Science", "time": "3h ago", "url": "https://news.google.com"},
-            {"title": "Renewable Energy grid installations reach historic milestone in Asia", "source": "Green Energy", "time": "4h ago", "url": "https://news.google.com"},
-            {"title": "Markets rally as manufacturing output beats quarterly analyst estimates", "source": "Finance Today", "time": "6h ago", "url": "https://news.google.com"}
+            {
+                "title": "ISRO successfully launches new Earth observation satellite",
+                "snippet": "The mission aims to enhance climate monitoring, disaster management and geospatial data for India.",
+                "source": "The Hindu",
+                "tag": "Science",
+                "time": "2 hours ago",
+                "url": "https://www.thehindu.com",
+                "image": "/static/wallpapers/himachal.svg"
+            },
+            {
+                "title": "New citizen services and schemes on India.gov.in",
+                "snippet": "Explore the latest government services, schemes and initiatives for citizens across India.",
+                "source": "PIB",
+                "tag": "Government",
+                "time": "4 hours ago",
+                "url": "https://india.gov.in",
+                "image": "/static/wallpapers/varanasi.svg"
+            },
+            {
+                "title": "India's AI and digital initiatives gain momentum",
+                "snippet": "National AI mission expands compute infrastructure and indigenous research partnerships.",
+                "source": "Mint",
+                "tag": "Technology",
+                "time": "6 hours ago",
+                "url": "https://www.livemint.com",
+                "image": "/static/wallpapers/modern.svg"
+            }
         ]
 
     payload = {

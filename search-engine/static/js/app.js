@@ -2005,282 +2005,1019 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   ];
 
-  function initWallpaperManager() {
-    const wallpaperBg = document.getElementById("wallpaperBg");
-    const wallpaperLocation = document.getElementById("wallpaperLocation");
-    const wallpaperToggleBtn = document.getElementById("wallpaperToggleBtn");
+  // ==========================================================================
+  // STAUNT DESKTOP WEB SEARCH ENGINE — MODULE IMPLEMENTATION
+  // ==========================================================================
 
-    const savedMode = localStorage.getItem("staunt_wallpaper_mode");
-    if (savedMode === "disabled") {
-      document.body.classList.add("minimalist-mode");
+  // --- 1. DYNAMIC WALLPAPER SYSTEM WITH RESILIENT CROSSFADE ---
+  const DEFAULT_WALLPAPERS = [
+    {
+      id: "himachal",
+      title: "Himachal Pradesh, India",
+      location: "Himachal Pradesh, India",
+      url: "/static/wallpapers/himachal.svg",
+      fallback_url: "/static/wallpapers/himachal.svg"
+    },
+    {
+      id: "varanasi",
+      title: "Varanasi Ghats at Dusk",
+      location: "Varanasi, Uttar Pradesh",
+      url: "/static/wallpapers/varanasi.svg",
+      fallback_url: "/static/wallpapers/varanasi.svg"
+    },
+    {
+      id: "coastal",
+      title: "Coastal Sunset & Arabian Sea",
+      location: "Coastal India",
+      url: "/static/wallpapers/coastal.svg",
+      fallback_url: "/static/wallpapers/coastal.svg"
+    },
+    {
+      id: "teagardens",
+      title: "Emerald Tea Gardens of Munnar",
+      location: "Tea Gardens, Munnar",
+      url: "/static/wallpapers/teagardens.svg",
+      fallback_url: "/static/wallpapers/teagardens.svg"
+    },
+    {
+      id: "desert",
+      title: "Thar Desert Golden Dunes",
+      location: "Desert India, Rajasthan",
+      url: "/static/wallpapers/desert.svg",
+      fallback_url: "/static/wallpapers/desert.svg"
+    },
+    {
+      id: "modern",
+      title: "Modern India Tech Skyline",
+      location: "Modern India",
+      url: "/static/wallpapers/modern.svg",
+      fallback_url: "/static/wallpapers/modern.svg"
+    },
+    {
+      id: "dal_lake",
+      title: "Kashmir Dal Lake Reflections",
+      location: "Dal Lake, Kashmir",
+      url: "/static/wallpapers/dal_lake.svg",
+      fallback_url: "/static/wallpapers/dal_lake.svg"
+    }
+  ];
+
+  let wallpapers = [...DEFAULT_WALLPAPERS];
+  let currentWpIndex = 0;
+  let activeWpLayer = "A";
+  let wpRotationTimer = null;
+  let isWpRotating = true;
+  let wpIntervalMs = 60000;
+
+  async function initWallpaperManager() {
+    const layerA = document.getElementById("wallpaperLayerA");
+    const layerB = document.getElementById("wallpaperLayerB");
+    const wpLocText = document.getElementById("wallpaperLocation");
+    const prevBtn = document.getElementById("prevWallpaperBtn");
+    const nextBtn = document.getElementById("nextWallpaperBtn");
+
+    // Load user rotation preferences
+    const savedAuto = localStorage.getItem("staunt_auto_wallpaper");
+    if (savedAuto === "false") isWpRotating = false;
+
+    const savedInt = localStorage.getItem("staunt_wallpaper_interval");
+    if (savedInt) {
+      const parsedInt = parseInt(savedInt, 10);
+      if (parsedInt > 0) wpIntervalMs = parsedInt * 1000;
+      else if (parsedInt === 0) isWpRotating = false;
     }
 
-    const dayIndex = (new Date().getDate()) % WALLPAPERS.length;
-    const todayWp = WALLPAPERS[dayIndex];
-    if (wallpaperBg) wallpaperBg.style.backgroundImage = `url('${todayWp.url}')`;
-    if (wallpaperLocation) wallpaperLocation.textContent = todayWp.location;
+    // Fetch dynamic wallpaper manifest from server
+    try {
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(() => ctrl.abort(), 2000);
+      const res = await apiFetch("/api/wallpapers", { signal: ctrl.signal });
+      clearTimeout(timeoutId);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data.wallpapers && Array.isArray(data.wallpapers) && data.wallpapers.length > 0) {
+          wallpapers = data.wallpapers;
+        }
+      }
+    } catch (e) {
+      // Retain verified local fallback manifest
+    }
 
-    if (wallpaperToggleBtn) {
-      wallpaperToggleBtn.addEventListener("click", () => {
-        document.body.classList.toggle("minimalist-mode");
-        const isMin = document.body.classList.contains("minimalist-mode");
-        localStorage.setItem("staunt_wallpaper_mode", isMin ? "disabled" : "enabled");
+    // Set initial wallpaper based on current date
+    currentWpIndex = (new Date().getDate()) % wallpapers.length;
+    applyWallpaper(currentWpIndex, false);
+
+    // Schedule rotation
+    startWallpaperRotation();
+
+    // Pause rotation when page is hidden
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stopWallpaperRotation();
+      } else {
+        startWallpaperRotation();
+      }
+    });
+
+    // Manual navigation controls
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        stopWallpaperRotation();
+        currentWpIndex = (currentWpIndex - 1 + wallpapers.length) % wallpapers.length;
+        applyWallpaper(currentWpIndex, true);
+        startWallpaperRotation();
       });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        stopWallpaperRotation();
+        currentWpIndex = (currentWpIndex + 1) % wallpapers.length;
+        applyWallpaper(currentWpIndex, true);
+        startWallpaperRotation();
+      });
+    }
+
+    // Connect explore topics cards to switch wallpaper
+    document.querySelectorAll(".topic-landscape-card").forEach(card => {
+      card.addEventListener("click", () => {
+        const wpId = card.getAttribute("data-wp");
+        const idx = wallpapers.findIndex(w => w.id === wpId);
+        if (idx !== -1) {
+          stopWallpaperRotation();
+          currentWpIndex = idx;
+          applyWallpaper(currentWpIndex, true);
+          startWallpaperRotation();
+        }
+      });
+    });
+  }
+
+  function applyWallpaper(index, crossfade = true) {
+    if (!wallpapers || wallpapers.length === 0) return;
+    const wp = wallpapers[index];
+    const targetUrl = wp.local_url || wp.url || wp.fallback_url;
+    const locName = wp.location || wp.title || "India";
+
+    const layerA = document.getElementById("wallpaperLayerA");
+    const layerB = document.getElementById("wallpaperLayerB");
+    const wpLocText = document.getElementById("wallpaperLocation");
+
+    if (!layerA || !layerB) return;
+
+    if (wpLocText) wpLocText.textContent = locName;
+
+    const reducedMotion = document.body.classList.contains("reduced-motion") ||
+      (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    // Preload image before displaying
+    const imgLoader = new Image();
+    let loaded = false;
+
+    function activateTarget(src) {
+      if (activeWpLayer === "A") {
+        layerB.style.backgroundImage = `url('${src}')`;
+        if (reducedMotion || !crossfade) {
+          layerB.classList.add("active");
+          layerA.classList.remove("active");
+        } else {
+          layerB.classList.add("active");
+          setTimeout(() => layerA.classList.remove("active"), 800);
+        }
+        activeWpLayer = "B";
+      } else {
+        layerA.style.backgroundImage = `url('${src}')`;
+        if (reducedMotion || !crossfade) {
+          layerA.classList.add("active");
+          layerB.classList.remove("active");
+        } else {
+          layerA.classList.add("active");
+          setTimeout(() => layerB.classList.remove("active"), 800);
+        }
+        activeWpLayer = "A";
+      }
+    }
+
+    imgLoader.onload = () => {
+      loaded = true;
+      activateTarget(targetUrl);
+    };
+
+    imgLoader.onerror = () => {
+      // Fallback to verified local asset
+      const fb = wp.fallback_url || "/static/wallpapers/himachal.svg";
+      activateTarget(fb);
+    };
+
+    // Timeout guard: 3.0s max wait for external URLs
+    setTimeout(() => {
+      if (!loaded) {
+        activateTarget(wp.fallback_url || "/static/wallpapers/himachal.svg");
+      }
+    }, 3000);
+
+    imgLoader.src = targetUrl;
+  }
+
+  function startWallpaperRotation() {
+    stopWallpaperRotation();
+    if (!isWpRotating || wpIntervalMs <= 0) return;
+    wpRotationTimer = setInterval(() => {
+      currentWpIndex = (currentWpIndex + 1) % wallpapers.length;
+      applyWallpaper(currentWpIndex, true);
+    }, wpIntervalMs);
+  }
+
+  function stopWallpaperRotation() {
+    if (wpRotationTimer) {
+      clearInterval(wpRotationTimer);
+      wpRotationTimer = null;
     }
   }
 
-  // --- LIVE WEATHER WIDGET ---
-  async function initWeatherWidget() {
-    const weatherIcon = document.getElementById("weatherIcon");
-    const weatherTemp = document.getElementById("weatherTemp");
-    const weatherCity = document.getElementById("weatherCity");
-    const headerWeatherPill = document.getElementById("headerWeatherPill");
+  // --- 2. CUSTOMIZABLE SHORTCUTS GRID ---
+  const DEFAULT_SHORTCUTS = [
+    { name: "YouTube", url: "https://www.youtube.com", icon: "https://www.google.com/s2/favicons?domain=youtube.com&sz=64" },
+    { name: "Google", url: "https://www.google.com", icon: "https://www.google.com/s2/favicons?domain=google.com&sz=64" },
+    { name: "Wikipedia", url: "https://www.wikipedia.org", icon: "https://www.google.com/s2/favicons?domain=wikipedia.org&sz=64" },
+    { name: "GitHub", url: "https://www.github.com", icon: "https://www.google.com/s2/favicons?domain=github.com&sz=64" },
+    { name: "Gmail", url: "https://mail.google.com", icon: "https://www.google.com/s2/favicons?domain=mail.google.com&sz=64" },
+    { name: "Maps", url: "https://maps.google.com", icon: "https://www.google.com/s2/favicons?domain=maps.google.com&sz=64" },
+    { name: "Amazon", url: "https://www.amazon.in", icon: "https://www.google.com/s2/favicons?domain=amazon.in&sz=64" },
+    { name: "Flipkart", url: "https://www.flipkart.com", icon: "https://www.google.com/s2/favicons?domain=flipkart.com&sz=64" }
+  ];
 
+  let userShortcuts = [];
+
+  function initShortcutsManager() {
+    const grid = document.getElementById("shortcutsGrid");
+    const shortcutModal = document.getElementById("shortcutModal");
+    const closeShortcutModal = document.getElementById("closeShortcutModal");
+    const cancelShortcutBtn = document.getElementById("cancelShortcutBtn");
+    const shortcutForm = document.getElementById("shortcutForm");
+    const nameInput = document.getElementById("shortcutNameInput");
+    const urlInput = document.getElementById("shortcutUrlInput");
+
+    // Load from localStorage
     try {
-      const res = await apiFetch("/api/weather");
-      if (res.ok) {
-        const data = await res.json();
-        if (weatherIcon) weatherIcon.textContent = data.icon || "🌤️";
-        if (weatherTemp) weatherTemp.textContent = `${data.temp}°C`;
-        if (weatherCity) weatherCity.textContent = data.city || "New Delhi";
+      const stored = localStorage.getItem("staunt_shortcuts_v2");
+      if (stored) {
+        userShortcuts = JSON.parse(stored);
       }
     } catch (e) {
-      console.warn("Weather fetch note:", e);
+      userShortcuts = [];
     }
 
-    if (headerWeatherPill) {
-      headerWeatherPill.addEventListener("click", () => {
-        const city = weatherCity ? weatherCity.textContent : "New Delhi";
-        headerInput.value = `weather in ${city}`;
+    if (!userShortcuts || userShortcuts.length === 0) {
+      userShortcuts = [...DEFAULT_SHORTCUTS];
+      saveShortcuts();
+    }
+
+    renderShortcutsGrid();
+
+    // Add Shortcut Modal Handlers
+    function openAddModal() {
+      if (shortcutModal) {
+        if (nameInput) nameInput.value = "";
+        if (urlInput) urlInput.value = "https://";
+        shortcutModal.classList.add("open");
+        setTimeout(() => urlInput && urlInput.focus(), 100);
+      }
+    }
+
+    function closeModal() {
+      if (shortcutModal) shortcutModal.classList.remove("open");
+    }
+
+    if (closeShortcutModal) closeShortcutModal.addEventListener("click", closeModal);
+    if (cancelShortcutBtn) cancelShortcutBtn.addEventListener("click", closeModal);
+
+    if (shortcutForm) {
+      shortcutForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        let rawUrl = (urlInput.value || "").trim();
+        let rawName = (nameInput.value || "").trim();
+
+        if (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
+          rawUrl = "https://" + rawUrl;
+        }
+
+        try {
+          const u = new URL(rawUrl);
+          if (!rawName) rawName = u.hostname.replace("www.", "").split(".")[0];
+          const icon = `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`;
+
+          userShortcuts.push({
+            name: rawName,
+            url: u.href,
+            icon: icon
+          });
+
+          saveShortcuts();
+          renderShortcutsGrid();
+          closeModal();
+        } catch (err) {
+          alert("Please enter a valid website URL (e.g. https://example.com)");
+        }
+      });
+    }
+
+    // Attach to global window for reset
+    window.resetShortcutsToDefault = () => {
+      userShortcuts = [...DEFAULT_SHORTCUTS];
+      saveShortcuts();
+      renderShortcutsGrid();
+    };
+  }
+
+  function saveShortcuts() {
+    try {
+      localStorage.setItem("staunt_shortcuts_v2", JSON.stringify(userShortcuts));
+    } catch (e) {}
+  }
+
+  function renderShortcutsGrid() {
+    const grid = document.getElementById("shortcutsGrid");
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    userShortcuts.forEach((item, index) => {
+      const tile = document.createElement("a");
+      tile.href = item.url;
+      tile.target = "_blank";
+      tile.rel = "noopener noreferrer";
+      tile.className = "shortcut-tile";
+      tile.title = `${item.name} (${item.url})`;
+
+      tile.innerHTML = `
+        <div class="shortcut-icon-box">
+          <img src="${escapeHtml(item.icon)}" alt="${escapeHtml(item.name)}" onerror="this.src='/static/icons/icon.svg'" />
+        </div>
+        <span class="shortcut-name">${escapeHtml(item.name)}</span>
+        <button type="button" class="shortcut-action-del" title="Remove Shortcut" data-idx="${index}">✕</button>
+      `;
+
+      // Prevent tile navigation when delete button clicked
+      const delBtn = tile.querySelector(".shortcut-action-del");
+      delBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        userShortcuts.splice(index, 1);
+        saveShortcuts();
+        renderShortcutsGrid();
+      });
+
+      grid.appendChild(tile);
+    });
+
+    // Add Shortcut Tile
+    const addTile = document.createElement("div");
+    addTile.className = "shortcut-tile add-shortcut-tile";
+    addTile.title = "Add custom shortcut";
+    addTile.innerHTML = `
+      <div class="shortcut-icon-box" style="border-style: dashed; font-size: 22px; color: var(--accent);">
+        +
+      </div>
+      <span class="shortcut-name">Add shortcut</span>
+    `;
+    addTile.addEventListener("click", () => {
+      const shortcutModal = document.getElementById("shortcutModal");
+      const nameInput = document.getElementById("shortcutNameInput");
+      const urlInput = document.getElementById("shortcutUrlInput");
+      if (nameInput) nameInput.value = "";
+      if (urlInput) urlInput.value = "https://";
+      if (shortcutModal) shortcutModal.classList.add("open");
+    });
+    grid.appendChild(addTile);
+  }
+
+  // --- 3. LIVE WEATHER WIDGET & HOURLY FORECAST ---
+  async function initWeatherWidget() {
+    const topWeatherCity = document.getElementById("topWeatherCity");
+    const topWeatherIcon = document.getElementById("topWeatherIcon");
+    const topWeatherTemp = document.getElementById("topWeatherTemp");
+    const topWeatherPill = document.getElementById("topWeatherPill");
+
+    const weatherCardCity = document.getElementById("weatherCardCity");
+    const weatherUpdatedTime = document.getElementById("weatherUpdatedTime");
+    const weatherMainIcon = document.getElementById("weatherMainIcon");
+    const weatherMainTemp = document.getElementById("weatherMainTemp");
+    const weatherMainCond = document.getElementById("weatherMainCond");
+    const weatherHigh = document.getElementById("weatherHigh");
+    const weatherLow = document.getElementById("weatherLow");
+    const weatherFeelsLike = document.getElementById("weatherFeelsLike");
+    const weatherAqi = document.getElementById("weatherAqi");
+    const weatherAqiStatus = document.getElementById("weatherAqiStatus");
+    const weatherHourlyStrip = document.getElementById("weatherHourlyStrip");
+    const weatherRefreshBtn = document.getElementById("weatherRefreshBtn");
+
+    async function loadWeather() {
+      try {
+        const res = await apiFetch("/api/weather");
+        if (res && res.ok) {
+          const data = await res.json();
+          const city = data.city || "Delhi, India";
+          const temp = `${data.temp}°C`;
+          const cond = data.condition || "Haze";
+          const icon = data.icon || "⛅";
+
+          if (topWeatherCity) topWeatherCity.textContent = city;
+          if (topWeatherIcon) topWeatherIcon.textContent = icon;
+          if (topWeatherTemp) topWeatherTemp.textContent = `${temp} ${cond}`;
+
+          if (weatherCardCity) weatherCardCity.textContent = city;
+          if (weatherMainIcon) weatherMainIcon.textContent = icon;
+          if (weatherMainTemp) weatherMainTemp.textContent = temp;
+          if (weatherMainCond) weatherMainCond.textContent = cond;
+
+          if (weatherHigh) weatherHigh.textContent = `${data.high || 32}°`;
+          if (weatherLow) weatherLow.textContent = `${data.low || 24}°`;
+          if (weatherFeelsLike) weatherFeelsLike.textContent = `${data.feels_like || 30}°`;
+          if (weatherAqi) weatherAqi.textContent = data.aqi || 176;
+          if (weatherAqiStatus) weatherAqiStatus.textContent = data.aqi_status || "Moderate";
+          if (weatherUpdatedTime) weatherUpdatedTime.textContent = `Updated ${data.updated_at || 'just now'}`;
+
+          // Render Hourly Forecast (6 Slots)
+          if (weatherHourlyStrip && Array.isArray(data.hourly) && data.hourly.length > 0) {
+            weatherHourlyStrip.innerHTML = data.hourly.slice(0, 6).map(h => `
+              <div class="hourly-slot">
+                <span>${escapeHtml(h.time)}</span>
+                <span style="font-size: 1.1rem;">${h.icon}</span>
+                <span class="hourly-temp">${escapeHtml(h.temp)}°</span>
+              </div>
+            `).join("");
+          }
+        }
+      } catch (e) {
+        console.warn("Weather widget load notice:", e);
+      }
+    }
+
+    loadWeather();
+
+    if (weatherRefreshBtn) weatherRefreshBtn.addEventListener("click", loadWeather);
+
+    if (topWeatherPill) {
+      topWeatherPill.addEventListener("click", () => {
+        const city = topWeatherCity ? topWeatherCity.textContent : "Delhi";
         homeInput.value = `weather in ${city}`;
+        headerInput.value = `weather in ${city}`;
         executeSearch(`weather in ${city}`, "all");
       });
     }
   }
 
-  // --- BING FINANCIAL MARKETS & TRENDING NEWS ---
+  // --- 4. TRENDING SEARCHES & FINANCIAL MARKETS ---
   async function initTrendingAndMarkets() {
-    const marketsRibbon = document.getElementById("marketsRibbon");
-    const trendingChipsWrap = document.getElementById("trendingChipsWrap");
-    const trendingNewsGrid = document.getElementById("trendingNewsGrid");
-    const newsCatFilters = document.querySelectorAll(".news-filter-btn");
+    const trendingList = document.getElementById("trendingList");
+    const trendingRefreshBtn = document.getElementById("trendingRefreshBtn");
+    const marketsList = document.getElementById("marketsList");
+    const marketsRefreshBtn = document.getElementById("marketsRefreshBtn");
 
-    try {
-      const res = await apiFetch("/api/trending");
-      if (!res.ok) return;
-      const data = await res.json();
+    async function loadTrending() {
+      try {
+        const res = await apiFetch("/api/trending");
+        if (!res || !res.ok) return;
+        const data = await res.json();
 
-      // 1. Markets
-      if (marketsRibbon && data.markets) {
-        marketsRibbon.innerHTML = data.markets.map(m => `
-          <div class="market-pill" data-query="${escapeHtml(m.symbol)} stock price today">
-            <span class="market-sym">${escapeHtml(m.symbol)}</span>
-            <span class="market-val">${escapeHtml(m.value)}</span>
-            <span class="market-chg ${m.is_up ? 'up' : 'down'}">${escapeHtml(m.change)}</span>
-          </div>
-        `).join("");
+        // 1. Trending Searches (Ranked 1-10 with green arrows)
+        if (trendingList && Array.isArray(data.topics)) {
+          trendingList.innerHTML = data.topics.map((t, idx) => {
+            const rank = t.rank || (idx + 1);
+            return `
+              <div class="trend-item-row" data-query="${escapeHtml(t.query)}">
+                <span class="trend-rank">${rank}</span>
+                <span class="trend-query">${escapeHtml(t.query)}</span>
+                <span class="trend-arrow">↗</span>
+              </div>
+            `;
+          }).join("");
 
-        marketsRibbon.querySelectorAll(".market-pill").forEach(pill => {
-          pill.addEventListener("click", () => {
-            const q = pill.getAttribute("data-query");
-            homeInput.value = q;
-            headerInput.value = q;
-            executeSearch(q, "all");
+          trendingList.querySelectorAll(".trend-item-row").forEach(row => {
+            row.addEventListener("click", () => {
+              const q = row.getAttribute("data-query");
+              homeInput.value = q;
+              headerInput.value = q;
+              executeSearch(q, "all");
+            });
           });
-        });
-      }
+        }
 
-      // 2. Trending Topics
-      if (trendingChipsWrap && data.topics) {
-        trendingChipsWrap.innerHTML = data.topics.map(t => `
-          <button type="button" class="trending-chip" data-query="${escapeHtml(t.query)}">
-            <span>${t.icon || '🔥'} ${escapeHtml(t.query)}</span>
-          </button>
-        `).join("");
+        // 2. Financial Markets (Sensex, Nifty 50, Gold 24K)
+        if (marketsList && Array.isArray(data.markets)) {
+          marketsList.innerHTML = data.markets.slice(0, 3).map(m => `
+            <div class="market-index-row" data-query="${escapeHtml(m.symbol)} today price index">
+              <span class="market-sym-name">${escapeHtml(m.symbol)}</span>
+              <div class="market-val-group">
+                <span class="market-val-num">${escapeHtml(m.value)}</span>
+                <span class="market-change-badge ${m.is_up ? 'up' : 'down'}">${escapeHtml(m.change)} ↗</span>
+                <svg class="market-sparkline-svg" viewBox="0 0 120 30" fill="none">
+                  <path d="${m.sparkline || 'M0,25 Q40,15 80,18 T120,5'}" stroke="${m.is_up ? '#10b981' : '#ef4444'}" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+          `).join("");
 
-        trendingChipsWrap.querySelectorAll(".trending-chip").forEach(chip => {
-          chip.addEventListener("click", () => {
-            const q = chip.getAttribute("data-query");
-            homeInput.value = q;
-            headerInput.value = q;
-            executeSearch(q, "all");
+          marketsList.querySelectorAll(".market-index-row").forEach(row => {
+            row.addEventListener("click", () => {
+              const q = row.getAttribute("data-query");
+              homeInput.value = q;
+              headerInput.value = q;
+              executeSearch(q, "all");
+            });
           });
-        });
+        }
+      } catch (e) {
+        console.warn("Trending and markets fetch notice:", e);
       }
+    }
 
-      // 3. Trending News
-      let allNews = data.news || [];
-      function renderNews(items) {
-        if (!trendingNewsGrid) return;
-        if (!items || items.length === 0) {
-          trendingNewsGrid.innerHTML = `<div class="news-skeleton">No headlines available right now.</div>`;
+    loadTrending();
+
+    if (trendingRefreshBtn) trendingRefreshBtn.addEventListener("click", loadTrending);
+    if (marketsRefreshBtn) marketsRefreshBtn.addEventListener("click", loadTrending);
+  }
+
+  // --- 5. TODAY'S HIGHLIGHTS & EXPLORE TOPICS ---
+  async function initHighlightsAndTopics() {
+    const highlightsGrid = document.getElementById("highlightsGrid");
+    const hlTabs = document.querySelectorAll(".hl-tab-btn");
+    const exploreScroll = document.getElementById("exploreTopicsScroll");
+    const explorePrevBtn = document.getElementById("explorePrevBtn");
+    const exploreNextBtn = document.getElementById("exploreNextBtn");
+
+    async function loadHighlights(cat = "trending") {
+      if (!highlightsGrid) return;
+      highlightsGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted);">
+          Loading ${cat} headlines...
+        </div>
+      `;
+
+      try {
+        const res = await apiFetch(`/api/discover?category=${encodeURIComponent(cat)}`);
+        if (res && res.ok) {
+          const data = await res.json();
+          const items = data.items || [];
+          if (items.length === 0) {
+            renderFallbackHighlights(cat);
+            return;
+          }
+
+          highlightsGrid.innerHTML = items.slice(0, 3).map((n, i) => {
+            const thumb = n.image || `/static/wallpapers/${DEFAULT_WALLPAPERS[i % DEFAULT_WALLPAPERS.length].id}.svg`;
+            const badge = cat === "trending" ? "News" : cat.toUpperCase();
+            return `
+              <a href="${escapeHtml(n.url || '#')}" target="_blank" rel="noopener noreferrer" class="highlight-item-card">
+                <div class="hl-img-wrap">
+                  <img src="${escapeHtml(thumb)}" alt="${escapeHtml(n.title)}" class="hl-img" onerror="this.src='/static/wallpapers/himachal.svg'" />
+                  <span class="hl-badge">${escapeHtml(badge)}</span>
+                </div>
+                <div class="hl-body">
+                  <div class="hl-title">${escapeHtml(n.title)}</div>
+                  <div class="hl-snippet">${escapeHtml(n.snippet || '')}</div>
+                  <div class="hl-footer">
+                    <span>${escapeHtml(n.domain || n.source || 'Verified Source')}</span>
+                    <span>${escapeHtml(n.published_date || 'Recent')}</span>
+                  </div>
+                </div>
+              </a>
+            `;
+          }).join("");
           return;
         }
-        trendingNewsGrid.innerHTML = items.map(n => `
-          <a href="${escapeHtml(n.url || '#')}" target="_blank" rel="noopener noreferrer" class="news-card">
-            <div class="news-card-title">${escapeHtml(n.title)}</div>
-            <div class="news-card-footer">
-              <span class="news-source-tag">${escapeHtml(n.source || 'News')}</span>
-              <span class="news-time">${escapeHtml(n.time || 'Trending')}</span>
-            </div>
-          </a>
-        `).join("");
+      } catch (e) {
+        console.warn("Highlights load notice:", e);
       }
 
-      renderNews(allNews);
+      renderFallbackHighlights(cat);
+    }
 
-      // News filters
-      newsCatFilters.forEach(btn => {
-        btn.addEventListener("click", async () => {
-          newsCatFilters.forEach(b => b.classList.remove("active"));
-          btn.classList.add("active");
-          const cat = btn.getAttribute("data-cat");
-          if (cat === "all") {
-            renderNews(allNews);
-          } else {
-            try {
-              trendingNewsGrid.innerHTML = `<div class="news-skeleton">Loading ${cat} stories...</div>`;
-              const res = await apiFetch(`/api/search?q=${encodeURIComponent(cat + " news")}&category=news`);
-              if (res.ok) {
-                const ndata = await res.json();
-                renderNews(ndata.news || allNews);
-              }
-            } catch (e) {
-              renderNews(allNews);
-            }
-          }
-        });
+    function renderFallbackHighlights(cat) {
+      if (!highlightsGrid) return;
+      const defaults = [
+        {
+          title: "ISRO successfully launches new Earth observation satellite",
+          snippet: "The mission aims to enhance climate monitoring, disaster management and geospatial data for India.",
+          source: "The Hindu",
+          badge: "Science",
+          time: "2 hours ago",
+          url: "https://www.thehindu.com",
+          img: "/static/wallpapers/himachal.svg"
+        },
+        {
+          title: "New citizen services and schemes on India.gov.in",
+          snippet: "Explore the latest government services, schemes and initiatives for citizens across India.",
+          source: "PIB",
+          badge: "Government",
+          time: "4 hours ago",
+          url: "https://india.gov.in",
+          img: "/static/wallpapers/varanasi.svg"
+        },
+        {
+          title: "India's AI and digital initiatives gain momentum",
+          snippet: "National AI mission expands compute infrastructure and indigenous research partnerships.",
+          source: "Mint",
+          badge: "Technology",
+          time: "6 hours ago",
+          url: "https://www.livemint.com",
+          img: "/static/wallpapers/modern.svg"
+        }
+      ];
+
+      highlightsGrid.innerHTML = defaults.map(d => `
+        <a href="${d.url}" target="_blank" rel="noopener noreferrer" class="highlight-item-card">
+          <div class="hl-img-wrap">
+            <img src="${d.img}" alt="${d.title}" class="hl-img" />
+            <span class="hl-badge">${d.badge}</span>
+          </div>
+          <div class="hl-body">
+            <div class="hl-title">${d.title}</div>
+            <div class="hl-snippet">${d.snippet}</div>
+            <div class="hl-footer">
+              <span>${d.source}</span>
+              <span>${d.time}</span>
+            </div>
+          </div>
+        </a>
+      `).join("");
+    }
+
+    loadHighlights("trending");
+
+    hlTabs.forEach(btn => {
+      btn.addEventListener("click", () => {
+        hlTabs.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const cat = btn.getAttribute("data-cat") || "trending";
+        loadHighlights(cat);
       });
+    });
 
-    } catch (e) {
-      console.warn("Trending fetch note:", e);
+    // Horizontal scroll for Explore Topics strip
+    if (explorePrevBtn && exploreScroll) {
+      explorePrevBtn.addEventListener("click", () => {
+        exploreScroll.scrollBy({ left: -220, behavior: "smooth" });
+      });
+    }
+
+    if (exploreNextBtn && exploreScroll) {
+      exploreNextBtn.addEventListener("click", () => {
+        exploreScroll.scrollBy({ left: 220, behavior: "smooth" });
+      });
     }
   }
 
-  // --- QUICK TOOLS (Calculator, Currency, Travel Hub, Daily Fact) ---
-  function initQuickTools() {
-    const calcModal = document.getElementById("calcModal");
-    const currencyModal = document.getElementById("currencyModal");
-    const closeCalcModal = document.getElementById("closeCalcModal");
-    const closeCurrencyModal = document.getElementById("closeCurrencyModal");
+  // --- 6. NAVIGATION RAIL, TOP CATEGORIES & CLOCK ---
+  function initNavigationRailAndHeader() {
+    const navRail = document.getElementById("navRail");
+    const toggleBtn = document.getElementById("navRailToggleBtn");
+    const topClockTime = document.getElementById("topClockTime");
+    const topClockDate = document.getElementById("topClockDate");
 
-    const toolCalcBtn = document.getElementById("toolCalcBtn");
-    const toolCurrencyBtn = document.getElementById("toolCurrencyBtn");
-    const toolTravelBtn = document.getElementById("toolTravelBtn");
-    const toolFactBtn = document.getElementById("toolFactBtn");
-
-    if (toolCalcBtn && calcModal) toolCalcBtn.addEventListener("click", () => calcModal.classList.add("open"));
-    if (closeCalcModal && calcModal) closeCalcModal.addEventListener("click", () => calcModal.classList.remove("open"));
-
-    if (toolCurrencyBtn && currencyModal) toolCurrencyBtn.addEventListener("click", () => currencyModal.classList.add("open"));
-    if (closeCurrencyModal && currencyModal) closeCurrencyModal.addEventListener("click", () => currencyModal.classList.remove("open"));
-
-    if (toolTravelBtn) {
-      toolTravelBtn.addEventListener("click", () => {
-        const dests = ["Goa India", "Paris France", "Dubai UAE", "Kyoto Japan", "Manali Himachal", "Santorini Greece"];
-        const randomDest = dests[Math.floor(Math.random() * dests.length)];
-        homeInput.value = randomDest;
-        headerInput.value = randomDest;
-        executeSearch(randomDest, "all");
-      });
-    }
-
-    if (toolFactBtn) {
-      toolFactBtn.addEventListener("click", () => {
-        homeInput.value = "fact of the day";
-        headerInput.value = "fact of the day";
-        executeSearch("fact of the day", "all");
-      });
-    }
-
-    // Calculator logic
-    const calcDisplay = document.getElementById("calcDisplay");
-    let calcExpression = "";
-    document.querySelectorAll(".calc-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const val = btn.getAttribute("data-val");
-        if (val === "C") {
-          calcExpression = "";
-          if (calcDisplay) calcDisplay.textContent = "0";
-        } else if (val === "=") {
-          try {
-            const clean = calcExpression.replace(/×/g, "*").replace(/÷/g, "/");
-            const res = Function(`'use strict'; return (${clean})`)();
-            if (calcDisplay) calcDisplay.textContent = res;
-            calcExpression = String(res);
-          } catch (e) {
-            if (calcDisplay) calcDisplay.textContent = "Error";
-            calcExpression = "";
-          }
+    // Hamburger toggle
+    if (toggleBtn && navRail) {
+      toggleBtn.addEventListener("click", () => {
+        if (window.innerWidth <= 900) {
+          navRail.classList.toggle("open");
         } else {
-          calcExpression += val;
-          if (calcDisplay) calcDisplay.textContent = calcExpression;
+          navRail.classList.toggle("collapsed");
+        }
+      });
+    }
+
+    // Rail navigation items
+    document.querySelectorAll(".rail-item").forEach(item => {
+      item.addEventListener("click", () => {
+        const query = item.getAttribute("data-query");
+        const action = item.getAttribute("data-action");
+        const tab = item.getAttribute("data-tab");
+
+        document.querySelectorAll(".rail-item").forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+
+        if (action === "discover") {
+          window.location.href = "/discover";
+          return;
+        }
+
+        if (item.id === "navBookmarks") {
+          const saveModal = document.getElementById("saveResultModal");
+          if (saveModal) saveModal.classList.add("open");
+          return;
+        }
+
+        if (item.id === "navSettings") {
+          const settingsModal = document.getElementById("settingsModal");
+          if (settingsModal) settingsModal.classList.add("open");
+          return;
+        }
+
+        if (item.id === "navHome") {
+          homeView.style.display = "block";
+          resultsView.style.display = "none";
+          headerSearchWrap.style.display = "none";
+          currentQuery = "";
+          homeInput.value = "";
+          headerInput.value = "";
+          history.pushState(null, "", "/");
+          return;
+        }
+
+        if (query) {
+          homeInput.value = query;
+          headerInput.value = query;
+          executeSearch(query, "all");
+        } else if (tab) {
+          activeTab = tab;
+          if (currentQuery) {
+            executeSearch(currentQuery, tab);
+          }
         }
       });
     });
 
-    // Currency Converter logic
-    const currAmount = document.getElementById("currAmount");
-    const currFrom = document.getElementById("currFrom");
-    const currTo = document.getElementById("currTo");
-    const currResult = document.getElementById("currResult");
-    const currencyRateNote = document.getElementById("currencyRateNote");
+    // Top categories bar
+    document.querySelectorAll(".top-cat-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-tab");
+        if (!tab) return;
+        document.querySelectorAll(".top-cat-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
 
-    const RATES = {
-      USD: 1.0,
-      INR: 83.82,
-      EUR: 0.92,
-      GBP: 0.78,
-      AED: 3.67
-    };
+        if (tab === "maps") {
+          const q = (currentQuery || homeInput.value || "India").trim();
+          window.open(`https://maps.google.com/?q=${encodeURIComponent(q)}`, "_blank");
+          return;
+        }
 
-    function updateCurrency() {
-      if (!currAmount || !currResult) return;
-      const amt = parseFloat(currAmount.value) || 0;
-      const f = currFrom ? currFrom.value : "USD";
-      const t = currTo ? currTo.value : "INR";
-      const inUSD = amt / (RATES[f] || 1.0);
-      const out = inUSD * (RATES[t] || 83.82);
-      currResult.value = out.toFixed(2);
-      if (currencyRateNote) {
-        currencyRateNote.textContent = `1 ${f} = ${((RATES[t] || 83.82) / (RATES[f] || 1.0)).toFixed(2)} ${t}`;
-      }
+        activeTab = tab;
+        const q = (currentQuery || homeInput.value).trim();
+        if (q) {
+          executeSearch(q, tab);
+        } else {
+          // Switch tab in results view
+          switchTab(tab);
+        }
+      });
+    });
+
+    // Dropdown items
+    document.querySelectorAll(".dropdown-item").forEach(item => {
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        const tab = item.getAttribute("data-tab");
+        const q = (currentQuery || homeInput.value || "India").trim();
+        if (tab === "books") window.open(`https://books.google.com/books?q=${encodeURIComponent(q)}`, "_blank");
+        else if (tab === "finance") window.open(`https://www.google.com/finance/quote/${encodeURIComponent(q)}`, "_blank");
+        else if (tab === "flights") window.open(`https://www.google.com/travel/flights?q=${encodeURIComponent(q)}`, "_blank");
+        else if (tab === "scholar") window.open(`https://scholar.google.com/scholar?q=${encodeURIComponent(q)}`, "_blank");
+      });
+    });
+
+    // Live clock update
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const dayName = days[now.getDay()];
+      const monthName = months[now.getMonth()];
+      const dateNum = now.getDate();
+      const year = now.getFullYear();
+
+      if (topClockTime) topClockTime.textContent = `${hours}:${minutes} ${ampm}`;
+      if (topClockDate) topClockDate.textContent = `${dayName}, ${dateNum} ${monthName} ${year}`;
     }
 
-    if (currAmount) currAmount.addEventListener("input", updateCurrency);
-    if (currFrom) currFrom.addEventListener("change", updateCurrency);
-    if (currTo) currTo.addEventListener("change", updateCurrency);
+    updateClock();
+    setInterval(updateClock, 1000);
   }
 
-  // --- COPILOT / DEEP AI TOGGLE ---
-  let isDeepAiMode = false;
-  function initCopilotToggle() {
-    const copilotBtn = document.getElementById("copilotToggleBtn");
-    const copilotLabel = document.getElementById("copilotLabel");
+  // --- 7. QUICK TOOLS (8 Tools in 4x2 Grid) ---
+  function initQuickTools() {
+    const qrModal = document.getElementById("qrModal");
+    const closeQrModal = document.getElementById("closeQrModal");
+    const qrTextInput = document.getElementById("qrTextInput");
+    const qrImg = document.getElementById("qrImg");
 
-    if (copilotBtn) {
-      copilotBtn.addEventListener("click", () => {
-        isDeepAiMode = !isDeepAiMode;
-        if (isDeepAiMode) {
-          copilotBtn.classList.add("active");
-          if (copilotLabel) copilotLabel.textContent = "Copilot";
-        } else {
-          copilotBtn.classList.remove("active");
-          if (copilotLabel) copilotLabel.textContent = "Fast";
+    if (closeQrModal && qrModal) {
+      closeQrModal.addEventListener("click", () => qrModal.classList.remove("open"));
+    }
+
+    if (qrTextInput && qrImg) {
+      qrTextInput.addEventListener("input", () => {
+        const text = encodeURIComponent(qrTextInput.value || "https://staunt.vercel.app");
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${text}`;
+      });
+    }
+
+    document.querySelectorAll(".tool-tile").forEach(tile => {
+      tile.addEventListener("click", (e) => {
+        const tool = tile.getAttribute("data-tool");
+        if (!tool) return;
+
+        if (tool === "translate") {
+          const q = (currentQuery || homeInput.value).trim();
+          if (q) {
+            executeSearch(`translate ${q} to english`, "all");
+          } else {
+            window.open("https://translate.google.com", "_blank");
+          }
+        } else if (tool === "calculator") {
+          homeInput.value = "120 * 45";
+          headerInput.value = "120 * 45";
+          executeSearch("120 * 45", "all");
+        } else if (tool === "unit_convert") {
+          homeInput.value = "100 km to miles";
+          headerInput.value = "100 km to miles";
+          executeSearch("100 km to miles", "all");
+        } else if (tool === "currency") {
+          homeInput.value = "100 USD to INR";
+          headerInput.value = "100 USD to INR";
+          executeSearch("100 USD to INR", "all");
+        } else if (tool === "qr_code") {
+          if (qrModal) qrModal.classList.add("open");
+        } else if (tool === "screenshot") {
+          alert("Press 'Windows + Shift + S' to take a quick screenshot!");
+        } else if (tool === "image_search") {
+          switchTab("images");
+          homeInput.focus();
         }
+      });
+    });
+  }
+
+  // --- 8. SETTINGS MODAL & PREFERENCES ---
+  function initSettingsModal() {
+    const settingsModal = document.getElementById("settingsModal");
+    const closeSettingsModal = document.getElementById("closeSettingsModal");
+    const settingsBtn = document.getElementById("settingsBtn");
+
+    const settingAutoWallpaper = document.getElementById("settingAutoWallpaper");
+    const settingWallpaperInterval = document.getElementById("settingWallpaperInterval");
+    const settingReducedMotion = document.getElementById("settingReducedMotion");
+    const settingSafeSearch = document.getElementById("settingSafeSearch");
+    const settingNewTab = document.getElementById("settingNewTab");
+    const resetShortcutsBtn = document.getElementById("resetShortcutsBtn");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+    if (settingsBtn && settingsModal) {
+      settingsBtn.addEventListener("click", () => settingsModal.classList.add("open"));
+    }
+
+    if (closeSettingsModal && settingsModal) {
+      closeSettingsModal.addEventListener("click", () => settingsModal.classList.remove("open"));
+    }
+
+    // Auto Wallpaper
+    if (settingAutoWallpaper) {
+      settingAutoWallpaper.checked = isWpRotating;
+      settingAutoWallpaper.addEventListener("change", () => {
+        isWpRotating = settingAutoWallpaper.checked;
+        localStorage.setItem("staunt_auto_wallpaper", isWpRotating ? "true" : "false");
+        if (isWpRotating) startWallpaperRotation();
+        else stopWallpaperRotation();
+      });
+    }
+
+    // Interval Select
+    if (settingWallpaperInterval) {
+      settingWallpaperInterval.value = String(wpIntervalMs / 1000);
+      settingWallpaperInterval.addEventListener("change", () => {
+        const sec = parseInt(settingWallpaperInterval.value, 10);
+        localStorage.setItem("staunt_wallpaper_interval", String(sec));
+        if (sec > 0) {
+          wpIntervalMs = sec * 1000;
+          isWpRotating = true;
+          startWallpaperRotation();
+        } else {
+          isWpRotating = false;
+          stopWallpaperRotation();
+        }
+      });
+    }
+
+    // Reduced Motion
+    if (settingReducedMotion) {
+      settingReducedMotion.addEventListener("change", () => {
+        if (settingReducedMotion.checked) {
+          document.body.classList.add("reduced-motion");
+          localStorage.setItem("staunt_reduced_motion", "true");
+        } else {
+          document.body.classList.remove("reduced-motion");
+          localStorage.setItem("staunt_reduced_motion", "false");
+        }
+      });
+    }
+
+    // Reset Shortcuts
+    if (resetShortcutsBtn) {
+      resetShortcutsBtn.addEventListener("click", () => {
+        if (window.resetShortcutsToDefault) {
+          window.resetShortcutsToDefault();
+          alert("Shortcuts reset to default!");
+        }
+      });
+    }
+
+    // Clear History
+    if (clearHistoryBtn) {
+      clearHistoryBtn.addEventListener("click", () => {
+        localStorage.removeItem("staunt_search_history");
+        alert("Search history cleared!");
       });
     }
   }
 
+  // --- 9. VOICE & VISUAL SEARCH CONTROLS ---
+  function initVoiceAndVisualSearch() {
+    const voiceBtn = document.getElementById("homeVoiceBtn");
+    const visualBtn = document.getElementById("homeVisualBtn");
+
+    if (voiceBtn) {
+      voiceBtn.addEventListener("click", () => {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          alert("Voice search is not supported by your current browser. You can type directly in the search box.");
+          return;
+        }
+
+        try {
+          const recognition = new SpeechRec();
+          recognition.lang = "en-IN";
+          recognition.interimResults = false;
+
+          homeInput.placeholder = "Listening... Speak now";
+          voiceBtn.style.color = "#ef4444";
+
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            homeInput.value = transcript;
+            headerInput.value = transcript;
+            executeSearch(transcript, "all");
+          };
+
+          recognition.onerror = () => {
+            homeInput.placeholder = "Search the web with STAUNT...";
+            voiceBtn.style.color = "";
+          };
+
+          recognition.onend = () => {
+            homeInput.placeholder = "Search the web with STAUNT...";
+            voiceBtn.style.color = "";
+          };
+
+          recognition.start();
+        } catch (err) {
+          console.warn("Speech recognition notice:", err);
+        }
+      });
+    }
+
+    if (visualBtn) {
+      visualBtn.addEventListener("click", () => {
+        const imgUrl = prompt("Enter an image URL to find related web information:");
+        if (imgUrl && imgUrl.trim()) {
+          homeInput.value = imgUrl.trim();
+          headerInput.value = imgUrl.trim();
+          executeSearch(imgUrl.trim(), "images");
+        }
+      });
+    }
+
+    // Connect suggestion chips
+    document.querySelectorAll(".query-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const q = chip.getAttribute("data-query");
+        if (q) {
+          homeInput.value = q;
+          headerInput.value = q;
+          executeSearch(q, "all");
+        }
+      });
+    });
+  }
+
   // Initializations
   initWallpaperManager();
+  initShortcutsManager();
   initWeatherWidget();
   initTrendingAndMarkets();
+  initHighlightsAndTopics();
+  initNavigationRailAndHeader();
   initQuickTools();
-  initCopilotToggle();
+  initSettingsModal();
+  initVoiceAndVisualSearch();
 
   // Initial Auth & URL Check
   checkAuth();
   checkUrlParams();
 });
+
 

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <linearGradient id="dSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#180e07" />
+      <stop offset="35%" stop-color="#451a03" />
+      <stop offset="65%" stop-color="#9a3412" />
+      <stop offset="85%" stop-color="#c2410c" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+    <linearGradient id="dune1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#7c2d12" />
+    </linearGradient>
+    <linearGradient id="dune2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#9a3412" />
+    </linearGradient>
+    <linearGradient id="dune3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#451a03" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#dSky)" />
+
+  <!-- Huge Desert Sun -->
+  <circle cx="960" cy="560" r="160" fill="#fef08a" opacity="0.35" filter="blur(25px)" />
+  <circle cx="960" cy="560" r="55" fill="#fef3c7" opacity="0.95" />
+
+  <!-- Distant Dunes -->
+  <path d="M0,640 Q400,520 800,610 Q1200,530 1600,620 Q1760,570 1920,610 L1920,1080 L0,1080 Z" fill="url(#dune1)" opacity="0.9" />
+
+  <!-- Mid Dunes -->
+  <path d="M0,720 Q500,600 1000,710 Q1500,590 1920,700 L1920,1080 L0,1080 Z" fill="url(#dune2)" />
+
+  <!-- Camel Caravan Silhouette in Distance -->
+  <g fill="#271105" transform="translate(1120, 630) scale(0.65)">
+    <!-- Camel 1 -->
+    <path d="M40,50 Q45,20 60,10 Q65,10 65,25 Q70,25 75,35 Q90,30 100,45 Q115,35 125,50 L125,85 L115,85 L110,65 L95,65 L90,85 L80,85 L75,60 L55,60 L50,85 L40,85 Z" />
+    <!-- Rider -->
+    <circle cx="75" cy="25" r="7" />
+    <!-- Lead line -->
+    <line x1="40" y1="35" x2="10" y2="45" stroke="#271105" stroke-width="2" />
+    <!-- Camel 2 -->
+    <path d="M-40,55 Q-35,30 -20,20 Q-15,20 -15,35 Q-10,35 -5,45 Q10,40 20,55 L20,90 L10,90 L5,70 L-10,70 L-15,90 L-25,90 L-30,65 L-45,65 L-50,90 L-60,90 Z" />
+  </g>
+
+  <!-- Foreground Dramatic Dune Ridges -->
+  <path d="M0,820 Q600,690 1200,840 Q1600,740 1920,810 L1920,1080 L0,1080 Z" fill="url(#dune3)" />
+  <path d="M0,920 Q700,780 1400,950 Q1700,880 1920,920 L1920,1080 L0,1080 Z" fill="#2d1305" />
+
+  <!-- Vignette -->
+  <rect width="1920" height="1080" fill="#120702" opacity="0.48" />
+</svg>

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>STAUNT — Intelligent Search Engine</title>
+  <title>STAUNT — Sovereign Search Engine & Neural Discovery</title>
   <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg" />
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#0a0d14" />
-  <meta name="description" content="STAUNT is a high-speed, private search engine and neural discovery platform." />
+  <meta name="theme-color" content="#070a12" />
+  <meta name="description" content="STAUNT is a high-speed, sovereign Indian search engine with dynamic landscapes, live weather, verified markets, and AI discovery." />
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,359 +15,860 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <meta name="referrer" content="no-referrer" />
-  <link rel="stylesheet" href="/static/css/style.css?v=50" />
+  <link rel="stylesheet" href="/static/css/style.css?v=60" />
 </head>
 
 <body>
+  <!-- DYNAMIC WALLPAPER BACKGROUND STAGE -->
+  <div class="wallpaper-stage" id="wallpaperStage">
+    <div class="wallpaper-layer active" id="wallpaperLayerA" style="background-image: url('/static/wallpapers/himachal.svg');"></div>
+    <div class="wallpaper-layer" id="wallpaperLayerB"></div>
+    <div class="wallpaper-overlay"></div>
+  </div>
 
-  <!-- APP HEADER -->
-  <header class="app-header" id="appHeader">
-    <div class="brand-logo" id="brandLogo" title="STAUNT Home" onclick="window.location.href='/'" style="cursor: pointer;">
-      <div class="logo-mark">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      </div>
-      <div class="brand-text-wrap">
-        <span class="brand-name">STAUNT</span>
-      </div>
-    </div>
+  <!-- APP SHELL WRAPPER -->
+  <div class="app-shell" id="appShell">
 
-    <!-- Header Search Form (Visible on results view) -->
-    <div class="header-search-wrapper" id="headerSearchWrap" style="display: none;">
-      <form class="search-form" id="headerSearchForm">
-        <input 
-          type="text" 
-          id="headerSearchInput" 
-          class="search-input" 
-          placeholder="Search the web with STAUNT..." 
-          autocomplete="off" 
-          required 
-        />
-        <button type="button" class="clear-btn" id="headerClearBtn" title="Clear input" style="display: none;">✕</button>
-        <button type="submit" class="search-btn" aria-label="Search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <!-- TOP BAR -->
+    <header class="app-header" id="appHeader">
+      <div class="header-left">
+        <!-- Hamburger Menu Button to Toggle Left Navigation Rail -->
+        <button class="icon-btn rail-toggle-btn" id="navRailToggleBtn" title="Toggle Navigation Menu" aria-label="Toggle Navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-      </form>
-      <div class="suggest-box" id="suggestBoxHeader"></div>
-    </div>
 
-    <!-- Header Actions (Downloads & Theme) -->
-    <div class="header-actions">
-      <a href="/download/windows" class="native-app-btn" title="Download STAUNT Browser for Windows (Setup.exe)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.95-1.801"/></svg>
-        <span>Download for Windows</span>
-      </a>
-      <a href="/download/android" class="native-app-btn android-btn" title="Download STAUNT Browser for Android (.apk)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.086 12 8.086s-3.5902.3251-5.1368.8637L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
-        <span>Download for Android</span>
-      </a>
+        <!-- Brand Logo with Gradient A -->
+        <div class="brand-logo" id="brandLogo" title="STAUNT Home" style="cursor: pointer;">
+          <div class="logo-mark">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="brand-text-wrap">
+            <span class="brand-name">ST<span class="brand-accent">A</span>UNT</span>
+          </div>
+        </div>
 
-      <!-- Theme Switcher -->
-      <button class="icon-btn" id="themeToggle" title="Toggle Dark/Light Theme" aria-label="Toggle Theme">
-      </button>
-    </div>
-  </header>
-
-  <!-- HOME HERO VIEW (Search-First) -->
-  <main class="home-container" id="homeView">
-    
-    <div class="home-logo-wrap">
-      <div class="home-mark">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="brand-badge">India Technology</span>
       </div>
-      <h1 class="home-title">STAUNT</h1>
-      <p class="home-subtitle">High-Speed Sovereign Search Engine</p>
-    </div>
 
-    <!-- Home Central Search Form -->
-    <div class="home-search-wrap">
-      <form class="search-form home-large-form" id="homeSearchForm">
-        <input 
-          type="text" 
-          id="homeSearchInput" 
-          class="search-input" 
-          placeholder="Search the web with STAUNT..." 
-          autocomplete="off" 
-          required 
-          autofocus
-        />
-        <button type="button" class="clear-btn" id="homeClearBtn" title="Clear input" style="display: none;">✕</button>
-        <button type="submit" class="search-btn" aria-label="Search">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <!-- Top Search Form (Visible on results view or scrolled) -->
+      <div class="header-search-wrapper" id="headerSearchWrap" style="display: none;">
+        <form class="search-form" id="headerSearchForm">
+          <input 
+            type="text" 
+            id="headerSearchInput" 
+            class="search-input" 
+            placeholder="Search the web with STAUNT..." 
+            autocomplete="off" 
+            required 
+          />
+          <button type="button" class="clear-btn" id="headerClearBtn" title="Clear input" style="display: none;">✕</button>
+          <button type="submit" class="search-btn" aria-label="Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+        </form>
+        <div class="suggest-box" id="suggestBoxHeader"></div>
+      </div>
+
+      <!-- Center Top Categories Bar (Reference Match) -->
+      <nav class="top-nav-categories" id="topNavCategories">
+        <button class="top-cat-btn active" data-tab="all">Search</button>
+        <button class="top-cat-btn" data-tab="images">Images</button>
+        <button class="top-cat-btn" data-tab="news">News</button>
+        <button class="top-cat-btn" data-tab="videos">Videos</button>
+        <button class="top-cat-btn" data-tab="maps">Maps</button>
+        <button class="top-cat-btn" data-tab="shopping">Shopping</button>
+        <div class="top-cat-dropdown-wrap">
+          <button class="top-cat-btn" id="moreCatBtn">More <span class="arrow-down">▾</span></button>
+          <div class="top-cat-dropdown-menu" id="moreCatMenu">
+            <a href="#" data-tab="books" class="dropdown-item">📚 Books</a>
+            <a href="#" data-tab="finance" class="dropdown-item">📈 Finance</a>
+            <a href="#" data-tab="flights" class="dropdown-item">✈️ Flights</a>
+            <a href="#" data-tab="scholar" class="dropdown-item">🎓 Scholar</a>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="header-actions">
+        <!-- Weather & Location Pill -->
+        <div class="top-weather-pill" id="topWeatherPill" title="Current weather and location">
+          <span class="pill-loc">📍 <span id="topWeatherCity">Delhi, India</span></span>
+          <span class="pill-divider">•</span>
+          <span class="pill-cond"><span id="topWeatherIcon">⛅</span> <span id="topWeatherTemp">28°C Haze</span></span>
+        </div>
+
+        <!-- Clock & Date Widget -->
+        <div class="top-clock-display" id="topClockDisplay">
+          <span id="topClockTime">12:24 AM</span>
+          <span id="topClockDate" class="clock-date">Tue, 30 Sep 2026</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="themeToggle" title="Toggle Dark/Light Theme" aria-label="Toggle Theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
-      </form>
-      <div class="suggest-box" id="suggestBoxHome"></div>
-    </div>
 
-    <!-- Verified Working Search Categories -->
-    <nav class="home-modes-nav" id="homeVerticalShortcuts">
-      <button class="mode-nav-btn active" data-tab="all" title="Web Search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <span>All</span>
-      </button>
-      <button class="mode-nav-btn" data-tab="images" title="Search Images">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-        <span>Images</span>
-      </button>
-      <button class="mode-nav-btn" data-tab="news" title="Search News">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
-        <span>News</span>
-      </button>
-    </nav>
+        <!-- Settings Button -->
+        <button class="icon-btn" id="settingsBtn" title="Browser Settings & Wallpaper Preferences" aria-label="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
 
-    <!-- Download Banner Section -->
-    <div class="download-section-banner" style="margin-top: 48px; padding: 24px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); text-align: center; max-width: 680px; width: 100%;">
-      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">Browse with STAUNT Native Apps</h3>
-      <p style="font-size: 0.88rem; color: var(--text-muted, #8b949e); margin-bottom: 18px;">Built-in ad-blocking, tab isolation, and lightning-fast search.</p>
-      <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
-        <a href="/download/windows" class="native-app-btn" style="padding: 10px 20px; font-size: 0.9rem;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.95-1.801"/></svg>
-          <span>Download Windows (.exe • 83.7 MB)</span>
-        </a>
-        <a href="/download/android" class="native-app-btn android-btn" style="padding: 10px 20px; font-size: 0.9rem;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4111 13.8533 8.086 12 8.086s-3.5902.3251-5.1368.8637L4.8409 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
-          <span>Download Android (.apk • 2.2 MB)</span>
-        </a>
+        <!-- App Launcher / Profile Button -->
+        <button class="profile-avatar-btn" id="userProfileBtn" title="STAUNT Apps & Account">
+          <span class="avatar-initials">K</span>
+        </button>
       </div>
-      <div style="margin-top: 14px;">
-        <a href="/download" style="color: var(--accent, #a78bfa); font-size: 0.82rem; text-decoration: none;">📖 View Installation Guide, Android Sideloading & SHA-256 Checksums →</a>
-      </div>
-    </div>
+    </header>
 
-    <!-- Home Footer Navigation -->
-    <footer class="home-footer">
-      <a href="/privacy">Privacy</a>
-      <span>•</span>
-      <a href="/terms">Terms</a>
-      <span>•</span>
-      <span>&copy; 2026 STAUNT</span>
-    </footer>
-  </main>
+    <!-- MAIN BODY CONTAINER: Holds Left Rail & Content Area -->
+    <div class="app-body">
 
-  <!-- SEARCH RESULTS VIEW -->
-  <main class="results-container" id="resultsView" style="display: none;">
-    <!-- Category Tabs Navigation -->
-    <nav class="tabs-bar" id="categoriesBar">
-      <button class="tab-btn active" data-tab="all">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <span>All</span>
-      </button>
-      <button class="tab-btn" data-tab="images">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-        <span>Images</span>
-      </button>
-      <button class="tab-btn" data-tab="news">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
-        <span>News</span>
-      </button>
-    </nav>
-
-    <!-- Search Filters Bar (Time Filters) -->
-    <div class="filters-bar" id="searchFiltersBar" style="display: none;">
-      <button class="filter-pill active" data-time="">All Time</button>
-      <button class="filter-pill" data-time="d">Past 24 Hours</button>
-      <button class="filter-pill" data-time="w">Past Week</button>
-      <button class="filter-pill" data-time="m">Past Month</button>
-      <button class="filter-pill" data-time="y">Past Year</button>
-    </div>
-
-    <!-- Results Layout -->
-    <div class="results-layout">
-      <!-- Main Results Column -->
-      <div class="results-main">
-        <div class="results-meta-bar" id="resultsMetaBar">
-          <span class="results-stats" id="resultsStats"></span>
-          <span class="results-notice" id="resultsCountNotice" style="margin-left: 12px; font-size: 0.82rem; color: var(--text-muted);"></span>
+      <!-- LEFT NAVIGATION RAIL (Reference Match) -->
+      <aside class="nav-rail" id="navRail">
+        <div class="nav-rail-section top-section">
+          <button class="rail-item active" id="navHome" data-tab="all" title="Home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="rail-label">Home</span>
+          </button>
+          <button class="rail-item" id="navDiscover" data-action="discover" title="Discover">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+            <span class="rail-label">Discover</span>
+          </button>
+          <button class="rail-item" id="navNews" data-tab="news" title="News">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+            <span class="rail-label">News</span>
+          </button>
+          <button class="rail-item" id="navTech" data-query="latest technology AI gadgets news" title="Technology">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span class="rail-label">Technology</span>
+          </button>
+          <button class="rail-item" id="navScience" data-query="science discoveries space astronomy research" title="Science">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L4.65 19.5A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.75-2.5L14 9.31V2"/></svg>
+            <span class="rail-label">Science</span>
+          </button>
+          <button class="rail-item" id="navBusiness" data-query="business economy startups financial markets" title="Business">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span class="rail-label">Business</span>
+          </button>
+          <button class="rail-item" id="navSports" data-query="cricket sports football scores updates" title="Sports">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            <span class="rail-label">Sports</span>
+          </button>
+          <button class="rail-item" id="navEntertainment" data-query="entertainment cinema movies reviews music" title="Entertainment">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            <span class="rail-label">Entertainment</span>
+          </button>
+          <button class="rail-item" id="navIndia" data-query="India national news digital governance ISRO" title="India">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            <span class="rail-label">India</span>
+          </button>
         </div>
 
-        <!-- Instant Calculator Card -->
-        <div class="instant-calc-card" id="instantAnswerCard" style="display: none;">
-          <div class="calc-expression" id="calcExpr"></div>
-          <div class="calc-result" id="calcResult"></div>
-        </div>
+        <div class="nav-rail-divider"></div>
 
-        <!-- Destination & Travel Intelligence Card -->
-        <div class="destination-card" id="destinationCard" style="display: none;">
-          <div class="destination-hero-img-wrap" id="destHeroImgWrap" style="display: none;">
-            <img class="dest-hero-img" id="destHeroImg" src="" alt="Destination Photo" referrerpolicy="no-referrer" />
-          </div>
-          <div class="destination-hero">
-            <div class="destination-top-row">
-              <div>
-                <div class="destination-title" id="destTitle"></div>
-                <div class="destination-country" id="destCountry"></div>
-              </div>
-              <div class="destination-weather-badge" id="destWeather"></div>
-            </div>
-            <div class="destination-tagline" id="destTagline"></div>
-            <div class="destination-stats-row">
-              <span class="dest-stat-pill" id="destBestTime"></span>
-              <span class="dest-stat-pill" id="destDuration"></span>
-            </div>
-          </div>
-          <div class="destination-body">
-            <div class="dest-section-title">Top Attractions</div>
-            <div class="attractions-chips" id="destAttractions"></div>
-            <div class="destination-thumbs-row" id="destThumbsRow"></div>
-            <div class="destination-actions-row" style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-              <a href="#" target="_blank" rel="noopener noreferrer" class="auth-submit-btn" id="destMapsBtn" style="width: auto; padding: 8px 16px; font-size: 0.85rem; text-decoration: none;">View Maps ↗</a>
-              <a href="#" target="_blank" rel="noopener noreferrer" class="native-app-btn" id="destHotelsBtn" style="padding: 8px 16px; font-size: 0.85rem;">Find Hotels ↗</a>
-              <a href="#" target="_blank" rel="noopener noreferrer" class="native-app-btn" id="destFlightsBtn" style="padding: 8px 16px; font-size: 0.85rem;">Check Flights ↗</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Visual Discovery Strip -->
-        <div class="visual-strip-container" id="visualStripContainer" style="display: none;">
-          <div class="visual-strip-header">
-            <span class="visual-strip-title">Images</span>
-            <button class="visual-strip-more" id="visualStripMoreBtn">View All Images ↗</button>
-          </div>
-          <div class="visual-strip-scroll" id="visualStripScroll"></div>
-        </div>
-
-        <!-- AI Overview Synthesis Card -->
-        <div class="ai-overview-card" id="aiOverviewCard" style="display: none;">
-          <div class="ai-overview-header">
-            <div class="ai-header-left">
-              <span class="ai-spark-icon">✨</span>
-              <span class="ai-title">STAUNT Overview</span>
-            </div>
-            <div class="ai-header-actions">
-              <button class="ai-action-btn" id="copyOverviewBtn" title="Copy text">Copy</button>
-              <button class="ai-action-btn" id="collapseOverviewBtn" title="Collapse">Collapse</button>
-            </div>
-          </div>
-          <div class="ai-overview-body" id="aiOverviewBody">
-            <div id="aiContent">
-              <div class="ai-skeleton-wrap">
-                <div class="ai-skeleton-line" style="width: 90%;"></div>
-                <div class="ai-skeleton-line" style="width: 75%;"></div>
-                <div class="ai-skeleton-line" style="width: 82%;"></div>
-              </div>
-            </div>
-          </div>
-          <div class="ai-sources-tray" id="aiSourcesTray" style="display: none;">
-            <span class="sources-label">Sources:</span>
-            <div class="sources-list" id="aiSourcesList">
-              <div id="aiSources"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Scholarly Research Consensus Card -->
-        <div class="research-card" id="researchCard" style="display: none; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px 22px; margin-bottom: 24px;">
-          <h3 id="researchHeading" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">Scholarly Consensus</h3>
-          <p id="researchSummary" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px;"></p>
-          <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Key Findings</div>
-          <ul id="researchFindings" style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px;"></ul>
-          <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap;">
-            <div><strong>Methodology:</strong> <span id="researchMethodology"></span></div>
-            <div><strong>Limitations:</strong> <span id="researchLimitations"></span></div>
-          </div>
-        </div>
-
-        <!-- Production Entity & Person SERP Card -->
-        <div class="entity-profile-card" id="entityProfileCard" style="display: none;">
-          <div class="entity-main-header">
-            <div class="entity-avatar-wrap" id="entityAvatarWrap" style="display: none;">
-              <img class="entity-avatar" id="entityAvatar" src="" alt="Profile Image" referrerpolicy="no-referrer" />
-            </div>
-            <div class="entity-info-col">
-              <div class="entity-name-row">
-                <h2 class="entity-name" id="entityName"></h2>
-                <span class="entity-role-badge" id="entityRole"></span>
-                <span class="entity-confidence-badge" id="entityConfidence"></span>
-              </div>
-              <p class="entity-bio" id="entityBio"></p>
-              <div class="entity-links-row" id="entityLinksRow">
-                <a href="#" target="_blank" rel="noopener noreferrer" class="entity-btn site-btn" id="entityWebsiteBtn" style="display: none;">Official Website ↗</a>
-                <a href="#" target="_blank" rel="noopener noreferrer" class="entity-btn wiki-btn" id="entityWikiBtn" style="display: none;">Wikipedia ↗</a>
-              </div>
-            </div>
-          </div>
-          <div class="entity-profiles-section" id="entityProfilesSection" style="display: none;">
-            <div class="entity-profiles-label">Verified Profiles & Web Presence</div>
-            <div class="entity-profiles-grid" id="entityProfilesGrid"></div>
-          </div>
-          <div class="entity-media-clusters" id="entityMediaClusters" style="display: none;">
-            <div class="entity-cluster-box" id="entityNewsCluster" style="display: none;">
-              <div class="entity-cluster-title">Recent News</div>
-              <div id="entityNewsList"></div>
-            </div>
-            <div class="entity-cluster-box" id="entityVideosCluster" style="display: none;">
-              <div class="entity-cluster-title">Featured Videos</div>
-              <div id="entityVideosList"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Web Search Results List -->
-        <div class="web-results search-results-list" id="webResultsSection"></div>
-        <div class="search-results-list" id="searchResultsList" style="display: none;"></div>
-
-        <!-- Vertical Tab Results Sections -->
-        <div class="images-grid" id="imagesSection" style="display: none;"></div>
-        <div class="videos-grid" id="videosSection" style="display: none;"></div>
-        <div class="docs-results" id="docsSection" style="display: none;"></div>
-        <div class="code-results" id="codeSection" style="display: none;"></div>
-        <div class="shopping-results" id="shoppingSection" style="display: none;"></div>
-        <div class="jobs-results" id="jobsSection" style="display: none;"></div>
-
-        <!-- Empty State (Refined with quick actions & category awareness) -->
-        <div class="empty-state" id="emptyState" style="display: none;">
-          <div class="empty-icon" id="emptyIcon">🔍</div>
-          <h3 class="empty-title" id="emptyTitle">No search results found</h3>
-          <p class="empty-desc" id="emptyDesc">Try checking your spelling or use more general keywords.</p>
-          <div class="empty-actions" id="emptyActions">
-            <button class="empty-action-btn primary" id="emptySwitchAllBtn" type="button" style="display: none;">Search in All Results</button>
-            <button class="empty-action-btn" id="emptyRetryBtn" type="button">Retry Search</button>
-          </div>
-          <div class="empty-tips-card" id="emptyTipsCard">
-            <div class="empty-tips-title">Search suggestions</div>
-            <ul class="empty-tips-list">
-              <li>Ensure all words are spelled correctly.</li>
-              <li>Try more general or alternate keywords.</li>
-              <li>Switch to <strong>All</strong> to view broad web results and profiles.</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-bar" id="paginationBar" style="display: none;">
-          <button class="page-btn" id="prevPageBtn" disabled>← Previous</button>
-          <span class="page-indicator" id="pageIndicator">Page 1</span>
-          <button class="page-btn" id="nextPageBtn">Next →</button>
-        </div>
-      </div>
-
-      <!-- Sidebar Column (Wikipedia Knowledge Graph & Related) -->
-      <aside class="results-sidebar" id="resultsSidebar">
-        <div class="knowledge-card" id="knowledgeCard" style="display: none;">
-          <div class="kc-img-wrap" id="kcImgWrap" style="display: none;">
-            <img id="kcImg" src="" alt="Knowledge Entity" referrerpolicy="no-referrer" />
-          </div>
-          <div class="kc-content">
-            <h3 class="kc-title" id="kcTitle">Entity</h3>
-            <p class="kc-snippet" id="kcSnippet"></p>
-            <div class="kc-attrs" id="kcAttrs"></div>
-            <a href="#" target="_blank" rel="noopener noreferrer" class="kc-link" id="kcLink">Read on Wikipedia ↗</a>
-          </div>
-        </div>
-
-        <!-- Did You Mean Suggestion -->
-        <div class="did-you-mean-card" id="didYouMeanCard" style="display: none;">
-          <span class="dym-label">Did you mean:</span>
-          <a href="#" class="dym-link" id="dymLink">suggestion</a>
-        </div>
-
-        <!-- Related Searches -->
-        <div class="related-queries-card" id="relatedQueriesCard" style="margin-top: 18px;">
-          <h4 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px;">Related Searches</h4>
-          <div class="related-chips-list" id="relatedQueriesList"></div>
+        <div class="nav-rail-section bottom-section">
+          <button class="rail-item" id="navBookmarks" title="Bookmarks">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            <span class="rail-label">Bookmarks</span>
+          </button>
+          <button class="rail-item" id="navHistory" title="History">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="rail-label">History</span>
+          </button>
+          <a href="/download" class="rail-item" id="navDownloads" title="Downloads">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="rail-label">Downloads</span>
+          </a>
+          <button class="rail-item" id="navSettings" title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="rail-label">Settings</span>
+          </button>
         </div>
       </aside>
+
+      <!-- CONTENT CANVAS WRAPPER -->
+      <div class="content-canvas" id="contentCanvas">
+
+        <!-- ================= HOME VIEW (HERO & DASHBOARD) ================= -->
+        <main class="home-container" id="homeView">
+          
+          <!-- HERO SECTION -->
+          <section class="home-hero" id="homeHero">
+            <div class="home-logo-wrap">
+              <h1 class="home-title">ST<span class="brand-accent">A</span>UNT</h1>
+              <p class="home-subtitle">EXPLORE A MORE OPEN INTERNET</p>
+            </div>
+
+            <!-- Central Search Bar with Voice and Visual Search -->
+            <div class="home-search-wrap">
+              <form class="search-form home-large-form" id="homeSearchForm">
+                <div class="search-input-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <input 
+                  type="text" 
+                  id="homeSearchInput" 
+                  class="search-input" 
+                  placeholder="Search the web with STAUNT..." 
+                  autocomplete="off" 
+                  required 
+                  autofocus
+                />
+                <button type="button" class="clear-btn" id="homeClearBtn" title="Clear input" style="display: none;">✕</button>
+
+                <!-- Voice Search Button -->
+                <button type="button" class="tool-icon-btn" id="homeVoiceBtn" title="Search by voice" aria-label="Voice Search">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                </button>
+
+                <!-- Visual Lens Search Button -->
+                <button type="button" class="tool-icon-btn" id="homeVisualBtn" title="Search by image / visual lens" aria-label="Visual Search">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+
+                <!-- Round Blue Search Button -->
+                <button type="submit" class="search-submit-btn" id="homeSearchSubmitBtn" aria-label="Search">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </button>
+              </form>
+              <div class="suggest-box" id="suggestBoxHome"></div>
+            </div>
+
+            <!-- Search Suggestion Chips (Reference Match) -->
+            <div class="search-chips-row" id="searchChipsRow">
+              <button type="button" class="query-chip" data-query="India election 2026">India election 2026</button>
+              <button type="button" class="query-chip" data-query="ISRO latest news">ISRO latest news</button>
+              <button type="button" class="query-chip" data-query="Python tutorial">Python tutorial</button>
+              <button type="button" class="query-chip" data-query="Gold price today">Gold price today</button>
+              <button type="button" class="query-chip" data-query="Best laptops 2026">Best laptops 2026</button>
+            </div>
+
+            <!-- Shortcuts Row (Reference Match) -->
+            <div class="shortcuts-container" id="shortcutsContainer">
+              <div class="shortcuts-grid" id="shortcutsGrid">
+                <!-- Dynamically rendered shortcuts + Add shortcut button -->
+              </div>
+            </div>
+
+            <!-- Hero Bottom-Right Landscape Wallpaper Info & Controls -->
+            <div class="wallpaper-credit-widget" id="wallpaperCreditWidget">
+              <span class="wp-loc-pin">📍</span>
+              <span class="wp-loc-text" id="wallpaperLocation">Himachal Pradesh, India</span>
+              <div class="wp-nav-arrows">
+                <button class="wp-arrow-btn" id="prevWallpaperBtn" title="Previous Wallpaper">‹</button>
+                <button class="wp-arrow-btn" id="nextWallpaperBtn" title="Next Wallpaper">›</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- DESKTOP DASHBOARD GRID (Reference Match 3-Column Layout) -->
+          <section class="desktop-dashboard" id="homeDashboard">
+            
+            <!-- LEFT COLUMN: Weather & Quick Tools -->
+            <div class="dash-col dash-col-left">
+              
+              <!-- Weather Card -->
+              <div class="dash-card weather-card" id="weatherCard">
+                <div class="card-header-row">
+                  <div class="card-title-wrap">
+                    <span class="loc-icon">📍</span>
+                    <span class="card-title" id="weatherCardCity">Delhi, India</span>
+                  </div>
+                  <div class="card-header-actions">
+                    <span class="timestamp-label" id="weatherUpdatedTime">Updated 12:24 AM</span>
+                    <button class="card-refresh-btn" id="weatherRefreshBtn" title="Refresh Weather">🔄</button>
+                  </div>
+                </div>
+
+                <div class="weather-main-row">
+                  <div class="weather-temp-badge">
+                    <span class="weather-icon-large" id="weatherMainIcon">⛅</span>
+                    <div class="weather-temp-wrap">
+                      <span class="weather-degrees" id="weatherMainTemp">28°C</span>
+                      <span class="weather-desc" id="weatherMainCond">Haze</span>
+                    </div>
+                  </div>
+                  <div class="weather-stats-col">
+                    <div class="weather-hi-lo">
+                      H: <span id="weatherHigh">32°</span> L: <span id="weatherLow">24°</span>
+                    </div>
+                    <div class="weather-feels">
+                      Feels like <span id="weatherFeelsLike">30°</span>
+                    </div>
+                    <div class="weather-aqi-pill">
+                      <span class="aqi-dot yellow"></span>
+                      <span>AQI <span id="weatherAqi">176</span> • <span id="weatherAqiStatus">Moderate</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hourly Forecast (6 Slots) -->
+                <div class="weather-hourly-strip" id="weatherHourlyStrip">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+
+              <!-- Quick Tools Card -->
+              <div class="dash-card quick-tools-card" id="quickToolsCard">
+                <div class="card-header-row">
+                  <span class="card-title">Quick tools</span>
+                </div>
+                <div class="tools-grid-8" id="toolsGrid">
+                  <button type="button" class="tool-tile" data-tool="translate" title="Language Translate">
+                    <span class="tool-tile-icon">🌐</span>
+                    <span class="tool-tile-name">Translate</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="calculator" title="Instant Calculator">
+                    <span class="tool-tile-icon">🧮</span>
+                    <span class="tool-tile-name">Calculator</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="unit_convert" title="Unit Converter">
+                    <span class="tool-tile-icon">📐</span>
+                    <span class="tool-tile-name">Unit convert</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="currency" title="Currency Exchange">
+                    <span class="tool-tile-icon">₹</span>
+                    <span class="tool-tile-name">Currency</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="qr_code" title="Generate QR Code">
+                    <span class="tool-tile-icon">🏁</span>
+                    <span class="tool-tile-name">QR code</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="screenshot" title="Capture Screen">
+                    <span class="tool-tile-icon">📸</span>
+                    <span class="tool-tile-name">Screenshot</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="image_search" title="Search Images">
+                    <span class="tool-tile-icon">🖼️</span>
+                    <span class="tool-tile-name">Image search</span>
+                  </button>
+                  <a href="/download" class="tool-tile" title="Download Desktop & Android Apps">
+                    <span class="tool-tile-icon">📥</span>
+                    <span class="tool-tile-name">Downloads</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- MIDDLE COLUMN: Today's Highlights & Explore Topics -->
+            <div class="dash-col dash-col-mid">
+              
+              <!-- Today's Highlights -->
+              <div class="dash-card highlights-card" id="highlightsCard">
+                <div class="card-header-row">
+                  <span class="card-title">Today's highlights</span>
+                  <div class="highlights-tabs" id="highlightsTabs">
+                    <button class="hl-tab-btn active" data-cat="trending">For you</button>
+                    <button class="hl-tab-btn" data-cat="india">India</button>
+                    <button class="hl-tab-btn" data-cat="tech">Technology</button>
+                    <button class="hl-tab-btn" data-cat="science">Science</button>
+                    <button class="hl-tab-btn" data-cat="business">Business</button>
+                    <button class="hl-tab-btn" data-cat="sports">Sports</button>
+                    <button class="hl-tab-btn" data-cat="entertainment">Entertainment</button>
+                    <a href="/discover" class="hl-view-all">View all →</a>
+                  </div>
+                </div>
+
+                <!-- Highlights Content Grid / Carousel -->
+                <div class="highlights-grid" id="highlightsGrid">
+                  <!-- Rendered dynamically from backend news -->
+                </div>
+              </div>
+
+              <!-- Explore Topics Landscape Strip -->
+              <div class="dash-card explore-topics-card" id="exploreTopicsCard">
+                <div class="card-header-row">
+                  <span class="card-title">Explore topics</span>
+                  <div class="explore-arrows">
+                    <button class="explore-arrow-btn" id="explorePrevBtn">‹</button>
+                    <button class="explore-arrow-btn" id="exploreNextBtn">›</button>
+                  </div>
+                </div>
+
+                <div class="explore-topics-scroll" id="exploreTopicsScroll">
+                  <div class="topic-landscape-card" data-wp="himachal">
+                    <img src="/static/wallpapers/himachal.svg" alt="Himachal Pradesh" class="topic-thumb" />
+                    <span class="topic-label">Himachal Pradesh</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="varanasi">
+                    <img src="/static/wallpapers/varanasi.svg" alt="Varanasi" class="topic-thumb" />
+                    <span class="topic-label">Varanasi</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="coastal">
+                    <img src="/static/wallpapers/coastal.svg" alt="Coastal India" class="topic-thumb" />
+                    <span class="topic-label">Coastal India</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="teagardens">
+                    <img src="/static/wallpapers/teagardens.svg" alt="Tea Gardens" class="topic-thumb" />
+                    <span class="topic-label">Tea Gardens</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="desert">
+                    <img src="/static/wallpapers/desert.svg" alt="Desert India" class="topic-thumb" />
+                    <span class="topic-label">Desert India</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="modern">
+                    <img src="/static/wallpapers/modern.svg" alt="Modern India" class="topic-thumb" />
+                    <span class="topic-label">Modern India</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="dal_lake">
+                    <img src="/static/wallpapers/dal_lake.svg" alt="Kashmir Dal Lake" class="topic-thumb" />
+                    <span class="topic-label">Kashmir Lakes</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Trending Searches & Markets -->
+            <div class="dash-col dash-col-right">
+              
+              <!-- Trending Searches Card -->
+              <div class="dash-card trending-card" id="trendingCard">
+                <div class="card-header-row">
+                  <div class="card-title-wrap">
+                    <span class="trend-icon">📈</span>
+                    <span class="card-title">Trending searches</span>
+                  </div>
+                  <button class="card-refresh-btn" id="trendingRefreshBtn" title="Refresh Trending">🔄</button>
+                </div>
+
+                <div class="trending-list-grid" id="trendingList">
+                  <!-- Rendered dynamically: 10 numbered items with green arrows -->
+                </div>
+              </div>
+
+              <!-- Financial Markets Card -->
+              <div class="dash-card markets-card" id="marketsCard">
+                <div class="card-header-row">
+                  <div class="card-title-wrap">
+                    <span class="market-icon">📊</span>
+                    <span class="card-title">Markets</span>
+                  </div>
+                  <button class="card-refresh-btn" id="marketsRefreshBtn" title="Refresh Markets">🔄</button>
+                </div>
+
+                <div class="markets-indices-list" id="marketsList">
+                  <!-- Rendered dynamically: Sensex, Nifty 50, Gold 24K with live sparklines -->
+                </div>
+              </div>
+
+            </div>
+
+          </section>
+
+          <!-- Home Footer Navigation -->
+          <footer class="app-footer" id="appFooter">
+            <div class="footer-left">
+              <span class="footer-brand">STAUNT</span>
+              <span class="footer-sep">•</span>
+              <span class="footer-tagline">India Technology</span>
+              <span class="footer-sep">•</span>
+              <a href="/about" class="footer-link">About</a>
+              <span class="footer-sep">•</span>
+              <a href="/privacy" class="footer-link">Privacy</a>
+              <span class="footer-sep">•</span>
+              <a href="/terms" class="footer-link">Terms</a>
+              <span class="footer-sep">•</span>
+              <a href="/help" class="footer-link">Help</a>
+              <span class="footer-sep">•</span>
+              <a href="/feedback" class="footer-link">Feedback</a>
+            </div>
+            <div class="footer-right">
+              <span class="footer-motto">🕊️ A more open internet for a better India</span>
+              <div class="footer-social-icons">
+                <a href="https://github.com/keshavs40344/STAUNT" target="_blank" rel="noopener noreferrer" title="GitHub">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+              </div>
+            </div>
+          </footer>
+        </main>
+
+
+        <!-- ================= SEARCH RESULTS VIEW ================= -->
+        <main class="results-container" id="resultsView" style="display: none;">
+          <!-- Category Tabs Navigation -->
+          <nav class="tabs-bar" id="categoriesBar">
+            <button class="tab-btn active" data-tab="all">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <span>All</span>
+            </button>
+            <button class="tab-btn" data-tab="images">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <span>Images</span>
+            </button>
+            <button class="tab-btn" data-tab="news">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+              <span>News</span>
+            </button>
+            <button class="tab-btn" data-tab="videos">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect width="15" height="14" x="1" y="5" rx="2"/></svg>
+              <span>Videos</span>
+            </button>
+          </nav>
+
+          <!-- Search Filters Bar (Time Filters) -->
+          <div class="filters-bar" id="searchFiltersBar" style="display: none;">
+            <button class="filter-pill active" data-time="">All Time</button>
+            <button class="filter-pill" data-time="d">Past 24 Hours</button>
+            <button class="filter-pill" data-time="w">Past Week</button>
+            <button class="filter-pill" data-time="m">Past Month</button>
+            <button class="filter-pill" data-time="y">Past Year</button>
+          </div>
+
+          <!-- Results Layout -->
+          <div class="results-layout">
+            <!-- Main Results Column -->
+            <div class="results-main">
+              <div class="results-meta-bar" id="resultsMetaBar">
+                <span class="results-stats" id="resultsStats"></span>
+                <span class="results-notice" id="resultsCountNotice" style="margin-left: 12px; font-size: 0.82rem; color: var(--text-muted);"></span>
+              </div>
+
+              <!-- Instant Calculator Card -->
+              <div class="instant-calc-card" id="instantAnswerCard" style="display: none;">
+                <div class="calc-expression" id="calcExpr"></div>
+                <div class="calc-result" id="calcResult"></div>
+              </div>
+
+              <!-- Destination & Travel Intelligence Card -->
+              <div class="destination-card" id="destinationCard" style="display: none;">
+                <div class="destination-hero-img-wrap" id="destHeroImgWrap" style="display: none;">
+                  <img class="dest-hero-img" id="destHeroImg" src="" alt="Destination Photo" referrerpolicy="no-referrer" />
+                </div>
+                <div class="destination-hero">
+                  <div class="destination-top-row">
+                    <div>
+                      <div class="destination-title" id="destTitle"></div>
+                      <div class="destination-country" id="destCountry"></div>
+                    </div>
+                    <div class="destination-weather-badge" id="destWeather"></div>
+                  </div>
+                  <div class="destination-tagline" id="destTagline"></div>
+                  <div class="destination-stats-row">
+                    <span class="dest-stat-pill" id="destBestTime"></span>
+                    <span class="dest-stat-pill" id="destDuration"></span>
+                  </div>
+                </div>
+                <div class="destination-body">
+                  <div class="dest-section-title">Top Attractions</div>
+                  <div class="attractions-chips" id="destAttractions"></div>
+                  <div class="destination-thumbs-row" id="destThumbsRow"></div>
+                  <div class="destination-actions-row" style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="auth-submit-btn" id="destMapsBtn" style="width: auto; padding: 8px 16px; font-size: 0.85rem; text-decoration: none;">View Maps ↗</a>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="native-app-btn" id="destHotelsBtn" style="padding: 8px 16px; font-size: 0.85rem;">Find Hotels ↗</a>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="native-app-btn" id="destFlightsBtn" style="padding: 8px 16px; font-size: 0.85rem;">Check Flights ↗</a>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Visual Discovery Strip -->
+              <div class="visual-strip-container" id="visualStripContainer" style="display: none;">
+                <div class="visual-strip-header">
+                  <span class="visual-strip-title">Images</span>
+                  <button class="visual-strip-more" id="visualStripMoreBtn">View All Images ↗</button>
+                </div>
+                <div class="visual-strip-scroll" id="visualStripScroll"></div>
+              </div>
+
+              <!-- AI Overview Synthesis Card -->
+              <div class="ai-overview-card" id="aiOverviewCard" style="display: none;">
+                <div class="ai-overview-header">
+                  <div class="ai-header-left">
+                    <span class="ai-spark-icon">✨</span>
+                    <span class="ai-title">STAUNT Overview</span>
+                  </div>
+                  <div class="ai-header-actions">
+                    <button class="ai-action-btn" id="copyOverviewBtn" title="Copy text">Copy</button>
+                    <button class="ai-action-btn" id="collapseOverviewBtn" title="Collapse">Collapse</button>
+                  </div>
+                </div>
+                <div class="ai-overview-body" id="aiOverviewBody">
+                  <div id="aiContent">
+                    <div class="ai-skeleton-wrap">
+                      <div class="ai-skeleton-line" style="width: 90%;"></div>
+                      <div class="ai-skeleton-line" style="width: 75%;"></div>
+                      <div class="ai-skeleton-line" style="width: 82%;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="ai-sources-tray" id="aiSourcesTray" style="display: none;">
+                  <span class="sources-label">Sources:</span>
+                  <div class="sources-list" id="aiSourcesList">
+                    <div id="aiSources"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Scholarly Research Consensus Card -->
+              <div class="research-card" id="researchCard" style="display: none; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px 22px; margin-bottom: 24px;">
+                <h3 id="researchHeading" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">Scholarly Consensus</h3>
+                <p id="researchSummary" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px;"></p>
+                <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Key Findings</div>
+                <ul id="researchFindings" style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px;"></ul>
+                <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap;">
+                  <div><strong>Methodology:</strong> <span id="researchMethodology"></span></div>
+                  <div><strong>Limitations:</strong> <span id="researchLimitations"></span></div>
+                </div>
+              </div>
+
+              <!-- Production Entity & Person SERP Card -->
+              <div class="entity-profile-card" id="entityProfileCard" style="display: none;">
+                <div class="entity-main-header">
+                  <div class="entity-avatar-wrap" id="entityAvatarWrap" style="display: none;">
+                    <img class="entity-avatar" id="entityAvatar" src="" alt="Profile Image" referrerpolicy="no-referrer" />
+                  </div>
+                  <div class="entity-info-col">
+                    <div class="entity-name-row">
+                      <h2 class="entity-name" id="entityName"></h2>
+                      <span class="entity-role-badge" id="entityRole"></span>
+                      <span class="entity-confidence-badge" id="entityConfidence"></span>
+                    </div>
+                    <p class="entity-bio" id="entityBio"></p>
+                    <div class="entity-links-row" id="entityLinksRow">
+                      <a href="#" target="_blank" rel="noopener noreferrer" class="entity-btn site-btn" id="entityWebsiteBtn" style="display: none;">Official Website ↗</a>
+                      <a href="#" target="_blank" rel="noopener noreferrer" class="entity-btn wiki-btn" id="entityWikiBtn" style="display: none;">Wikipedia ↗</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="entity-profiles-section" id="entityProfilesSection" style="display: none;">
+                  <div class="entity-profiles-label">Verified Profiles & Web Presence</div>
+                  <div class="entity-profiles-grid" id="entityProfilesGrid"></div>
+                </div>
+                <div class="entity-media-clusters" id="entityMediaClusters" style="display: none;">
+                  <div class="entity-cluster-box" id="entityNewsCluster" style="display: none;">
+                    <div class="entity-cluster-title">Recent News</div>
+                    <div id="entityNewsList"></div>
+                  </div>
+                  <div class="entity-cluster-box" id="entityVideosCluster" style="display: none;">
+                    <div class="entity-cluster-title">Featured Videos</div>
+                    <div id="entityVideosList"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Web Search Results List -->
+              <div class="web-results search-results-list" id="webResultsSection"></div>
+              <div class="search-results-list" id="searchResultsList" style="display: none;"></div>
+
+              <!-- Vertical Tab Results Sections -->
+              <div class="images-grid" id="imagesSection" style="display: none;"></div>
+              <div class="videos-grid" id="videosSection" style="display: none;"></div>
+              <div class="docs-results" id="docsSection" style="display: none;"></div>
+              <div class="code-results" id="codeSection" style="display: none;"></div>
+              <div class="shopping-results" id="shoppingSection" style="display: none;"></div>
+              <div class="jobs-results" id="jobsSection" style="display: none;"></div>
+
+              <!-- Empty State (Refined with quick actions & category awareness) -->
+              <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon" id="emptyIcon">🔍</div>
+                <h3 class="empty-title" id="emptyTitle">No search results found</h3>
+                <p class="empty-desc" id="emptyDesc">Try checking your spelling or use more general keywords.</p>
+                <div class="empty-actions" id="emptyActions">
+                  <button class="empty-action-btn primary" id="emptySwitchAllBtn" type="button" style="display: none;">Search in All Results</button>
+                  <button class="empty-action-btn" id="emptyRetryBtn" type="button">Retry Search</button>
+                </div>
+                <div class="empty-tips-card" id="emptyTipsCard">
+                  <div class="empty-tips-title">Search suggestions</div>
+                  <ul class="empty-tips-list">
+                    <li>Ensure all words are spelled correctly.</li>
+                    <li>Try more general or alternate keywords.</li>
+                    <li>Switch to <strong>All</strong> to view broad web results and profiles.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Pagination Controls -->
+              <div class="pagination-bar" id="paginationBar" style="display: none;">
+                <button class="page-btn" id="prevPageBtn" disabled>← Previous</button>
+                <span class="page-indicator" id="pageIndicator">Page 1</span>
+                <button class="page-btn" id="nextPageBtn">Next →</button>
+              </div>
+            </div>
+
+            <!-- Sidebar Column (Wikipedia Knowledge Graph & Related) -->
+            <aside class="results-sidebar" id="resultsSidebar">
+              <div class="knowledge-card" id="knowledgeCard" style="display: none;">
+                <div class="kc-img-wrap" id="kcImgWrap" style="display: none;">
+                  <img id="kcImg" src="" alt="Knowledge Entity" referrerpolicy="no-referrer" />
+                </div>
+                <div class="kc-content">
+                  <h3 class="kc-title" id="kcTitle">Entity</h3>
+                  <p class="kc-snippet" id="kcSnippet"></p>
+                  <div class="kc-attrs" id="kcAttrs"></div>
+                  <a href="#" target="_blank" rel="noopener noreferrer" class="kc-link" id="kcLink">Read on Wikipedia ↗</a>
+                </div>
+              </div>
+
+              <!-- Did You Mean Suggestion -->
+              <div class="did-you-mean-card" id="didYouMeanCard" style="display: none;">
+                <span class="dym-label">Did you mean:</span>
+                <a href="#" class="dym-link" id="dymLink">suggestion</a>
+              </div>
+
+              <!-- Related Searches -->
+              <div class="related-queries-card" id="relatedQueriesCard" style="margin-top: 18px;">
+                <h4 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px;">Related Searches</h4>
+                <div class="related-chips-list" id="relatedQueriesList"></div>
+              </div>
+            </aside>
+          </div>
+        </main>
+
+      </div>
     </div>
-  </main>
+  </div>
+
+  <!-- ================= MODALS & POPUPS ================= -->
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="settings-modal-content">
+      <div class="modal-header">
+        <h3>Browser Settings & Privacy</h3>
+        <button class="modal-close-btn" id="closeSettingsModal">✕</button>
+      </div>
+      <div class="modal-body settings-body">
+        
+        <!-- Wallpaper Preferences -->
+        <div class="settings-section">
+          <h4>Dynamic Wallpapers</h4>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Auto-Rotate Indian Landscapes</div>
+              <div class="setting-desc">Smoothly rotates between Himalayan, coastal, desert, and heritage landscapes</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingAutoWallpaper" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Rotation Interval</div>
+              <div class="setting-desc">How often the desktop wallpaper crossfades</div>
+            </div>
+            <select class="settings-select" id="settingWallpaperInterval">
+              <option value="30">30 seconds</option>
+              <option value="60" selected>1 minute</option>
+              <option value="300">5 minutes</option>
+              <option value="0">Do not rotate</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Reduced Motion</div>
+              <div class="setting-desc">Disables crossfade transitions for performance and accessibility</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingReducedMotion" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Search Preferences -->
+        <div class="settings-section">
+          <h4>Search Preferences</h4>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">SafeSearch Filter</div>
+              <div class="setting-desc">Filter explicit content from web and image queries</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingSafeSearch" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Open Links in New Tab</div>
+              <div class="setting-desc">External search result links open in a new tab</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingNewTab" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Search History</div>
+              <div class="setting-desc">Save queries locally on this device only (never uploaded to cloud)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingHistory" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-section">
+          <h4>Data & Storage</h4>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Reset Shortcuts to Default</div>
+              <div class="setting-desc">Restore initial 8 Indian & global tech shortcuts</div>
+            </div>
+            <button type="button" class="empty-action-btn" id="resetShortcutsBtn">Reset</button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Clear Local Search History</div>
+              <div class="setting-desc">Erase all query history stored in local storage</div>
+            </div>
+            <button type="button" class="empty-action-btn" id="clearHistoryBtn">Clear</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT SHORTCUT MODAL -->
+  <div class="modal-overlay" id="shortcutModal">
+    <div class="small-modal-content">
+      <div class="modal-header">
+        <h3 id="shortcutModalTitle">Add Shortcut</h3>
+        <button class="modal-close-btn" id="closeShortcutModal">✕</button>
+      </div>
+      <form id="shortcutForm">
+        <div class="small-modal-body">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Shortcut Name</label>
+            <input type="text" id="shortcutNameInput" class="search-input" placeholder="e.g. YouTube" required style="width: 100%; border-radius: 8px;" />
+          </div>
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Web URL</label>
+            <input type="url" id="shortcutUrlInput" class="search-input" placeholder="https://example.com" required style="width: 100%; border-radius: 8px;" />
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="empty-action-btn" id="cancelShortcutBtn">Cancel</button>
+            <button type="submit" class="auth-submit-btn" style="width: auto; padding: 8px 20px;">Save Shortcut</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- QR CODE TOOL MODAL -->
+  <div class="modal-overlay" id="qrModal">
+    <div class="small-modal-content">
+      <div class="modal-header">
+        <h3>Instant QR Code Generator</h3>
+        <button class="modal-close-btn" id="closeQrModal">✕</button>
+      </div>
+      <div class="small-modal-body" style="text-align: center;">
+        <input type="text" id="qrTextInput" class="search-input" placeholder="Enter text or URL..." value="https://staunt.vercel.app" style="width: 100%; border-radius: 8px; margin-bottom: 14px;" />
+        <div id="qrCodeContainer" style="padding: 16px; background: white; border-radius: 12px; display: inline-block; margin-bottom: 14px;">
+          <!-- QR SVG / Img generated dynamically -->
+          <img id="qrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://staunt.vercel.app" alt="QR Code" style="width: 160px; height: 160px; display: block;" />
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">Scan with any smartphone camera to visit link.</p>
+      </div>
+    </div>
+  </div>
 
   <!-- IMAGE LIGHTBOX MODAL -->
   <div class="modal-overlay" id="lightboxModal">
@@ -426,6 +927,6 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=52"></script>
+  <script src="/static/js/app.js?v=60"></script>
 </body>
 </html>
