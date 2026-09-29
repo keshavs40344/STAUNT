@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <linearGradient id="vSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1026" />
+      <stop offset="35%" stop-color="#1e183a" />
+      <stop offset="65%" stop-color="#581c87" />
+      <stop offset="85%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="vWater" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181329" />
+      <stop offset="40%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    <radialGradient id="vMoon" cx="25%" cy="35%" r="20%">
+      <stop offset="0%" stop-color="#fef3c7" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#7c2d12" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#vSky)" />
+  <circle cx="480" cy="380" r="140" fill="url(#vMoon)" />
+  <circle cx="480" cy="380" r="32" fill="#fffbeb" opacity="0.92" />
+
+  <!-- Distant Temple Spires & Ghat Architecture Silhouette -->
+  <path d="M0,620 L120,620 L150,530 L180,620 L240,620 L260,480 L280,620 L350,620 L370,550 L390,620 L500,620 L520,510 L540,620 L660,620 L700,440 L740,620 L840,620 L880,520 L920,620 L1040,620 L1080,460 L1120,620 L1260,620 L1300,530 L1340,620 L1460,620 L1500,490 L1540,620 L1680,620 L1720,540 L1760,620 L1920,620 L1920,740 L0,740 Z" fill="#18122b" opacity="0.9" />
+
+  <!-- Detailed Midground Ghats with Steps (Pauri) -->
+  <polygon points="0,670 1920,670 1920,760 0,760" fill="#120d20" />
+  <polygon points="0,700 1920,700 1920,780 0,780" fill="#0d0917" />
+
+  <!-- Sacred Ganges Water with Reflections -->
+  <rect y="750" width="1920" height="330" fill="url(#vWater)" />
+  <ellipse cx="480" cy="840" rx="180" ry="12" fill="#d97706" opacity="0.35" />
+  <ellipse cx="700" cy="870" rx="220" ry="16" fill="#f59e0b" opacity="0.25" />
+  <ellipse cx="1080" cy="890" rx="200" ry="14" fill="#fbbf24" opacity="0.2" />
+
+  <!-- Traditional Wooden Boat Silhouettes -->
+  <path d="M520,810 Q580,830 640,810 Q610,818 550,818 Z" fill="#030712" />
+  <line x1="580" y1="814" x2="580" y2="780" stroke="#030712" stroke-width="3" />
+  <path d="M1200,830 Q1270,855 1340,830 Q1305,840 1235,840 Z" fill="#030712" />
+  <line x1="1270" y1="835" x2="1270" y2="795" stroke="#030712" stroke-width="3" />
+
+  <!-- Vignette -->
+  <rect width="1920" height="1080" fill="#070913" opacity="0.52" />
+</svg>

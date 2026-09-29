@@ -1,0 +1,72 @@
+[
+  {
+    "id": "himachal",
+    "title": "Himachal Pradesh, India",
+    "location": "Himachal Pradesh, India",
+    "region": "Northern Himalayas",
+    "local_url": "/static/wallpapers/himachal.svg",
+    "fallback_url": "/static/wallpapers/himachal.svg",
+    "credit": "STAUNT Landscapes • Western Himalayas",
+    "accent": "#38bdf8"
+  },
+  {
+    "id": "varanasi",
+    "title": "Varanasi Ghats at Dusk",
+    "location": "Varanasi, Uttar Pradesh",
+    "region": "Ganges Riverfront",
+    "local_url": "/static/wallpapers/varanasi.svg",
+    "fallback_url": "/static/wallpapers/varanasi.svg",
+    "credit": "STAUNT Landscapes • Ancient Heritage",
+    "accent": "#f59e0b"
+  },
+  {
+    "id": "coastal",
+    "title": "Coastal Sunset & Arabian Sea",
+    "location": "Coastal India",
+    "region": "Western Ghats & Coast",
+    "local_url": "/static/wallpapers/coastal.svg",
+    "fallback_url": "/static/wallpapers/coastal.svg",
+    "credit": "STAUNT Landscapes • Arabian Sea Coast",
+    "accent": "#06b6d4"
+  },
+  {
+    "id": "teagardens",
+    "title": "Emerald Tea Gardens of Munnar",
+    "location": "Tea Gardens, Munnar",
+    "region": "Southern Highlands",
+    "local_url": "/static/wallpapers/teagardens.svg",
+    "fallback_url": "/static/wallpapers/teagardens.svg",
+    "credit": "STAUNT Landscapes • Western Ghats Flora",
+    "accent": "#10b981"
+  },
+  {
+    "id": "desert",
+    "title": "Thar Desert Golden Dunes",
+    "location": "Desert India, Rajasthan",
+    "region": "Great Indian Desert",
+    "local_url": "/static/wallpapers/desert.svg",
+    "fallback_url": "/static/wallpapers/desert.svg",
+    "credit": "STAUNT Landscapes • Thar Dunes",
+    "accent": "#f97316"
+  },
+  {
+    "id": "modern",
+    "title": "Modern India Tech Skyline",
+    "location": "Modern India",
+    "region": "Silicon Plateau & Metros",
+    "local_url": "/static/wallpapers/modern.svg",
+    "fallback_url": "/static/wallpapers/modern.svg",
+    "credit": "STAUNT Landscapes • India Technology Metros",
+    "accent": "#6366f1"
+  },
+  {
+    "id": "dal_lake",
+    "title": "Kashmir Dal Lake Reflections",
+    "location": "Dal Lake, Kashmir",
+    "region": "Kashmir Valley",
+    "local_url": "/static/wallpapers/dal_lake.svg",
+    "fallback_url": "/static/wallpapers/dal_lake.svg",
+    "credit": "STAUNT Landscapes • Valley of Flowers & Lakes",
+    "accent": "#8b5cf6"
+  }
+]

@@ -155,6 +155,21 @@ class TestDesktopSearchEngineHomepage(unittest.TestCase):
         self.assertIn("condition", data)
         self.assertIn("hourly", data)
 
+    def test_08_vercel_adapters_and_public_static_wallpapers(self):
+        """Verify that Vercel adapters exist and public static wallpaper assets are synced."""
+        api_dir = os.path.join(ROOT, "api")
+        public_wallpapers = os.path.join(ROOT, "public", "static", "wallpapers")
+
+        # Test adapter files exist
+        for adapter in ("wallpapers.py", "discover.py", "images.py", "overview.py"):
+            path = os.path.join(api_dir, adapter)
+            self.assertTrue(os.path.exists(path), f"Missing adapter {adapter}")
+
+        # Test public static wallpapers exist
+        self.assertTrue(os.path.exists(os.path.join(public_wallpapers, "manifest.json")))
+        for w in ("himachal.svg", "varanasi.svg", "coastal.svg", "teagardens.svg", "desert.svg", "modern.svg", "dal_lake.svg"):
+            self.assertTrue(os.path.exists(os.path.join(public_wallpapers, w)), f"Missing public wallpaper {w}")
+
 
 if __name__ == "__main__":
     unittest.main()

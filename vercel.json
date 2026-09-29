@@ -71,6 +71,22 @@
       "destination": "/api/releases"
     },
     {
+      "source": "/api/wallpapers",
+      "destination": "/api/wallpapers"
+    },
+    {
+      "source": "/api/discover",
+      "destination": "/api/discover"
+    },
+    {
+      "source": "/api/images",
+      "destination": "/api/images"
+    },
+    {
+      "source": "/api/overview",
+      "destination": "/api/overview"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/index"
     }

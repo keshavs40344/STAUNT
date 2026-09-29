@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329" />
+      <stop offset="35%" stop-color="#1e294b" />
+      <stop offset="65%" stop-color="#7c2d12" />
+      <stop offset="85%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="72%" cy="60%" r="40%">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="1" />
+      <stop offset="25%" stop-color="#fb923c" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#ea580c" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#7c2d12" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="mountFar" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff" />
+      <stop offset="30%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+    <linearGradient id="mountMid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#312e81" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="30%" stop-color="#1e293b" />
+      <stop offset="70%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1920" height="1080" fill="url(#skyGrad)" />
+  <circle cx="1380" cy="560" r="180" fill="url(#sunGlow)" />
+  <circle cx="1380" cy="560" r="45" fill="#fffbeb" opacity="0.95" />
+
+  <!-- Distant High Himalayan Snow Peaks -->
+  <polygon points="0,520 180,410 320,490 510,360 680,480 880,330 1060,460 1240,310 1420,440 1620,320 1780,430 1920,380 1920,720 0,720" fill="url(#mountFar)" opacity="0.85" />
+  <polygon points="180,410 240,460 320,490 380,430 510,360 560,420 680,480 750,410 880,330 940,410 1060,460 1140,390 1240,310 1310,400 1420,440 1520,370 1620,320 1710,410 1780,430 1860,390 1920,430 1920,720 0,720 0,520" fill="#ffffff" opacity="0.4" />
+
+  <!-- Mid Himalayan Mountain Ridges -->
+  <polygon points="0,580 140,510 310,610 490,490 690,620 920,480 1120,630 1310,510 1540,640 1740,530 1920,620 1920,800 0,800" fill="url(#mountMid)" opacity="0.95" />
+
+  <!-- Evergreen Pine Tree Silhouettes in Midground -->
+  <polygon points="0,670 40,630 70,660 110,610 150,650 190,600 240,650 280,590 330,650 390,580 440,640 500,590 570,660 630,610 700,670 780,620 860,680 950,610 1030,670 1110,620 1200,670 1290,610 1380,680 1470,620 1560,670 1650,600 1740,660 1830,610 1920,670 1920,820 0,820" fill="#090d16" />
+
+  <!-- Lake Surface with Golden Reflection -->
+  <rect y="740" width="1920" height="340" fill="url(#waterGrad)" />
+  <ellipse cx="1380" cy="820" rx="220" ry="15" fill="#f59e0b" opacity="0.3" filter="blur(4px)" />
+  <ellipse cx="1380" cy="870" rx="360" ry="25" fill="#ea580c" opacity="0.2" filter="blur(8px)" />
+  <ellipse cx="1380" cy="940" rx="480" ry="35" fill="#fb923c" opacity="0.12" filter="blur(12px)" />
+
+  <!-- Foreground Dark Silhouetted Pines & Rocks -->
+  <polygon points="0,780 60,690 120,780 160,710 220,800 300,730 380,820 460,750 560,840 680,810 820,850 1120,860 1400,850 1680,820 1820,760 1920,810 1920,1080 0,1080" fill="#050811" />
+  <!-- Additional pine shapes -->
+  <polygon points="60,690 50,750 70,750" fill="#03050a" />
+  <polygon points="160,710 150,770 170,770" fill="#03050a" />
+  <polygon points="300,730 290,790 310,790" fill="#03050a" />
+  <polygon points="1820,760 1810,830 1830,830" fill="#03050a" />
+
+  <!-- Atmospheric Dark Gradient Vignette for Search Engine Readability -->
+  <rect width="1920" height="1080" fill="#070a12" opacity="0.48" />
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#061c14" />
+      <stop offset="35%" stop-color="#064e3b" />
+      <stop offset="70%" stop-color="#047857" />
+      <stop offset="90%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#a7f3d0" />
+    </linearGradient>
+    <linearGradient id="hillFar" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+    <linearGradient id="hillMid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="hillNear" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#tSky)" />
+
+  <!-- Morning Mist / Sunrise Glow -->
+  <circle cx="1520" cy="460" r="160" fill="#fef08a" opacity="0.35" filter="blur(20px)" />
+  <circle cx="1520" cy="460" r="45" fill="#fef9c3" opacity="0.85" />
+
+  <!-- Far rolling hills -->
+  <path d="M0,520 Q480,420 960,500 T1920,440 L1920,1080 L0,1080 Z" fill="url(#hillFar)" opacity="0.9" />
+
+  <!-- Mid rolling hills with terrace lines -->
+  <path d="M0,620 Q560,540 1120,640 T1920,560 L1920,1080 L0,1080 Z" fill="url(#hillMid)" />
+  <!-- Terrace contours -->
+  <path d="M0,660 Q600,580 1200,680 T1920,600" stroke="#10b981" stroke-width="2" fill="none" opacity="0.4" />
+  <path d="M0,700 Q580,620 1240,720 T1920,640" stroke="#10b981" stroke-width="2" fill="none" opacity="0.4" />
+  <path d="M0,740 Q540,660 1280,760 T1920,680" stroke="#10b981" stroke-width="2" fill="none" opacity="0.4" />
+
+  <!-- Foreground lush tea garden curves -->
+  <path d="M0,780 Q450,680 900,810 Q1400,720 1920,770 L1920,1080 L0,1080 Z" fill="url(#hillNear)" />
+  <path d="M0,840 Q480,750 960,880 Q1440,780 1920,830" stroke="#34d399" stroke-width="3" fill="none" opacity="0.5" />
+  <path d="M0,900 Q500,820 1020,940 Q1500,840 1920,890" stroke="#34d399" stroke-width="3" fill="none" opacity="0.5" />
+  <path d="M0,960 Q520,890 1080,1000 Q1560,900 1920,950" stroke="#34d399" stroke-width="3" fill="none" opacity="0.5" />
+
+  <!-- Near foreground base -->
+  <path d="M0,920 Q600,880 1200,960 T1920,940 L1920,1080 L0,1080 Z" fill="#021f18" />
+
+  <!-- Vignette -->
+  <rect width="1920" height="1080" fill="#03140e" opacity="0.52" />
+</svg>
