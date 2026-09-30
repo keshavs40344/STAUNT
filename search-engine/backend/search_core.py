@@ -3,6 +3,7 @@ import re
 import json
 import time
 import logging
+import html
 import urllib.parse
 import concurrent.futures
 import requests
@@ -142,66 +143,111 @@ def search_tavily_raw(query, search_depth="basic", max_results=8, topic="general
 
 
 def search_duckduckgo_raw(query, max_results=10, time_range=None):
-    """Fallback search using DuckDuckGo HTML scraping with pooled session and timeout."""
+    """Fallback search using DuckDuckGo Lite & HTML scraping with pooled session and timeout."""
     t0 = time.time()
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9"
         }
-        url = "https://html.duckduckgo.com/html/"
-        post_data = {"q": query}
         df_map = {"day": "d", "week": "w", "month": "m", "year": "y"}
+        post_data = {"q": query}
         if time_range in df_map:
             post_data["df"] = df_map[time_range]
 
-        resp = http_session.post(url, data=post_data, headers=headers, timeout=DDG_TIMEOUT)
-        elapsed_ms = round((time.time() - t0) * 1000)
-
-        if resp.status_code not in (200, 202):
-            logger.warning(f"[PROVIDER_FAIL] provider=DuckDuckGo status={resp.status_code} elapsed={elapsed_ms}ms")
-            return {"results": [], "images": [], "provider": "failed"}
-
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(resp.text, "html.parser")
-        raw_results = soup.select(".result")
-
         results = []
-        for r in raw_results[:max_results]:
-            title_elem = r.select_one(".result__title a")
-            snippet_elem = r.select_one(".result__snippet")
-            if not title_elem:
-                continue
 
-            raw_href = title_elem.get("href", "")
-            target_url = raw_href
-            if "uddg=" in raw_href:
-                parsed = urllib.parse.parse_qs(urllib.parse.urlparse(raw_href).query)
-                if "uddg" in parsed:
-                    target_url = parsed["uddg"][0]
+        # 1. Primary: DDG Lite (lightweight, direct links, high serverless resilience)
+        try:
+            resp_lite = http_session.post("https://lite.duckduckgo.com/lite/", data=post_data, headers=headers, timeout=DDG_TIMEOUT)
+            if resp_lite.status_code in (200, 202):
+                soup_lite = BeautifulSoup(resp_lite.text, "html.parser")
+                lite_links = soup_lite.select(".result-link")
+                lite_snippets = soup_lite.select(".result-snippet")
+                for l, snip in zip(lite_links, lite_snippets):
+                    raw_href = l.get("href", "")
+                    if any(ad in raw_href for ad in ["/y.js", "ad_domain", "bing.com/aclick", "googleadservices", "duckduckgo.com", "duck.co"]):
+                        continue
+                    target_url = raw_href
+                    if "uddg=" in raw_href:
+                        parsed = urllib.parse.parse_qs(urllib.parse.urlparse(raw_href).query)
+                        if "uddg" in parsed:
+                            target_url = parsed["uddg"][0]
+                    norm_url = normalize_url(target_url)
+                    if not norm_url:
+                        continue
+                    title = html.unescape(l.get_text(strip=True))
+                    if title.lower() in ("more info", "advertisement", "ad", "feedback", "privacy"):
+                        continue
+                    snippet = html.unescape(snip.get_text(strip=True)) if snip else ""
+                    domain = urllib.parse.urlsplit(norm_url).netloc
+                    if "duckduckgo.com" in domain:
+                        continue
+                    res_dict = {
+                        "title": title,
+                        "url": norm_url,
+                        "domain": domain,
+                        "favicon": f"https://www.google.com/s2/favicons?domain={domain}&sz=64" if domain else "",
+                        "snippet": safe_snippet(snippet),
+                        "score": 1.0,
+                        "published_date": ""
+                    }
+                    if validate_result(res_dict):
+                        results.append(res_dict)
+                    if len(results) >= max_results:
+                        break
+        except Exception as lite_err:
+            logger.warning(f"[PROVIDER_NOTE] DDG Lite note: {type(lite_err).__name__}")
 
-            norm_url = normalize_url(target_url)
-            if not norm_url:
-                continue
+        # 2. Secondary: DDG HTML fallback if Lite yielded no results
+        if not results:
+            resp_html = http_session.post("https://html.duckduckgo.com/html/", data=post_data, headers=headers, timeout=DDG_TIMEOUT)
+            elapsed_ms = round((time.time() - t0) * 1000)
+            if resp_html.status_code in (200, 202):
+                soup = BeautifulSoup(resp_html.text, "html.parser")
+                raw_results = soup.select(".result")
+                for r in raw_results[:max_results]:
+                    title_elem = r.select_one(".result__title a")
+                    snippet_elem = r.select_one(".result__snippet")
+                    if not title_elem:
+                        continue
+                    raw_href = title_elem.get("href", "")
+                    if any(ad in raw_href for ad in ["/y.js", "ad_domain", "bing.com/aclick", "googleadservices", "duckduckgo.com", "duck.co"]):
+                        continue
+                    target_url = raw_href
+                    if "uddg=" in raw_href:
+                        parsed = urllib.parse.parse_qs(urllib.parse.urlparse(raw_href).query)
+                        if "uddg" in parsed:
+                            target_url = parsed["uddg"][0]
+                    norm_url = normalize_url(target_url)
+                    if not norm_url:
+                        continue
+                    title = html.unescape(title_elem.get_text(strip=True))
+                    if title.lower() in ("more info", "advertisement", "ad", "feedback", "privacy"):
+                        continue
+                    snippet = html.unescape(snippet_elem.get_text(strip=True)) if snippet_elem else ""
+                    domain = urllib.parse.urlsplit(norm_url).netloc
+                    if "duckduckgo.com" in domain:
+                        continue
+                    res_dict = {
+                        "title": title,
+                        "url": norm_url,
+                        "domain": domain,
+                        "favicon": f"https://www.google.com/s2/favicons?domain={domain}&sz=64" if domain else "",
+                        "snippet": safe_snippet(snippet),
+                        "score": 1.0,
+                        "published_date": ""
+                    }
+                    if validate_result(res_dict):
+                        results.append(res_dict)
+            else:
+                logger.warning(f"[PROVIDER_FAIL] provider=DuckDuckGo status={resp_html.status_code} elapsed={elapsed_ms}ms")
 
-            title = title_elem.get_text(strip=True)
-            snippet = snippet_elem.get_text(strip=True) if snippet_elem else ""
-            domain = urllib.parse.urlsplit(norm_url).netloc
-
-            res_dict = {
-                "title": title,
-                "url": norm_url,
-                "domain": domain,
-                "favicon": f"https://www.google.com/s2/favicons?domain={domain}&sz=64" if domain else "",
-                "snippet": safe_snippet(snippet),
-                "score": 1.0,
-                "published_date": ""
-            }
-            if validate_result(res_dict):
-                results.append(res_dict)
-
-        return {"results": results, "images": [], "provider": "duckduckgo"}
+        if results:
+            return {"results": results, "images": [], "provider": "duckduckgo"}
+        return {"results": [], "images": [], "provider": "failed"}
     except requests.exceptions.Timeout:
         elapsed_ms = round((time.time() - t0) * 1000)
         logger.warning(f"[PROVIDER_FAIL] provider=DuckDuckGo status=TIMEOUT elapsed={elapsed_ms}ms")
@@ -215,7 +261,12 @@ def search_duckduckgo_raw(query, max_results=10, time_range=None):
 def search_wikipedia_fallback(query, max_results=6):
     """Zero-auth fallback search using Wikipedia API when commercial providers fail or bot-check."""
     try:
-        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(query)}&format=json&srlimit={max_results}"
+        clean_q = query.strip()
+        # Strip question phrasing to ensure direct entity matching
+        match_nl = re.match(r"^(?:who\s+(?:is|was)|what\s+(?:is|was)|where\s+(?:is|was)|tell\s+me\s+about|explain)\s+(.+)$", clean_q, re.I)
+        search_term = match_nl.group(1).strip() if match_nl else clean_q
+
+        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(search_term)}&format=json&srlimit={max_results}"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 (StauntSearch; https://staunt.vercel.app)"
         }
@@ -224,13 +275,16 @@ def search_wikipedia_fallback(query, max_results=6):
             data = resp.json()
             results = []
             for item in data.get("query", {}).get("search", []):
-                title = (item.get("title") or "").strip()
+                raw_title = (item.get("title") or "").strip()
+                title = html.unescape(raw_title)
                 page_url = f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title.replace(' ', '_'))}"
-                clean_snippet = re.sub(r"<[^>]+>", "", item.get("snippet", ""))
+                raw_snip = re.sub(r"<[^>]+>", "", item.get("snippet", ""))
+                clean_snippet = html.unescape(raw_snip).strip()
+                domain = "en.wikipedia.org"
                 res_dict = {
                     "title": title,
                     "url": page_url,
-                    "domain": "en.wikipedia.org",
+                    "domain": domain,
                     "favicon": "https://www.google.com/s2/favicons?domain=en.wikipedia.org&sz=64",
                     "snippet": safe_snippet(clean_snippet),
                     "score": 0.9,
