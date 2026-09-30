@@ -461,6 +461,14 @@ def get_destination_intel(query):
     if len(clean_q) < 3 or len(clean_q.split()) > 5:
         return None
 
+    # Immediate hard guard against non-destinations (e.g. programming languages, software, code)
+    non_dest_keywords = [
+        "programming", "language", "python", "software", "algorithm",
+        "code", "operating system", "framework", "library", "tutorial", "course", "github"
+    ]
+    if any(k in clean_q.lower() for k in non_dest_keywords):
+        return None
+
     # Fast intent filter: check if 1-3 words or matches travel clues
     travel_clues = ["weather", "visit", "travel", "city", "hotel", "flights", "attractions", "tour", "beach", "capital", "island", "resort", "monument", "where is", "tourism in", "places in"]
     words = clean_q.lower().split()
@@ -525,6 +533,15 @@ If NO (e.g., it's a person, company, programming question, animal, or product), 
         except Exception as e:
             logger.warning(f"Destination check note: {type(e).__name__}")
 
+    # Guard against non-destinations (e.g. programming languages, software, mathematics, entities)
+    non_dest_keywords = [
+        "programming", "language", "python", "software", "algorithm",
+        "code", "operating system", "framework", "library", "tutorial"
+    ]
+    if any(k in clean_q.lower() for k in non_dest_keywords):
+        DESTINATION_CACHE[cache_key] = None
+        return None
+
     # Fallback to Wikipedia Place Detection (Zero-Token fallback)
     try:
         wiki_res = search_core.search_wikipedia_fallback(clean_q, max_results=3)
@@ -532,7 +549,8 @@ If NO (e.g., it's a person, company, programming question, animal, or product), 
         if results:
             first = results[0]
             snippet = (first.get("snippet", "")).lower()
-            if any(w in snippet for w in ["city", "capital", "island", "state", "country", "destination", "coastal", "mountain", "beach", "district", "town", "resort", "tourism", "monument", "peninsula"]):
+            place_pattern = r"\b(capital city|coastal city|tourist destination|beach resort|mountain range|island nation|district of|province of|town in|city in|state of)\b"
+            if re.search(place_pattern, snippet, re.I):
                 name = first.get("title", clean_q.title())
                 img_list = get_destination_images(name)
                 fb_data = {

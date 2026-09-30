@@ -78,6 +78,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
@@ -5411,21 +5416,67 @@ body.in-search-mode .top-nav-categories {
 }
 
 body.in-search-mode .nav-rail {
-  width: 64px;
+  width: 64px !important;
+  min-width: 64px !important;
 }
 
+body.in-search-mode .rail-label,
 body.in-search-mode .nav-rail-item span,
 body.in-search-mode .nav-rail-section-label {
-  display: none;
+  display: none !important;
 }
 
+body.in-search-mode .rail-item,
 body.in-search-mode .nav-rail-item {
-  justify-content: center;
-  padding: 10px 0;
+  justify-content: center !important;
+  padding: 12px 0 !important;
+  width: 100% !important;
 }
 
 body.in-search-mode .app-main {
   background: var(--bg-primary);
+}
+
+@media (max-width: 768px) {
+  body.in-search-mode .nav-rail {
+    display: none !important;
+  }
+  body.in-search-mode .top-weather-pill,
+  body.in-search-mode .top-clock-display,
+  body.in-search-mode .brand-badge,
+  body.in-search-mode .brand-text-wrap {
+    display: none !important;
+  }
+  body.in-search-mode .app-header {
+    padding: 0 10px !important;
+    gap: 8px !important;
+  }
+  body.in-search-mode .header-search-wrapper {
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  body.in-search-mode .header-search-wrapper .search-form {
+    width: 100% !important;
+  }
+  body.in-search-mode .header-actions {
+    gap: 2px !important;
+  }
+}
+
+[data-theme="light"] .home-search-input {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .home-search-input::placeholder {
+  color: #64748b;
+}
+
+[data-theme="light"] .home-voice-btn,
+[data-theme="light"] .home-visual-btn {
+  color: #475569;
 }
 
 /* Skeleton Loading Shimmer */

@@ -159,7 +159,7 @@ def search_duckduckgo_raw(query, max_results=10, time_range=None):
         resp = http_session.post(url, data=post_data, headers=headers, timeout=DDG_TIMEOUT)
         elapsed_ms = round((time.time() - t0) * 1000)
 
-        if resp.status_code != 200:
+        if resp.status_code not in (200, 202):
             logger.warning(f"[PROVIDER_FAIL] provider=DuckDuckGo status={resp.status_code} elapsed={elapsed_ms}ms")
             return {"results": [], "images": [], "provider": "failed"}
 
@@ -321,6 +321,26 @@ def execute_web_query(query, max_results=8, topic="general", include_images=True
         if wiki_fallback.get("results"):
             deduped = wiki_fallback.get("results", [])
             active_provider = "wikipedia_fallback"
+
+    if not deduped:
+        clean_q = query.strip()
+        if re.match(r"^[a-zA-Z0-9_-]{3,39}$", clean_q) and not any(w in clean_q.lower() for w in ("the", "and", "news", "video", "photo", "image", "what", "how", "why")):
+            try:
+                head_resp = http_session.head(f"https://github.com/{clean_q}", headers={"User-Agent": "STAUNT-Search-Engine"}, timeout=(0.8, 1.2), allow_redirects=True)
+                if head_resp.status_code == 200:
+                    gh_user = clean_q
+                    deduped = [{
+                        "title": f"{gh_user} · GitHub Developer Profile",
+                        "url": f"https://github.com/{gh_user}",
+                        "snippet": f"Public repositories, open source contributions, software engineering projects, and developer profile for {gh_user} on GitHub.",
+                        "domain": "github.com",
+                        "favicon": "https://www.google.com/s2/favicons?domain=github.com&sz=64",
+                        "thumbnail": f"https://github.com/{gh_user}.png",
+                        "source": "github"
+                    }]
+                    active_provider = "github_profile"
+            except Exception:
+                pass
 
     return {
         "results": deduped,
