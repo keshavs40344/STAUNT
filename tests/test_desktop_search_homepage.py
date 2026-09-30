@@ -170,6 +170,44 @@ class TestDesktopSearchEngineHomepage(unittest.TestCase):
         for w in ("himachal.svg", "varanasi.svg", "coastal.svg", "teagardens.svg", "desert.svg", "modern.svg", "dal_lake.svg"):
             self.assertTrue(os.path.exists(os.path.join(public_wallpapers, w)), f"Missing public wallpaper {w}")
 
+    def test_09_desktop_web_search_engine_ux_and_navigation(self):
+        """Verify web search engine hero actions, clean footer, zero-overflow CSS, and history/arrow nav in JS."""
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+
+        # 1. Search action buttons
+        self.assertIn('id="homeSearchBtn"', html)
+        self.assertIn('id="homeLuckyBtn"', html)
+        self.assertIn("STAUNT Search", html)
+        self.assertIn("I'm Feeling Lucky", html)
+
+        # 2. Header and footer links
+        self.assertIn("Discover", html)
+        self.assertIn("Apps", html)
+        self.assertIn("Privacy", html)
+        self.assertIn("About STAUNT", html)
+        self.assertIn("Downloads", html)
+        self.assertIn("v5.4", html)
+
+        # 3. CSS zero-overflow and layout rules
+        css_path = os.path.join(SEARCH_STATIC, "css", "style.css")
+        with open(css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+        self.assertIn("overflow-x: hidden !important", css)
+        self.assertIn(".nav-rail {\n  display: none !important;", css)
+        self.assertIn(".desktop-dashboard {\n  display: none !important;", css)
+
+        # 4. JS navigation and history guards
+        js_path = os.path.join(SEARCH_STATIC, "js", "app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        self.assertIn("isPopState", js)
+        self.assertIn("initKeyboardNavigation", js)
+        self.assertIn("ArrowLeft", js)
+        self.assertIn("ArrowRight", js)
+        self.assertIn("returnToHome", js)
+
 
 if __name__ == "__main__":
     unittest.main()

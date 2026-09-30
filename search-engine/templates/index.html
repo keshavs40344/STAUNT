@@ -93,6 +93,11 @@
 
       <!-- Right Header Actions -->
       <div class="header-actions">
+        <!-- Clean Web Search Engine Header Links -->
+        <a href="/discover" class="header-nav-link header-nav-link-right">Discover</a>
+        <a href="/download" class="header-nav-link header-nav-link-right">Apps</a>
+        <a href="/privacy" class="header-nav-link header-nav-link-right">Privacy</a>
+
         <!-- Weather & Location Pill -->
         <div class="top-weather-pill" id="topWeatherPill" title="Current weather and location">
           <span class="pill-loc">📍 <span id="topWeatherCity">Delhi, India</span></span>
@@ -237,13 +242,20 @@
               <div class="suggest-box" id="suggestBoxHome"></div>
             </div>
 
+            <!-- Conventional Search Action Buttons -->
+            <div class="hero-actions-row">
+              <button type="button" class="hero-action-btn" id="homeSearchBtn">STAUNT Search</button>
+              <button type="button" class="hero-action-btn lucky-btn" id="homeLuckyBtn">I'm Feeling Lucky</button>
+            </div>
+
             <!-- Search Suggestion Chips (Reference Match) -->
             <div class="search-chips-row" id="searchChipsRow">
               <button type="button" class="query-chip" data-query="India election 2026">India election 2026</button>
               <button type="button" class="query-chip" data-query="ISRO latest news">ISRO latest news</button>
               <button type="button" class="query-chip" data-query="Python tutorial">Python tutorial</button>
               <button type="button" class="query-chip" data-query="Gold price today">Gold price today</button>
-              <button type="button" class="query-chip" data-query="Best laptops 2026">Best laptops 2026</button>
+              <button type="button" class="query-chip" data-query="Why is the sky blue">Why is the sky blue</button>
+              <button type="button" class="query-chip" data-query="CA vs CMA">CA vs CMA</button>
             </div>
 
             <!-- Shortcuts Row (Reference Match) -->
@@ -463,24 +475,22 @@
           <!-- Home Footer Navigation -->
           <footer class="app-footer" id="appFooter">
             <div class="footer-left">
-              <span class="footer-brand">STAUNT</span>
-              <span class="footer-sep">•</span>
-              <span class="footer-tagline">India Technology</span>
-              <span class="footer-sep">•</span>
-              <a href="/about" class="footer-link">About</a>
+              <span class="footer-country">🇮🇳 India</span>
               <span class="footer-sep">•</span>
               <a href="/privacy" class="footer-link">Privacy</a>
               <span class="footer-sep">•</span>
               <a href="/terms" class="footer-link">Terms</a>
               <span class="footer-sep">•</span>
-              <a href="/help" class="footer-link">Help</a>
+              <a href="/about" class="footer-link">About STAUNT</a>
               <span class="footer-sep">•</span>
-              <a href="/feedback" class="footer-link">Feedback</a>
+              <a href="/download" class="footer-link">Downloads</a>
+              <span class="footer-sep">•</span>
+              <span class="footer-version">v5.4</span>
             </div>
             <div class="footer-right">
-              <span class="footer-motto">🕊️ A more open internet for a better India</span>
+              <span class="footer-motto">🕊️ Sovereign, Open Web Discovery</span>
               <div class="footer-social-icons">
-                <a href="https://github.com/keshavs40344/STAUNT" target="_blank" rel="noopener noreferrer" title="GitHub">
+                <a href="https://github.com/keshavs40344/STAUNT" target="_blank" rel="noopener noreferrer" title="STAUNT GitHub Repository">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
                 </a>
               </div>

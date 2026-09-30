@@ -231,16 +231,28 @@ document.addEventListener("DOMContentLoaded", () => {
   setupClearBtn(homeInput, homeClearBtn);
   setupClearBtn(headerInput, headerClearBtn);
 
+  function returnToHome(pushHistory = true) {
+    document.body.classList.remove("in-search-mode");
+    if (resultsView) {
+      resultsView.classList.remove("active");
+      resultsView.style.display = "none";
+    }
+    if (homeView) homeView.style.display = "flex";
+    if (headerSearchWrap) headerSearchWrap.style.display = "none";
+    if (homeInput) homeInput.value = "";
+    if (headerInput) headerInput.value = "";
+    currentQuery = "";
+    if (paginationBar) paginationBar.style.display = "none";
+    if (pushHistory && (window.location.search || window.location.pathname !== "/")) {
+      try {
+        window.history.pushState({ home: true }, "", "/");
+      } catch (e) {}
+    }
+  }
+
   // Logo returns to home view
   brandLogo.addEventListener("click", () => {
-    document.body.classList.remove("in-search-mode");
-    resultsView.classList.remove("active");
-    resultsView.style.display = "none";
-    homeView.style.display = "flex";
-    headerSearchWrap.style.display = "none";
-    homeInput.value = "";
-    headerInput.value = "";
-    currentQuery = "";
+    returnToHome(true);
   });
 
   // --- Guest Local Search History (Phase 4 & 11) ---
@@ -650,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSearchPage = 1;
 
   // --- Core Search Execution ---
-  async function executeSearch(query, category = "all", time = "", page = 1) {
+  async function executeSearch(query, category = "all", time = "", page = 1, isPopState = false) {
     activeSearchId++;
     const thisSearchId = activeSearchId;
     currentSearchPage = page || 1;
@@ -694,31 +706,33 @@ document.addEventListener("DOMContentLoaded", () => {
     headerSearchWrap.style.display = "flex";
     headerInput.value = query;
 
-    // Sync URL without reload
-    try {
-      const url = new URL(window.location);
-      url.searchParams.set("q", query);
-      if (category && category !== "all") {
-        url.searchParams.set("category", category);
-      } else {
-        url.searchParams.delete("category");
-      }
-      if (currentTimeFilter) {
-        url.searchParams.set("time", currentTimeFilter);
-      } else {
-        url.searchParams.delete("time");
-      }
-      if (page && page > 1) {
-        url.searchParams.set("page", page);
-      } else {
-        url.searchParams.delete("page");
-      }
-      if (window.location.search !== url.search) {
-        window.history.pushState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
-      } else {
-        window.history.replaceState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
-      }
-    } catch (e) {}
+    // Sync URL without reload (do not pushState during popstate event)
+    if (!isPopState) {
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set("q", query);
+        if (category && category !== "all") {
+          url.searchParams.set("category", category);
+        } else {
+          url.searchParams.delete("category");
+        }
+        if (currentTimeFilter) {
+          url.searchParams.set("time", currentTimeFilter);
+        } else {
+          url.searchParams.delete("time");
+        }
+        if (page && page > 1) {
+          url.searchParams.set("page", page);
+        } else {
+          url.searchParams.delete("page");
+        }
+        if (window.location.search !== url.search) {
+          window.history.pushState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
+        } else {
+          window.history.replaceState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
+        }
+      } catch (e) {}
+    }
 
     // Reset section visibilities
     if (instantAnswerCard) instantAnswerCard.style.display = "none";
@@ -2271,7 +2285,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Initial URL Query Param Check (e.g. ?q=World+Tech+news+today) ---
-  function checkUrlParams() {
+  function checkUrlParams(isPopState = false) {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     const cat = params.get("category") || "all";
@@ -2287,24 +2301,15 @@ document.addEventListener("DOMContentLoaded", () => {
           btn.classList.remove("active");
         }
       });
-      executeSearch(q.trim(), cat, time, page);
+      executeSearch(q.trim(), cat, time, page, isPopState);
     } else {
       // Cleanly reset back to homeView when navigating back with browser button
-      document.body.classList.remove("in-search-mode");
-      if (resultsView) {
-        resultsView.style.display = "none";
-        resultsView.classList.remove("active");
-      }
-      if (homeView) homeView.style.display = "flex";
-      if (headerSearchWrap) headerSearchWrap.style.display = "none";
-      if (homeInput) homeInput.value = "";
-      if (headerInput) headerInput.value = "";
-      if (paginationBar) paginationBar.style.display = "none";
+      returnToHome(false);
     }
   }
 
   window.addEventListener("popstate", () => {
-    checkUrlParams();
+    checkUrlParams(true);
   });
 
   // --- BING-STYLE DYNAMIC WALLPAPERS ---
@@ -3045,13 +3050,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (item.id === "navHome") {
-          homeView.style.display = "block";
-          resultsView.style.display = "none";
-          headerSearchWrap.style.display = "none";
-          currentQuery = "";
-          homeInput.value = "";
-          headerInput.value = "";
-          history.pushState(null, "", "/");
+          returnToHome(true);
           return;
         }
 
@@ -3334,6 +3333,95 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- 10. HERO SEARCH ACTIONS ("STAUNT Search" & "I'm Feeling Lucky") ---
+  function initHeroSearchActions() {
+    const homeSearchBtn = document.getElementById("homeSearchBtn");
+    const homeLuckyBtn = document.getElementById("homeLuckyBtn");
+
+    if (homeSearchBtn) {
+      homeSearchBtn.addEventListener("click", () => {
+        const q = (homeInput ? homeInput.value : "").trim();
+        if (q) {
+          if (headerInput) headerInput.value = q;
+          executeSearch(q, "all");
+        } else if (homeInput) {
+          homeInput.focus();
+        }
+      });
+    }
+
+    if (homeLuckyBtn) {
+      const LUCKY_TOPICS = [
+        "ISRO latest missions",
+        "Who was Albert Einstein?",
+        "Why is the sky blue?",
+        "Explain photosynthesis",
+        "CA vs CMA",
+        "What is quantum computing?",
+        "India technology roadmap 2026",
+        "Taj Mahal history and architecture"
+      ];
+      homeLuckyBtn.addEventListener("click", () => {
+        let q = (homeInput ? homeInput.value : "").trim();
+        if (!q) {
+          q = LUCKY_TOPICS[Math.floor(Math.random() * LUCKY_TOPICS.length)];
+          if (homeInput) homeInput.value = q;
+        }
+        if (headerInput) headerInput.value = q;
+        executeSearch(q, "all");
+      });
+    }
+  }
+
+  // --- 11. KEYBOARD NAVIGATION (ArrowLeft / ArrowRight) ---
+  function initKeyboardNavigation() {
+    window.addEventListener("keydown", (e) => {
+      // 1. Never intercept when user is typing inside any input, textarea, select, or contenteditable
+      const activeEl = document.activeElement;
+      if (activeEl && (
+        activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        activeEl.tagName === "SELECT" ||
+        activeEl.isContentEditable
+      )) {
+        return;
+      }
+
+      // 2. Never block native browser shortcuts like Alt+Left (Back) or Alt+Right (Forward)
+      if (e.altKey || e.ctrlKey || e.metaKey) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        if (document.body.classList.contains("in-search-mode")) {
+          if (prevPageBtn && !prevPageBtn.disabled && prevPageBtn.offsetParent !== null) {
+            e.preventDefault();
+            prevPageBtn.click();
+          }
+        } else {
+          const prevWpBtn = document.getElementById("prevWallpaperBtn");
+          if (prevWpBtn) {
+            e.preventDefault();
+            prevWpBtn.click();
+          }
+        }
+      } else if (e.key === "ArrowRight") {
+        if (document.body.classList.contains("in-search-mode")) {
+          if (nextPageBtn && !nextPageBtn.disabled && nextPageBtn.offsetParent !== null) {
+            e.preventDefault();
+            nextPageBtn.click();
+          }
+        } else {
+          const nextWpBtn = document.getElementById("nextWallpaperBtn");
+          if (nextWpBtn) {
+            e.preventDefault();
+            nextWpBtn.click();
+          }
+        }
+      }
+    });
+  }
+
   // Initializations
   initWallpaperManager();
   initShortcutsManager();
@@ -3344,6 +3432,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initQuickTools();
   initSettingsModal();
   initVoiceAndVisualSearch();
+  initHeroSearchActions();
+  initKeyboardNavigation();
 
   // Initial Auth & URL Check
   checkAuth();

@@ -867,6 +867,176 @@ header.app-header {
   opacity: 0.85;
 }
 
+/* --- DIRECT ANSWER ENGINE CARD --- */
+.direct-answer-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 22px 26px;
+  margin-bottom: 26px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast);
+}
+.answer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.answer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.answer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: rgba(212, 175, 55, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+.answer-confidence {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.answer-action-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+.answer-action-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+.answer-content {
+  font-size: 1.05rem;
+  line-height: 1.68;
+  color: var(--text-primary);
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+.answer-citation {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 2px;
+  text-decoration: none;
+  cursor: pointer;
+  vertical-align: baseline;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.answer-citation:hover {
+  background: var(--accent);
+  color: #12100e;
+  transform: translateY(-1px);
+}
+.answer-bullets {
+  margin-top: 14px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.answer-bullet-item {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.answer-sources {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+.answer-sources-title,
+.answer-followup-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.answer-sources-chips,
+.answer-followup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.answer-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--input-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+.answer-source-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: rgba(212, 175, 55, 0.08);
+}
+.answer-source-chip .chip-idx {
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+.answer-followup {
+  margin-top: 14px;
+}
+.answer-followup-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.answer-followup-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(212, 175, 55, 0.06);
+}
+.answer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
 /* --- AI OVERVIEW CARD (RESTRAINED PRODUCTION STYLE) --- */
 .ai-overview-card {
   background: var(--overview-bg);
@@ -5727,4 +5897,265 @@ body.in-search-mode .app-main {
   font-size: 0.85rem;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+/* ==========================================================================
+   STAUNT DESKTOP-FIRST WEB SEARCH ENGINE UX & ZERO-OVERFLOW SYSTEM
+   ========================================================================== */
+
+/* 1. Universal Zero Horizontal Overflow */
+html,
+body,
+.app-shell,
+.app-body,
+.content-canvas,
+.home-container,
+.results-container,
+.app-header,
+.app-footer {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. Hide Navigation Rail & Clutter on Web Search Engine */
+.nav-rail {
+  display: none !important;
+}
+
+.desktop-dashboard {
+  display: none !important;
+}
+
+.rail-toggle-btn,
+.top-weather-pill,
+.top-clock-display,
+.profile-avatar-btn,
+.brand-badge {
+  display: none !important;
+}
+
+/* 3. Header Styling for Desktop Search Engine */
+.header-nav-link {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.header-nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+}
+
+[data-theme="light"] .header-nav-link:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.in-search-mode .header-nav-link-right {
+  display: none !important;
+}
+
+body:not(.in-search-mode) .app-header .brand-logo {
+  visibility: hidden;
+}
+
+body.in-search-mode .app-header .brand-logo {
+  visibility: visible;
+  display: flex !important;
+}
+
+/* 4. Centerpiece Homepage Hero */
+.home-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: calc(100vh - 56px) !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+}
+
+.home-hero {
+  min-height: unset !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 700px !important;
+  margin: auto auto !important;
+  padding: 32px 20px 24px 20px !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+.home-logo-wrap {
+  margin-bottom: 24px !important;
+}
+
+.home-title {
+  font-size: 4.4rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.03em !important;
+  color: #ffffff !important;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  line-height: 1 !important;
+  margin-bottom: 6px !important;
+}
+
+[data-theme="light"] .home-title {
+  color: #0f172a !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+}
+
+.home-subtitle {
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 5. Search Bar & Form */
+.home-search-wrap {
+  width: 100% !important;
+  max-width: 660px !important;
+  position: relative !important;
+  margin: 0 auto !important;
+}
+
+.home-large-form {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 40px !important;
+  padding: 6px 10px 6px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="light"] .home-large-form {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+.home-large-form:focus-within {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 8px 32px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* 6. Conventional Hero Action Buttons */
+.hero-actions-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 22px;
+  margin-bottom: 20px;
+}
+
+.hero-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  padding: 10px 22px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.hero-action-btn:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.2);
+}
+
+[data-theme="light"] .hero-action-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+[data-theme="light"] .hero-action-btn:hover {
+  background: #e2e8f0;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+/* 7. Refined Suggestion Chips */
+.search-chips-row {
+  display: flex !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  max-width: 700px !important;
+  margin-bottom: 20px !important;
+}
+
+/* 8. Pinned Clean Footer */
+.app-footer {
+  width: 100% !important;
+  margin-top: auto !important;
+  border-top: 1px solid var(--border-subtle) !important;
+  background: rgba(7, 11, 20, 0.8) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  padding: 14px 28px !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="light"] .app-footer {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+/* 9. Wallpaper Overlay - Subtle Backdrop */
+.wallpaper-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at 50% 35%, rgba(7, 11, 20, 0.65) 0%, rgba(7, 11, 20, 0.92) 80%, #070b14 100%) !important;
+}
+
+[data-theme="light"] .wallpaper-overlay {
+  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.72) 0%, rgba(248, 250, 252, 0.94) 80%, #ffffff 100%) !important;
+}
+
+/* 10. Wallpaper Controls in Bottom Right */
+.wallpaper-credit-widget {
+  position: fixed !important;
+  right: 20px !important;
+  bottom: 60px !important;
+  z-index: 10 !important;
+  opacity: 0.75 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.wallpaper-credit-widget:hover {
+  opacity: 1 !important;
+}
+
+body.in-search-mode .wallpaper-credit-widget {
+  display: none !important;
 }

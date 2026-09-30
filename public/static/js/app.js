@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Results Sections
   const instantAnswerCard = document.getElementById("instantAnswerCard");
+  const directAnswerCard = document.getElementById("directAnswerCard");
   const calcExpr = document.getElementById("calcExpr");
   const calcResult = document.getElementById("calcResult");
 
@@ -230,16 +231,28 @@ document.addEventListener("DOMContentLoaded", () => {
   setupClearBtn(homeInput, homeClearBtn);
   setupClearBtn(headerInput, headerClearBtn);
 
+  function returnToHome(pushHistory = true) {
+    document.body.classList.remove("in-search-mode");
+    if (resultsView) {
+      resultsView.classList.remove("active");
+      resultsView.style.display = "none";
+    }
+    if (homeView) homeView.style.display = "flex";
+    if (headerSearchWrap) headerSearchWrap.style.display = "none";
+    if (homeInput) homeInput.value = "";
+    if (headerInput) headerInput.value = "";
+    currentQuery = "";
+    if (paginationBar) paginationBar.style.display = "none";
+    if (pushHistory && (window.location.search || window.location.pathname !== "/")) {
+      try {
+        window.history.pushState({ home: true }, "", "/");
+      } catch (e) {}
+    }
+  }
+
   // Logo returns to home view
   brandLogo.addEventListener("click", () => {
-    document.body.classList.remove("in-search-mode");
-    resultsView.classList.remove("active");
-    resultsView.style.display = "none";
-    homeView.style.display = "flex";
-    headerSearchWrap.style.display = "none";
-    homeInput.value = "";
-    headerInput.value = "";
-    currentQuery = "";
+    returnToHome(true);
   });
 
   // --- Guest Local Search History (Phase 4 & 11) ---
@@ -649,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSearchPage = 1;
 
   // --- Core Search Execution ---
-  async function executeSearch(query, category = "all", time = "", page = 1) {
+  async function executeSearch(query, category = "all", time = "", page = 1, isPopState = false) {
     activeSearchId++;
     const thisSearchId = activeSearchId;
     currentSearchPage = page || 1;
@@ -693,34 +706,37 @@ document.addEventListener("DOMContentLoaded", () => {
     headerSearchWrap.style.display = "flex";
     headerInput.value = query;
 
-    // Sync URL without reload
-    try {
-      const url = new URL(window.location);
-      url.searchParams.set("q", query);
-      if (category && category !== "all") {
-        url.searchParams.set("category", category);
-      } else {
-        url.searchParams.delete("category");
-      }
-      if (currentTimeFilter) {
-        url.searchParams.set("time", currentTimeFilter);
-      } else {
-        url.searchParams.delete("time");
-      }
-      if (page && page > 1) {
-        url.searchParams.set("page", page);
-      } else {
-        url.searchParams.delete("page");
-      }
-      if (window.location.search !== url.search) {
-        window.history.pushState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
-      } else {
-        window.history.replaceState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
-      }
-    } catch (e) {}
+    // Sync URL without reload (do not pushState during popstate event)
+    if (!isPopState) {
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set("q", query);
+        if (category && category !== "all") {
+          url.searchParams.set("category", category);
+        } else {
+          url.searchParams.delete("category");
+        }
+        if (currentTimeFilter) {
+          url.searchParams.set("time", currentTimeFilter);
+        } else {
+          url.searchParams.delete("time");
+        }
+        if (page && page > 1) {
+          url.searchParams.set("page", page);
+        } else {
+          url.searchParams.delete("page");
+        }
+        if (window.location.search !== url.search) {
+          window.history.pushState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
+        } else {
+          window.history.replaceState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
+        }
+      } catch (e) {}
+    }
 
     // Reset section visibilities
     if (instantAnswerCard) instantAnswerCard.style.display = "none";
+    if (directAnswerCard) directAnswerCard.style.display = "none";
     if (destinationCard) destinationCard.style.display = "none";
     if (destHeroImgWrap) destHeroImgWrap.style.display = "none";
     if (entityProfileCard) entityProfileCard.style.display = "none";
@@ -1062,6 +1078,13 @@ document.addEventListener("DOMContentLoaded", () => {
       instantAnswerCard.style.display = "block";
     }
 
+    // 1.5. STAUNT Direct Answer Engine Card
+    if (data.answer && directAnswerCard) {
+      renderDirectAnswerCard(data.answer, query);
+    } else if (directAnswerCard) {
+      directAnswerCard.style.display = "none";
+    }
+
     // 2. Compact Inline Visual Discovery Strip (Max 4 items, never for math)
     const previewImages = data.images || [];
     if (previewImages.length > 0 && !data.instant_answer && visualStripContainer && visualStripScroll) {
@@ -1123,7 +1146,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.scrollTo({ top: 0, behavior: "smooth" });
         };
       }
-    } else if (!data.instant_answer && previewImages.length === 0 && results.length === 0) {
+    } else if (!data.instant_answer && !data.answer && previewImages.length === 0 && results.length === 0) {
       if (paginationBar) paginationBar.style.display = "none";
       showEmptyState("all", query);
     }
@@ -1618,6 +1641,131 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       copyOverviewBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="13" height="13" x="9" y="9" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
     }, 2000);
+  });
+
+  // Render STAUNT Direct Answer Engine Card
+  function renderDirectAnswerCard(ans, query) {
+    if (!directAnswerCard) return;
+    if (!ans || !ans.is_sufficient) {
+      directAnswerCard.style.display = "none";
+      return;
+    }
+
+    const answerBadge = document.getElementById("answerBadge");
+    const answerConfidence = document.getElementById("answerConfidence");
+    const answerContent = document.getElementById("answerContent");
+    const answerBullets = document.getElementById("answerBullets");
+    const answerSourcesSection = document.getElementById("answerSourcesSection");
+    const answerSourcesChips = document.getElementById("answerSourcesChips");
+    const answerFollowupSection = document.getElementById("answerFollowupSection");
+    const answerFollowupChips = document.getElementById("answerFollowupChips");
+    const answerProviderTag = document.getElementById("answerProviderTag");
+
+    // Badge based on question_type
+    const qType = ans.question_type || "general";
+    let badgeText = "Direct Answer";
+    if (qType === "comparison") badgeText = "Comparison";
+    else if (qType === "explanation") badgeText = "Explanation";
+    else if (qType === "current_info") badgeText = "Current Information";
+    else if (qType === "hindi_hinglish") badgeText = "Direct Answer";
+    else if (qType === "math_problem") badgeText = "Step-by-Step Solution";
+
+    if (answerBadge) answerBadge.textContent = badgeText;
+    if (answerConfidence) {
+      answerConfidence.textContent = ans.confidence === "verified" ? "• Verified Sources" : "• Grounded in Web";
+    }
+
+    // Convert [1], [2] to clickable citation links
+    function linkifyCitations(text) {
+      if (!text) return "";
+      return escapeHtml(text).replace(/\[(\d+)\]/g, (match, idx) => {
+        const sIndex = parseInt(idx, 10);
+        const source = (ans.sources || []).find(s => s.index === sIndex);
+        if (source && source.url) {
+          return `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer" class="answer-citation" title="${escapeHtml(source.title || source.domain || 'Source ' + idx)}">[${idx}]</a>`;
+        }
+        return `<span class="answer-citation">[${idx}]</span>`;
+      });
+    }
+
+    if (answerContent) {
+      answerContent.innerHTML = linkifyCitations(ans.direct_answer);
+    }
+
+    // Key points bullets
+    if (answerBullets) {
+      if (ans.key_points && ans.key_points.length > 0) {
+        answerBullets.innerHTML = ans.key_points.map(pt => `
+          <div class="answer-bullet-item">• ${linkifyCitations(pt)}</div>
+        `).join("");
+        answerBullets.style.display = "flex";
+      } else {
+        answerBullets.style.display = "none";
+      }
+    }
+
+    // Sources chips
+    if (answerSourcesSection && answerSourcesChips) {
+      if (ans.sources && ans.sources.length > 0) {
+        answerSourcesChips.innerHTML = ans.sources.map(s => `
+          <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="answer-source-chip" title="${escapeHtml(s.title || s.url)}">
+            <span class="chip-idx">[${s.index}]</span>
+            <span class="chip-domain">${escapeHtml(s.domain || "Source")}</span>
+          </a>
+        `).join("");
+        answerSourcesSection.style.display = "block";
+      } else {
+        answerSourcesSection.style.display = "none";
+      }
+    }
+
+    // Follow-up related questions
+    if (answerFollowupSection && answerFollowupChips) {
+      if (ans.related_questions && ans.related_questions.length > 0) {
+        answerFollowupChips.innerHTML = ans.related_questions.map(rq => `
+          <button type="button" class="answer-followup-btn" data-query="${escapeHtml(rq)}">
+            ${escapeHtml(rq)}
+          </button>
+        `).join("");
+        answerFollowupSection.style.display = "block";
+
+        answerFollowupChips.querySelectorAll(".answer-followup-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const nextQuery = btn.getAttribute("data-query");
+            if (nextQuery) {
+              if (searchInput) searchInput.value = nextQuery;
+              executeSearch(nextQuery, "all");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          });
+        });
+      } else {
+        answerFollowupSection.style.display = "none";
+      }
+    }
+
+    // Footer provider info
+    if (answerProviderTag) {
+      answerProviderTag.textContent = ans.mode && ans.mode.startsWith("neural")
+        ? "Synthesized by STAUNT AI · Grounded in sources"
+        : "Extracted from verified public web sources";
+    }
+
+    directAnswerCard.style.display = "block";
+  }
+
+  // Copy Answer Button Handler
+  const copyAnswerBtn = document.getElementById("copyAnswerBtn");
+  safeOn(copyAnswerBtn, "click", () => {
+    const textEl = document.getElementById("answerContent");
+    const text = textEl ? textEl.innerText : "";
+    if (navigator.clipboard && text) {
+      navigator.clipboard.writeText(text);
+      copyAnswerBtn.innerHTML = `✓`;
+      setTimeout(() => {
+        copyAnswerBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="13" height="13" x="9" y="9" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+      }, 2000);
+    }
   });
 
   // Sidebar Related Queries
@@ -2137,7 +2285,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Initial URL Query Param Check (e.g. ?q=World+Tech+news+today) ---
-  function checkUrlParams() {
+  function checkUrlParams(isPopState = false) {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     const cat = params.get("category") || "all";
@@ -2153,24 +2301,15 @@ document.addEventListener("DOMContentLoaded", () => {
           btn.classList.remove("active");
         }
       });
-      executeSearch(q.trim(), cat, time, page);
+      executeSearch(q.trim(), cat, time, page, isPopState);
     } else {
       // Cleanly reset back to homeView when navigating back with browser button
-      document.body.classList.remove("in-search-mode");
-      if (resultsView) {
-        resultsView.style.display = "none";
-        resultsView.classList.remove("active");
-      }
-      if (homeView) homeView.style.display = "flex";
-      if (headerSearchWrap) headerSearchWrap.style.display = "none";
-      if (homeInput) homeInput.value = "";
-      if (headerInput) headerInput.value = "";
-      if (paginationBar) paginationBar.style.display = "none";
+      returnToHome(false);
     }
   }
 
   window.addEventListener("popstate", () => {
-    checkUrlParams();
+    checkUrlParams(true);
   });
 
   // --- BING-STYLE DYNAMIC WALLPAPERS ---
@@ -2911,13 +3050,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (item.id === "navHome") {
-          homeView.style.display = "block";
-          resultsView.style.display = "none";
-          headerSearchWrap.style.display = "none";
-          currentQuery = "";
-          homeInput.value = "";
-          headerInput.value = "";
-          history.pushState(null, "", "/");
+          returnToHome(true);
           return;
         }
 
@@ -3200,6 +3333,95 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- 10. HERO SEARCH ACTIONS ("STAUNT Search" & "I'm Feeling Lucky") ---
+  function initHeroSearchActions() {
+    const homeSearchBtn = document.getElementById("homeSearchBtn");
+    const homeLuckyBtn = document.getElementById("homeLuckyBtn");
+
+    if (homeSearchBtn) {
+      homeSearchBtn.addEventListener("click", () => {
+        const q = (homeInput ? homeInput.value : "").trim();
+        if (q) {
+          if (headerInput) headerInput.value = q;
+          executeSearch(q, "all");
+        } else if (homeInput) {
+          homeInput.focus();
+        }
+      });
+    }
+
+    if (homeLuckyBtn) {
+      const LUCKY_TOPICS = [
+        "ISRO latest missions",
+        "Who was Albert Einstein?",
+        "Why is the sky blue?",
+        "Explain photosynthesis",
+        "CA vs CMA",
+        "What is quantum computing?",
+        "India technology roadmap 2026",
+        "Taj Mahal history and architecture"
+      ];
+      homeLuckyBtn.addEventListener("click", () => {
+        let q = (homeInput ? homeInput.value : "").trim();
+        if (!q) {
+          q = LUCKY_TOPICS[Math.floor(Math.random() * LUCKY_TOPICS.length)];
+          if (homeInput) homeInput.value = q;
+        }
+        if (headerInput) headerInput.value = q;
+        executeSearch(q, "all");
+      });
+    }
+  }
+
+  // --- 11. KEYBOARD NAVIGATION (ArrowLeft / ArrowRight) ---
+  function initKeyboardNavigation() {
+    window.addEventListener("keydown", (e) => {
+      // 1. Never intercept when user is typing inside any input, textarea, select, or contenteditable
+      const activeEl = document.activeElement;
+      if (activeEl && (
+        activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        activeEl.tagName === "SELECT" ||
+        activeEl.isContentEditable
+      )) {
+        return;
+      }
+
+      // 2. Never block native browser shortcuts like Alt+Left (Back) or Alt+Right (Forward)
+      if (e.altKey || e.ctrlKey || e.metaKey) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        if (document.body.classList.contains("in-search-mode")) {
+          if (prevPageBtn && !prevPageBtn.disabled && prevPageBtn.offsetParent !== null) {
+            e.preventDefault();
+            prevPageBtn.click();
+          }
+        } else {
+          const prevWpBtn = document.getElementById("prevWallpaperBtn");
+          if (prevWpBtn) {
+            e.preventDefault();
+            prevWpBtn.click();
+          }
+        }
+      } else if (e.key === "ArrowRight") {
+        if (document.body.classList.contains("in-search-mode")) {
+          if (nextPageBtn && !nextPageBtn.disabled && nextPageBtn.offsetParent !== null) {
+            e.preventDefault();
+            nextPageBtn.click();
+          }
+        } else {
+          const nextWpBtn = document.getElementById("nextWallpaperBtn");
+          if (nextWpBtn) {
+            e.preventDefault();
+            nextWpBtn.click();
+          }
+        }
+      }
+    });
+  }
+
   // Initializations
   initWallpaperManager();
   initShortcutsManager();
@@ -3210,6 +3432,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initQuickTools();
   initSettingsModal();
   initVoiceAndVisualSearch();
+  initHeroSearchActions();
+  initKeyboardNavigation();
 
   // Initial Auth & URL Check
   checkAuth();
