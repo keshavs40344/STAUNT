@@ -799,26 +799,72 @@ header.app-header {
   text-decoration: none;
 }
 
-/* --- INSTANT CALCULATOR CARD --- */
+/* --- INSTANT CALCULATOR & CURRENCY CARD --- */
 .instant-calc-card {
   background: var(--card-bg);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 20px 26px;
+  padding: 22px 26px;
   margin-bottom: 26px;
   box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast);
+}
+.calc-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 8px;
 }
 .calc-expression {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: var(--text-secondary);
-  font-family: monospace;
+  font-family: inherit;
+  font-weight: 500;
 }
 .calc-result {
-  font-size: 2.3rem;
+  font-size: 2.2rem;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--text-primary);
   margin-top: 4px;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.calc-result.is-accent {
+  color: var(--accent);
+}
+.calc-result.is-error {
+  color: #ef4444;
+  font-size: 1.4rem;
+}
+.calc-subtext {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  font-weight: 500;
+}
+.calc-footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.calc-source-badge {
+  font-weight: 500;
+}
+.calc-disclaimer {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.85;
 }
 
 /* --- AI OVERVIEW CARD (RESTRAINED PRODUCTION STYLE) --- */

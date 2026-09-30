@@ -1003,10 +1003,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 1. ALL Category (Web Results Prioritized + Instant Answer + Sidebar Context)
   function renderAllCategory(data, query) {
-    // 1. Instant Math / Calculation
+    // 1. Instant Math / Calculation / Live Currency
     if (data.instant_answer && instantAnswerCard) {
-      if (calcExpr) calcExpr.textContent = `${data.instant_answer.expression} =`;
-      if (calcResult) calcResult.textContent = data.instant_answer.result;
+      const ia = data.instant_answer;
+      const headerBadge = document.getElementById("calcHeaderBadge");
+      const calcSubtext = document.getElementById("calcSubtext");
+      const calcFooterMeta = document.getElementById("calcFooterMeta");
+      const calcSourceBadge = document.getElementById("calcSourceBadge");
+      const calcDisclaimer = document.getElementById("calcDisclaimer");
+
+      if (ia.type === "currency" && ia.details) {
+        const d = ia.details;
+        if (headerBadge) {
+          headerBadge.textContent = "Live Currency Conversion";
+          headerBadge.style.display = "inline-flex";
+        }
+        if (calcExpr) calcExpr.textContent = d.formatted_expression || `${d.amount} ${d.from_code} =`;
+        if (calcResult) {
+          calcResult.textContent = d.formatted_result || `${d.converted_amount} ${d.to_code}`;
+          calcResult.className = "calc-result is-accent";
+        }
+        if (calcSubtext) {
+          calcSubtext.textContent = `${d.rate_text} · ${d.inverse_rate_text}`;
+          calcSubtext.style.display = "block";
+        }
+        if (calcFooterMeta) {
+          if (calcSourceBadge) {
+            calcSourceBadge.textContent = `Source: ${d.provider} · ${d.timestamp}${d.is_cached ? ' (Cached)' : ''}`;
+          }
+          if (calcDisclaimer) {
+            calcDisclaimer.textContent = d.disclaimer || "Indicative exchange rate.";
+          }
+          calcFooterMeta.style.display = "flex";
+        }
+      } else {
+        // Standard Calculator
+        if (headerBadge) {
+          headerBadge.textContent = "Calculator";
+          headerBadge.style.display = "inline-flex";
+        }
+        if (calcExpr) calcExpr.textContent = `${ia.expression} =`;
+        if (calcResult) {
+          calcResult.textContent = ia.result;
+          calcResult.className = ia.error ? "calc-result is-error" : "calc-result is-accent";
+        }
+        if (calcSubtext) {
+          if (ia.steps && !ia.error) {
+            calcSubtext.textContent = ia.steps;
+            calcSubtext.style.display = "block";
+          } else {
+            calcSubtext.style.display = "none";
+          }
+        }
+        if (calcFooterMeta) {
+          calcFooterMeta.style.display = "none";
+        }
+      }
       instantAnswerCard.style.display = "block";
     }
 
@@ -1572,8 +1624,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function updateRelatedQueries(query, data) {
     if (!relatedQueriesCard || !relatedQueriesList) return;
 
-    // 1. Math / Calculation queries: suppress related queries completely
-    if (data && (data.instant_answer || data.provider === "local_calculator")) {
+    // 1. Math / Calculation / Currency queries: suppress related queries completely
+    if (data && (data.instant_answer || data.provider === "local_calculator" || data.provider === "live_currency_converter")) {
       relatedQueriesCard.style.display = "none";
       return;
     }

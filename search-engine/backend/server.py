@@ -38,6 +38,8 @@ import crawler
 import query_engine
 import spell_checker
 import entity_engine
+import calculator_engine
+import currency_engine
 from search_validator import (
     normalize_url, validate_result, deduplicate_results, safe_snippet
 )
@@ -385,37 +387,10 @@ CACHE_TTL = 900  # 15 minutes
 
 
 def evaluate_instant_math(query):
-    """Safely calculate arithmetic or basic math functions if query is a math expression."""
-    if not query:
-        return None
-    raw_clean = query.strip()
-    clean = raw_clean.replace("x", "*").replace("×", "*").replace("÷", "/").replace("^", "**")
-
-    # Check for sqrt(n) or square root of n
-    sqrt_match = re.match(r"^(?:sqrt|square\s*root)\s*\(\s*([\d\.]+)\s*\)$", clean, re.I)
-    if sqrt_match:
-        try:
-            val = float(sqrt_match.group(1))
-            res = math.sqrt(val)
-            formatted = str(int(res)) if res.is_integer() else f"{res:.6f}".rstrip("0").rstrip(".")
-            return {"expression": raw_clean, "result": formatted}
-        except Exception:
-            return None
-
-    # Strict regex check: only digits, basic math symbols, spaces, parentheses
-    if re.match(r"^[\d\s\+\-\*\/\(\)\.\%\*]+$", clean) and any(op in clean for op in "+-*/%*"):
-        try:
-            if len(clean) > 80 or clean.count("**") > 2:
-                return None
-            res = eval(clean, {"__builtins__": None, "math": math, "sqrt": math.sqrt}, {})
-            if isinstance(res, (int, float)):
-                if isinstance(res, int) or (isinstance(res, float) and res.is_integer()):
-                    formatted = str(int(res))
-                else:
-                    formatted = f"{res:.6f}".rstrip("0").rstrip(".")
-                return {"expression": raw_clean, "result": formatted}
-        except Exception:
-            pass
+    """Safely calculate arithmetic or basic math functions using safe AST evaluator (zero eval)."""
+    res = calculator_engine.evaluate_calculator_query(query)
+    if res and not res.get("error"):
+        return {"expression": res["expression"], "result": res["result"]}
     return None
 
 
@@ -1119,15 +1094,42 @@ def api_search():
         except Exception as e:
             logger.warning(f"History record error: {e}")
 
-    # 1. PURE MATH CHECK (Zero Network Dependency)
-    instant_math = evaluate_instant_math(query)
-    if instant_math:
+    # 1. LIVE REAL-TIME CURRENCY CONVERTER CHECK (Pre-search short-circuit)
+    currency_data = currency_engine.convert_currency_query(query)
+    if currency_data:
+        return jsonify({
+            "request_id": req_id,
+            "query": query,
+            "category": category,
+            "intent": {"intent": "currency_conversion", "confidence": 1.0},
+            "instant_answer": {
+                "type": "currency",
+                "expression": currency_data.get("formatted_expression"),
+                "result": currency_data.get("formatted_result"),
+                "details": currency_data
+            },
+            "destination": None,
+            "results": [],
+            "images": [],
+            "provider": "live_currency_converter"
+        })
+
+    # 2. PURE MATHEMATICAL CALCULATOR (Safe AST evaluation, zero network dependency)
+    calc_data = calculator_engine.evaluate_calculator_query(query)
+    if calc_data:
         return jsonify({
             "request_id": req_id,
             "query": query,
             "category": category,
             "intent": {"intent": "calculation", "confidence": 1.0},
-            "instant_answer": instant_math,
+            "instant_answer": {
+                "type": "calculator",
+                "expression": calc_data.get("expression"),
+                "result": calc_data.get("result"),
+                "formatted_result": calc_data.get("formatted_result"),
+                "steps": calc_data.get("steps"),
+                "error": calc_data.get("error")
+            },
             "destination": None,
             "results": [],
             "images": [],
@@ -1760,6 +1762,46 @@ def api_suggest():
             logger.warning(f"Local db suggest note: {type(e).__name__}")
 
     return jsonify(combined_suggestions[:8])
+ 
+ 
+@app.route("/api/calculate", methods=["GET", "POST"])
+def api_calculate():
+    if request.method == "POST":
+        data = request.get_json() or {}
+        q = data.get("query") or data.get("expression", "")
+    else:
+        q = request.args.get("q", "")
+    res = calculator_engine.evaluate_calculator_query(q)
+    if not res:
+        return jsonify({"status": "invalid_expression", "error": "Not a valid mathematical expression"}), 400
+    return jsonify({"status": "success", "data": res})
+ 
+ 
+@app.route("/api/convert", methods=["GET", "POST"])
+def api_convert():
+    if request.method == "POST":
+        data = request.get_json() or {}
+        q = data.get("query", "")
+        amount = data.get("amount")
+        from_curr = data.get("from")
+        to_curr = data.get("to")
+    else:
+        q = request.args.get("q", "")
+        amount = request.args.get("amount")
+        from_curr = request.args.get("from")
+        to_curr = request.args.get("to")
+ 
+    if from_curr and to_curr:
+        try:
+            amt = float(amount) if amount else 1.0
+        except (ValueError, TypeError):
+            amt = 1.0
+        q = f"{amt:g} {from_curr} to {to_curr}"
+ 
+    res = currency_engine.convert_currency_query(q)
+    if not res:
+        return jsonify({"status": "invalid_query", "error": "Not a valid currency conversion request"}), 400
+    return jsonify({"status": "success", "data": res})
 
 
 @app.route("/api/crawler/status", methods=["GET"])

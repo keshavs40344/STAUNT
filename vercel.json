@@ -47,6 +47,14 @@
       "destination": "/api/search"
     },
     {
+      "source": "/api/calculate",
+      "destination": "/api/calculate"
+    },
+    {
+      "source": "/api/convert",
+      "destination": "/api/convert"
+    },
+    {
       "source": "/api/suggest",
       "destination": "/api/suggest"
     },
