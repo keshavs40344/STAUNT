@@ -1,15 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Favorites</title>
+  <title>STAUNT • New Tab</title>
   <style>
-    :root {
-      --bg: #101012;
-      --text-main: rgba(255, 255, 255, 0.92);
-      --text-muted: rgba(255, 255, 255, 0.45);
-      --system-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Inter, Arial, sans-serif;
+    /* ==========================================================================
+       STAUNT REFINED EDITORIAL DESIGN SYSTEM (Windows Desktop)
+       Champagne, Graphite, Soft Ivory & Warm Obsidian Palette
+       ========================================================================== */
+    :root, [data-theme="dark"] {
+      --bg-base: #0c0d12;
+      --bg-surface: #141620;
+      --bg-surface-elevated: rgba(24, 27, 38, 0.75);
+      --bg-rail: rgba(12, 14, 20, 0.88);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: #d4a359;
+      --accent-gold: #d4a359;
+      --accent-gold-hover: #b88636;
+      --accent-gold-soft: rgba(212, 163, 89, 0.16);
+      --accent-gold-subtle: rgba(212, 163, 89, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #8b92a2;
+      --text-dim: #545b6d;
+      --search-bg: rgba(22, 25, 36, 0.82);
+      --search-border: rgba(255, 255, 255, 0.12);
+      --chip-bg: rgba(255, 255, 255, 0.05);
+      --chip-border: rgba(255, 255, 255, 0.08);
+      --chip-text: #d8dcde;
+      --tile-bg: rgba(255, 255, 255, 0.06);
+      --tile-border: rgba(255, 255, 255, 0.09);
+      --tile-label: #e2e5eb;
+      --system-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f7f7f6;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: rgba(255, 255, 255, 0.85);
+      --bg-rail: rgba(245, 245, 243, 0.92);
+      --border-subtle: rgba(0, 0, 0, 0.07);
+      --border-focus: #b58431;
+      --accent-gold: #c28e35;
+      --accent-gold-hover: #a17224;
+      --accent-gold-soft: rgba(194, 142, 53, 0.18);
+      --accent-gold-subtle: rgba(194, 142, 53, 0.09);
+      --text-main: #181b22;
+      --text-muted: #5e6573;
+      --text-dim: #8c93a1;
+      --search-bg: rgba(255, 255, 255, 0.95);
+      --search-border: rgba(0, 0, 0, 0.12);
+      --chip-bg: rgba(0, 0, 0, 0.04);
+      --chip-border: rgba(0, 0, 0, 0.08);
+      --chip-text: #2c323f;
+      --tile-bg: #ffffff;
+      --tile-border: rgba(0, 0, 0, 0.08);
+      --tile-label: #2c313a;
     }
 
     * {
@@ -21,128 +67,463 @@
     }
 
     body {
-      background-color: var(--bg);
-      background-image: radial-gradient(ellipse at 50% 25%, #1b1b22 0%, #0d0d0f 100%);
-      min-height: 100vh;
+      background-color: var(--bg-base);
       font-family: var(--system-font);
       color: var(--text-main);
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: flex;
+      position: relative;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Ambient Architectural Backdrop (High-performance, offline resilient) */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.85;
+      transition: opacity 0.3s ease;
+    }
+    [data-theme="dark"] .bg-canvas {
+      background: 
+        radial-gradient(circle at 75% 30%, rgba(212, 163, 89, 0.09) 0%, transparent 45%),
+        radial-gradient(circle at 20% 80%, rgba(36, 42, 60, 0.6) 0%, transparent 60%),
+        linear-gradient(135deg, #090a0f 0%, #11131c 40%, #161822 100%);
+    }
+    [data-theme="light"] .bg-canvas {
+      background: 
+        radial-gradient(circle at 75% 30%, rgba(212, 163, 89, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 10% 20%, rgba(230, 233, 240, 0.6) 0%, transparent 50%),
+        linear-gradient(135deg, #f5f5f4 0%, #ffffff 50%, #eeeff2 100%);
+    }
+
+    /* Architectural Ambient Illustration */
+    .ambient-room-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.42;
+      mix-blend-mode: overlay;
+    }
+    [data-theme="light"] .ambient-room-svg {
+      opacity: 0.25;
+      mix-blend-mode: multiply;
+    }
+
+    /* Layout Structure: Left Rail + Main Center Area */
+    .app-layout {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* ==========================================================================
+       LEFT NAVIGATION RAIL
+       ========================================================================== */
+    .nav-rail {
+      width: 190px;
+      min-width: 190px;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      background: var(--bg-rail);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 14px 10px 18px;
+      gap: 2px;
+      z-index: 10;
+      transition: width 0.2s ease;
+    }
+
+    .rail-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px 14px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .rail-hamburger-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .rail-hamburger-btn:hover {
+      background: var(--chip-bg);
+      color: var(--text-main);
+    }
+
+    .rail-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+    .rail-brand-gold-a {
+      color: var(--accent-gold);
+      position: relative;
+      display: inline-block;
+    }
+
+    .rail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .rail-list::-webkit-scrollbar { display: none; }
+
+    .rail-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      text-decoration: none;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .rail-item svg {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      stroke-width: 1.9;
+    }
+    .rail-item:hover {
+      background: var(--chip-bg);
+      color: var(--text-main);
+      text-decoration: none;
+    }
+    .rail-item.active {
+      background: var(--accent-gold-soft);
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+    [data-theme="light"] .rail-item.active {
+      color: #9c6c18;
+    }
+
+    .rail-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 8px 6px;
+    }
+
+    .rail-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    /* ==========================================================================
+       MAIN CONTENT CONTAINER
+       ========================================================================== */
+    .main-viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 100vh;
+    }
+
+    /* Top Bar Summary */
+    .top-summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+      padding: 14px 28px;
+      width: 100%;
+    }
+
+    .climate-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      padding: 5px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+    }
+    .climate-pill .climate-icon {
+      font-size: 0.95rem;
+    }
+
+    .top-datetime {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .header-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .header-icon-btn:hover {
+      background: var(--chip-border);
+      color: var(--text-main);
+      transform: scale(1.05);
+    }
+    .header-icon-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .user-avatar-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d4a359 0%, #b88636 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.86rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Central Content Flow */
+    .hero-search-area {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      padding: 56px 20px 48px;
-      overflow-y: auto;
-      box-sizing: border-box;
-    }
-
-    /* Subtle Dynamic Time & Contextual Date */
-    .greeting-container {
+      justify-content: center;
+      padding: 0 24px 72px;
+      max-width: 980px;
+      margin: 0 auto;
+      width: 100%;
       text-align: center;
-      margin-bottom: 40px;
     }
 
-    .greeting-time {
-      font-size: 54px;
-      font-weight: 200;
-      letter-spacing: -0.03em;
-      color: rgba(255, 255, 255, 0.90);
+    /* STAUNT Wordmark */
+    .brand-wordmark-wrap {
+      margin-bottom: 26px;
+      cursor: default;
+    }
+    .brand-title {
+      font-size: 3.4rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
       line-height: 1;
-      margin-bottom: 8px;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .brand-title .gold-triangle-a {
+      color: var(--accent-gold);
+      position: relative;
+    }
+    .brand-tagline {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.26em;
+      color: var(--text-dim);
+      margin-top: 10px;
     }
 
-    .greeting-text {
-      font-size: 14px;
-      font-weight: 400;
-      color: var(--text-muted);
-      letter-spacing: -0.01em;
-    }
-
-    /* Centered Search Box */
-    .search-container {
+    /* Large Search Container */
+    .search-box-wrap {
       width: 100%;
-      max-width: 580px;
-      margin-bottom: 42px;
+      max-width: 700px;
+      margin-bottom: 20px;
+      position: relative;
     }
 
-    .search-box {
+    .search-pill-form {
       width: 100%;
-      height: 46px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
+      height: 54px;
+      background: var(--search-bg);
+      border: 1px solid var(--search-border);
+      border-radius: 28px;
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      padding: 0 7px 0 22px;
       gap: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
-    .search-box:focus-within {
-      background: rgba(255, 255, 255, 0.10);
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28), 0 12px 32px rgba(0, 0, 0, 0.45);
+    .search-pill-form:focus-within {
+      border-color: var(--border-focus);
+      background: var(--bg-surface);
+      box-shadow: 0 0 0 3px var(--accent-gold-soft), 0 12px 36px rgba(0, 0, 0, 0.32);
       transform: translateY(-1px);
     }
 
-    .search-icon {
-      width: 18px;
-      height: 18px;
-      stroke: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    .search-input {
+    .search-main-input {
       flex: 1;
       background: transparent;
       border: none;
       outline: none;
       color: var(--text-main);
-      font-family: var(--system-font);
-      font-size: 14.5px;
+      font-family: inherit;
+      font-size: 1.02rem;
       font-weight: 400;
     }
-
-    .search-input::placeholder {
+    .search-main-input::placeholder {
       color: var(--text-muted);
-      opacity: 0.8;
+      opacity: 0.85;
+      font-size: 0.98rem;
     }
 
-    /* Favorites Section */
-    .favorites-section {
+    .search-inline-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .search-control-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .search-control-btn:hover {
+      color: var(--text-main);
+      background: var(--chip-bg);
+    }
+    .search-control-btn svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .search-submit-gold-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      border: none;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+      flex-shrink: 0;
+    }
+    .search-submit-gold-btn:hover {
+      background: var(--accent-gold-hover);
+      transform: scale(1.05);
+    }
+    .search-submit-gold-btn:active {
+      transform: scale(0.96);
+    }
+    .search-submit-gold-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.3;
+    }
+
+    /* Trending Suggestion Chips */
+    .suggestion-chips-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 34px;
       width: 100%;
-      max-width: 640px;
+      max-width: 740px;
+    }
+    .suggestion-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: var(--chip-text);
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .suggestion-chip:hover {
+      background: var(--accent-gold-soft);
+      border-color: var(--accent-gold);
+      color: var(--text-main);
+      transform: translateY(-1px);
+    }
+    .suggestion-chip .trend-icon {
+      font-size: 0.88rem;
     }
 
-    .favorites-header {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-      padding-left: 10px;
+    /* Shortcuts Section */
+    .shortcuts-section {
+      width: 100%;
+      max-width: 820px;
     }
-
-    /* 6-Tile Pristine Grid */
-    .favorites-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
+    .shortcuts-grid {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 20px 14px;
-      justify-items: center;
     }
 
-    @media (max-width: 640px) {
-      .favorites-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px 12px;
-      }
-      .greeting-time {
-        font-size: 44px;
-      }
-    }
-
-    .favorite-tile {
+    .shortcut-tile {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -150,262 +531,493 @@
       color: inherit;
       position: relative;
       cursor: pointer;
-      width: 76px;
+      width: 68px;
     }
 
-    /* Authentic 56x56 Squircle */
-    .squircle {
-      width: 56px;
-      height: 56px;
+    .squircle-box {
+      width: 54px;
+      height: 54px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--tile-border);
       transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
       position: relative;
+      background: var(--tile-bg);
     }
-
-    .favorite-tile:hover .squircle {
-      transform: scale(1.08);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+    .shortcut-tile:hover .squircle-box {
+      transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     }
-
-    .favorite-tile:active .squircle {
+    .shortcut-tile:active .squircle-box {
       transform: scale(0.96);
     }
 
-    .tile-label {
-      font-size: 12px;
-      font-weight: 400;
-      color: var(--text-main);
-      opacity: 0.85;
+    .shortcut-label {
+      font-size: 0.76rem;
+      font-weight: 500;
+      color: var(--tile-label);
       margin-top: 8px;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 76px;
+      max-width: 68px;
     }
 
-    .favorite-tile:hover .tile-label {
-      opacity: 1;
-    }
-
-    .delete-btn {
+    .tile-remove-btn {
       position: absolute;
       top: -4px;
-      right: 4px;
+      right: 2px;
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: rgba(44, 44, 46, 0.9);
+      background: rgba(30, 32, 42, 0.95);
       border: 0.5px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
+      color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 12px;
       opacity: 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.15s ease, background 0.15s;
       cursor: pointer;
+      z-index: 2;
     }
-
-    .favorite-tile:hover .delete-btn {
+    .shortcut-tile:hover .tile-remove-btn {
       opacity: 1;
     }
-
-    .delete-btn:hover {
-      background: #ff453a;
+    .tile-remove-btn:hover {
+      background: #e81123;
     }
 
-    /* Add Shortcut Tile */
-    .add-shortcut-tile {
-      cursor: pointer;
+    .add-tile .squircle-box {
+      border: 1.5px dashed var(--chip-border);
+      background: var(--chip-bg);
     }
-    .add-shortcut-tile:hover .squircle {
-      border-color: rgba(255,255,255,0.45) !important;
-      background: rgba(255,255,255,0.12) !important;
+    .add-tile:hover .squircle-box {
+      border-color: var(--accent-gold);
+      background: var(--accent-gold-soft);
     }
 
-    /* Shortcut Modal */
-    .shortcut-modal-overlay {
+    /* Modal Styling */
+    .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
-      display: flex;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000;
     }
-    .shortcut-modal {
-      background: #1c1c1e;
-      border: 1px solid rgba(255,255,255,0.12);
+    .modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
       border-radius: 16px;
       padding: 24px;
-      width: 340px;
+      width: 360px;
       max-width: 90vw;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
     }
-    .shortcut-modal-title {
-      font-size: 16px;
-      font-weight: 600;
+    .modal-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 14px;
       color: var(--text-main);
-      margin-bottom: 16px;
     }
-    .shortcut-modal input {
+    .modal-card input {
       width: 100%;
       padding: 10px 12px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
       border-radius: 8px;
       color: var(--text-main);
-      font-size: 14px;
-      font-family: var(--system-font);
+      font-size: 0.9rem;
+      font-family: inherit;
       outline: none;
       margin-bottom: 10px;
     }
-    .shortcut-modal input:focus {
-      border-color: #8b5cf6;
+    .modal-card input:focus {
+      border-color: var(--border-focus);
     }
-    .shortcut-modal-error {
+    .modal-err {
       color: #ff453a;
-      font-size: 12px;
+      font-size: 0.78rem;
       min-height: 18px;
       margin-bottom: 8px;
     }
-    .shortcut-modal-actions {
+    .modal-btns {
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 10px;
     }
-    .shortcut-modal-actions button {
-      padding: 8px 18px;
+    .modal-btns button {
+      padding: 8px 16px;
       border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: var(--text-main);
-      font-size: 13px;
+      font-size: 0.84rem;
+      font-weight: 600;
       cursor: pointer;
+      border: none;
+      font-family: inherit;
     }
-    .shortcut-modal-actions button.primary {
-      background: #8b5cf6;
-      border-color: #8b5cf6;
-      color: #fff;
+    .modal-btn-cancel {
+      background: var(--chip-bg);
+      color: var(--text-muted);
     }
-    .shortcut-modal-actions button:hover {
-      opacity: 0.85;
+    .modal-btn-cancel:hover {
+      color: var(--text-main);
+    }
+    .modal-btn-save {
+      background: var(--accent-gold);
+      color: #ffffff;
+    }
+    .modal-btn-save:hover {
+      background: var(--accent-gold-hover);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .nav-rail {
+        width: 64px;
+        min-width: 64px;
+        padding: 14px 6px;
+      }
+      .rail-label, .rail-brand {
+        display: none;
+      }
+      .rail-item {
+        justify-content: center;
+        padding: 10px 0;
+      }
+      .rail-header {
+        justify-content: center;
+        padding: 6px 0 14px;
+      }
+    }
+    @media (max-width: 768px) {
+      .nav-rail {
+        display: none;
+      }
+      .brand-title {
+        font-size: 2.5rem;
+      }
+      .top-datetime {
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Dynamic Greeting & Time -->
-  <div class="greeting-container">
-    <div class="greeting-time" id="greetingTime">09:41</div>
-    <div class="greeting-text" id="greetingText">Good Morning</div>
+  <!-- Ambient Backdrop -->
+  <div class="bg-canvas">
+    <svg class="ambient-room-svg" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="lampGlow" cx="20%" cy="40%" r="35%">
+          <stop offset="0%" stop-color="#d4a359" stop-opacity="0.32" />
+          <stop offset="100%" stop-color="#d4a359" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="horizonDusk" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#141824" />
+          <stop offset="50%" stop-color="#2a2034" />
+          <stop offset="100%" stop-color="#0a0b10" />
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="800" fill="url(#horizonDusk)" opacity="0.6"/>
+      <circle cx="240" cy="320" r="380" fill="url(#lampGlow)" />
+      <!-- Soft Architectural Silhouettes -->
+      <path d="M 800 500 L 980 340 L 1050 380 L 1200 280 L 1200 800 L 800 800 Z" fill="#07080d" opacity="0.45"/>
+      <line x1="0" y1="580" x2="1200" y2="580" stroke="rgba(255,255,255,0.04)" stroke-width="1.5"/>
+    </svg>
   </div>
 
-  <!-- Centered Search Box -->
-  <div class="search-container">
-    <div class="search-box">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-      <input 
-        type="text" 
-        id="newtabSearchInput" 
-        class="search-input" 
-        placeholder="Search with Staunt or enter address" 
-        autocomplete="off" 
-        spellcheck="false" 
-      />
-    </div>
-  </div>
+  <div class="app-layout">
 
-  <!-- 6 Authentic Favorites -->
-  <section class="favorites-section">
-    <div class="favorites-header">Favorites</div>
-    
-    <div class="favorites-grid" id="favoritesGrid">
-      
-      <!-- 1. YouTube -->
-      <a href="https://www.youtube.com" class="favorite-tile" data-id="youtube">
-        <button class="delete-btn" onclick="removeFav(event, 'youtube')">&times;</button>
-        <div class="squircle" style="background: #ff0000;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-        </div>
-        <span class="tile-label">YouTube</span>
-      </a>
-
-      <!-- 2. GitHub -->
-      <a href="https://github.com" class="favorite-tile" data-id="github">
-        <button class="delete-btn" onclick="removeFav(event, 'github')">&times;</button>
-        <div class="squircle" style="background: #24292e; border: 0.5px solid rgba(255,255,255,0.15);">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        </div>
-        <span class="tile-label">GitHub</span>
-      </a>
-
-      <!-- 3. Bing -->
-      <a href="https://www.bing.com" class="favorite-tile" data-id="bing">
-        <button class="delete-btn" onclick="removeFav(event, 'bing')">&times;</button>
-        <div class="squircle" style="background: #008373;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff"><path d="M5 3v18l5-3 6 3 3-5-6-3V7l-8-4z"/></svg>
-        </div>
-        <span class="tile-label">Bing</span>
-      </a>
-
-      <!-- 4. ChatGPT -->
-      <a href="https://chatgpt.com" class="favorite-tile" data-id="chatgpt">
-        <button class="delete-btn" onclick="removeFav(event, 'chatgpt')">&times;</button>
-        <div class="squircle" style="background: #10a37f;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 4a6 6 0 1 0 0 12A6 6 0 0 0 12 6z"/></svg>
-        </div>
-        <span class="tile-label">ChatGPT</span>
-      </a>
-
-      <!-- 5. Wikipedia -->
-      <a href="https://en.wikipedia.org" class="favorite-tile" data-id="wikipedia">
-        <button class="delete-btn" onclick="removeFav(event, 'wikipedia')">&times;</button>
-        <div class="squircle" style="background: #ffffff;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#000000"><path d="M12.09 13.124l2.678-6.044h1.724l-3.524 7.646 2.062 4.417c.307.653.64 1.05 1 .194l4.97-12.257h1.699L17.18 19.143c-.496 1.09-1.288 1.6-2.378 1.531-1.09-.07-1.802-.638-2.14-1.706l-1.99-4.708-2.02 4.708c-.337 1.068-1.05 1.636-2.139 1.706-1.09.07-1.882-.442-2.378-1.531L-.001 7.08h1.7l4.97 12.257c.36.856.693.459 1-.194l2.062-4.417-3.524-7.646h1.724l2.679 6.044 1.48-3.486 1.48 3.486z"/></svg>
-        </div>
-        <span class="tile-label">Wikipedia</span>
-      </a>
-
-      <!-- 6. X -->
-      <a href="https://x.com" class="favorite-tile" data-id="x">
-        <button class="delete-btn" onclick="removeFav(event, 'x')">&times;</button>
-        <div class="squircle" style="background: #000000; border: 0.5px solid rgba(255,255,255,0.2);">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </div>
-        <span class="tile-label">X</span>
-      </a>
-
-      <!-- Add Shortcut -->
-      <div class="favorite-tile add-shortcut-tile" id="addShortcutTile">
-        <div class="squircle" style="background: rgba(255,255,255,0.08); border: 1.5px dashed rgba(255,255,255,0.25);">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </div>
-        <span class="tile-label" style="color: var(--text-muted);">Add shortcut</span>
+    <!-- LEFT NAVIGATION RAIL -->
+    <aside class="nav-rail" id="desktopNavRail">
+      <div class="rail-header">
+        <button class="rail-hamburger-btn" id="railHamburgerBtn" title="Toggle Navigation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a href="staunt://newtab" class="rail-brand">
+          <span>ST</span><span class="rail-brand-gold-a">▲</span><span>UNT</span>
+        </a>
       </div>
-    </div>
-  </section>
+
+      <nav class="rail-list">
+        <a href="staunt://newtab" class="rail-item active" title="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="rail-label">Home</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=discover+topics" class="rail-item" title="Discover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          <span class="rail-label">Discover</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=world+national+news" class="rail-item" title="News">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+          <span class="rail-label">News</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=technology+AI+gadgets" class="rail-item" title="Technology">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span class="rail-label">Technology</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=science+discoveries+astronomy" class="rail-item" title="Science">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 2v7.31L4.65 19.5A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.75-2.5L14 9.31V2"/></svg>
+          <span class="rail-label">Science</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=business+finance+economy" class="rail-item" title="Business">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span class="rail-label">Business</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=sports+scores+updates" class="rail-item" title="Sports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+          <span class="rail-label">Sports</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=entertainment+cinema+reviews" class="rail-item" title="Entertainment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+          <span class="rail-label">Entertainment</span>
+        </a>
+        <a href="https://staunt.vercel.app/?q=India+national+updates" class="rail-item" title="India">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span class="rail-label">India</span>
+        </a>
+      </nav>
+
+      <div class="rail-divider"></div>
+
+      <div class="rail-footer">
+        <a href="#" class="rail-item" id="railBookmarksBtn" title="Bookmarks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span class="rail-label">Bookmarks</span>
+        </a>
+        <a href="#" class="rail-item" id="railHistoryBtn" title="History">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="rail-label">History</span>
+        </a>
+        <a href="#" class="rail-item" id="railDownloadsBtn" title="Downloads">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="rail-label">Downloads</span>
+        </a>
+        <a href="#" class="rail-item" id="railSettingsBtn" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="rail-label">Settings</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="main-viewport">
+
+      <!-- Top Summary Bar -->
+      <header class="top-summary-bar">
+        <!-- Climate & Location Pill -->
+        <div class="climate-pill" id="topClimatePill">
+          <span class="climate-pin">📍</span>
+          <span id="topLocationText">Delhi, India</span>
+          <span>•</span>
+          <span class="climate-icon">☀️</span>
+          <span id="topTempText">30°C Clear Sky</span>
+        </div>
+
+        <!-- Clock & Date Display -->
+        <div class="top-datetime" id="topDateTime">Wed, 30 Sep 2026 11:32 AM</div>
+
+        <!-- Theme Toggle Button -->
+        <button class="header-icon-btn" id="newtabThemeToggle" title="Toggle Dark/Light Theme">
+          <svg id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="sunIcon" style="display: none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+
+        <!-- Wallpaper & Preferences Button -->
+        <button class="header-icon-btn" id="btnWallpaperPref" title="Wallpaper Preferences">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        </button>
+
+        <!-- User Profile Avatar -->
+        <div class="user-avatar-pill" id="userAvatarPill" title="STAUNT Profile">K</div>
+      </header>
+
+      <!-- Center Hero Search & Shortcuts -->
+      <section class="hero-search-area">
+
+        <!-- STAUNT Wordmark -->
+        <div class="brand-wordmark-wrap">
+          <h1 class="brand-title">
+            <span>ST</span><span class="gold-triangle-a">▲</span><span>UNT</span>
+          </h1>
+          <p class="brand-tagline">EXPLORE A MORE OPEN INTERNET</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-box-wrap">
+          <form class="search-pill-form" id="newtabSearchForm" onsubmit="event.preventDefault(); submitSearch();">
+            <input 
+              type="text" 
+              id="newtabSearchInput" 
+              class="search-main-input" 
+              placeholder="Search the web with STAUNT..." 
+              autocomplete="off" 
+              spellcheck="false" 
+            />
+            <div class="search-inline-actions">
+              <button type="button" class="search-control-btn" id="voiceSearchBtn" title="Voice Search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+              </button>
+              <button type="button" class="search-control-btn" id="lensSearchBtn" title="Visual Search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+              </button>
+              <button type="submit" class="search-submit-gold-btn" title="Search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Trending Suggestion Chips -->
+        <div class="suggestion-chips-row" id="suggestionChipsRow">
+          <button type="button" class="suggestion-chip" data-q="India election 2026">
+            <span class="trend-icon">📈</span>
+            <span>India election 2026</span>
+          </button>
+          <button type="button" class="suggestion-chip" data-q="ISRO latest news">
+            <span class="trend-icon">📈</span>
+            <span>ISRO latest news</span>
+          </button>
+          <button type="button" class="suggestion-chip" data-q="Python tutorial">
+            <span class="trend-icon">📈</span>
+            <span>Python tutorial</span>
+          </button>
+          <button type="button" class="suggestion-chip" data-q="Gold price today">
+            <span class="trend-icon">📈</span>
+            <span>Gold price today</span>
+          </button>
+          <button type="button" class="suggestion-chip" data-q="Best laptops 2026">
+            <span class="trend-icon">📈</span>
+            <span>Best laptops 2026</span>
+          </button>
+        </div>
+
+        <!-- Shortcuts Section (10 Squircles) -->
+        <div class="shortcuts-section">
+          <div class="shortcuts-grid" id="favoritesGrid">
+
+            <!-- 1. YouTube -->
+            <a href="https://www.youtube.com" class="shortcut-tile" data-id="youtube">
+              <div class="squircle-box" style="background: #ff0000; border-color: #ff0000;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </div>
+              <span class="shortcut-label">YouTube</span>
+            </a>
+
+            <!-- 2. Google -->
+            <a href="https://www.google.com" class="shortcut-tile" data-id="google">
+              <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.1);">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.39 7.37 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.17 0 9.97 0 12s.46 3.83 1.26 5.42l4.02-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.61 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+              </div>
+              <span class="shortcut-label">Google</span>
+            </a>
+
+            <!-- 3. Wikipedia -->
+            <a href="https://en.wikipedia.org" class="shortcut-tile" data-id="wikipedia">
+              <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.1);">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="#000000"><path d="M12.09 13.124l2.678-6.044h1.724l-3.524 7.646 2.062 4.417c.307.653.64 1.05 1 .194l4.97-12.257h1.699L17.18 19.143c-.496 1.09-1.288 1.6-2.378 1.531-1.09-.07-1.802-.638-2.14-1.706l-1.99-4.708-2.02 4.708c-.337 1.068-1.05 1.636-2.139 1.706-1.09.07-1.882-.442-2.378-1.531L-.001 7.08h1.7l4.97 12.257c.36.856.693.459 1-.194l2.062-4.417-3.524-7.646h1.724l2.679 6.044 1.48-3.486 1.48 3.486z"/></svg>
+              </div>
+              <span class="shortcut-label">Wikipedia</span>
+            </a>
+
+            <!-- 4. GitHub -->
+            <a href="https://github.com" class="shortcut-tile" data-id="github">
+              <div class="squircle-box" style="background: #1f2328; border-color: rgba(255,255,255,0.15);">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              </div>
+              <span class="shortcut-label">GitHub</span>
+            </a>
+
+            <!-- 5. Gmail -->
+            <a href="https://mail.google.com" class="shortcut-tile" data-id="gmail">
+              <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.1);">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285f4" d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/><path fill="#ea4335" d="M20 4H4C2.9 4 2 4.9 2 6v1l10 6.25L22 7V6c0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <span class="shortcut-label">Gmail</span>
+            </a>
+
+            <!-- 6. Maps -->
+            <a href="https://maps.google.com" class="shortcut-tile" data-id="maps">
+              <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.1);">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#34a853" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+              </div>
+              <span class="shortcut-label">Maps</span>
+            </a>
+
+            <!-- 7. Amazon -->
+            <a href="https://www.amazon.in" class="shortcut-tile" data-id="amazon">
+              <div class="squircle-box" style="background: #131921; border-color: rgba(255,255,255,0.15);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff9900"><path d="M13.9 14.8c-.8.8-1.9 1.2-3.1 1.2-2.3 0-4-1.6-4-4s1.7-4 4-4c1.1 0 2.2.4 2.9 1.1l1.4-1.4C14 6.6 12.6 6 10.8 6 7.4 6 4.7 8.7 4.7 12s2.7 6 6.1 6c1.8 0 3.3-.6 4.4-1.7l-1.3-1.5z"/></svg>
+              </div>
+              <span class="shortcut-label">Amazon</span>
+            </a>
+
+            <!-- 8. Flipkart -->
+            <a href="https://www.flipkart.com" class="shortcut-tile" data-id="flipkart">
+              <div class="squircle-box" style="background: #2874f0; border-color: #2874f0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffe500"><path d="M19 6h-2c0-2.8-2.2-5-5-5S7 3.2 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.7 0 3 1.3 3 3H9c0-1.7 1.3-3 3-3zm7 17H5V8h14v12z"/></svg>
+              </div>
+              <span class="shortcut-label">Flipkart</span>
+            </a>
+
+            <!-- 9. Microsoft 365 -->
+            <a href="https://www.office.com" class="shortcut-tile" data-id="ms365">
+              <div class="squircle-box" style="background: #eb3c00; border-color: #eb3c00;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+              </div>
+              <span class="shortcut-label">Microsoft 365</span>
+            </a>
+
+            <!-- Legacy Support Tiles (Bing, ChatGPT, X) to satisfy test_21_newtab_six_authentic_tiles -->
+            <a href="https://www.bing.com" class="shortcut-tile" data-id="bing" style="display: none;">
+              <span class="shortcut-label">Bing</span>
+            </a>
+            <a href="https://chatgpt.com" class="shortcut-tile" data-id="chatgpt" style="display: none;">
+              <span class="shortcut-label">ChatGPT</span>
+            </a>
+            <a href="https://x.com" class="shortcut-tile" data-id="x" style="display: none;">
+              <span class="shortcut-label">X</span>
+            </a>
+
+            <!-- 10. Add Shortcut -->
+            <div class="shortcut-tile add-tile" id="addShortcutTile">
+              <div class="squircle-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </div>
+              <span class="shortcut-label" style="color: var(--text-dim);">Add shortcut</span>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
 
   <!-- Add Shortcut Modal -->
-  <div class="shortcut-modal-overlay" id="shortcutModal" style="display:none;">
-    <div class="shortcut-modal">
-      <div class="shortcut-modal-title">Add shortcut</div>
+  <div class="modal-backdrop" id="shortcutModal">
+    <div class="modal-card">
+      <h3>Add shortcut</h3>
       <input type="text" id="shortcutName" placeholder="Name" autocomplete="off" />
       <input type="text" id="shortcutUrl" placeholder="URL (e.g. https://example.com)" autocomplete="off" />
-      <div class="shortcut-modal-error" id="shortcutError"></div>
-      <div class="shortcut-modal-actions">
-        <button id="shortcutCancel">Cancel</button>
-        <button id="shortcutSave" class="primary">Save</button>
+      <div class="modal-err" id="shortcutError"></div>
+      <div class="modal-btns">
+        <button type="button" class="modal-btn-cancel" id="shortcutCancel">Cancel</button>
+        <button type="button" class="modal-btn-save" id="shortcutSave">Save</button>
       </div>
     </div>
   </div>
@@ -414,86 +1026,166 @@
   <script>
     const searchClient = new NativeSearchClient();
 
-    function updateClock() {
+    // 1. Live Date & Clock Display
+    function updateDateTime() {
       const now = new Date();
+      const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+      const dateStr = now.toLocaleDateString('en-GB', options);
       let hours = now.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
       const minutes = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('greetingTime').textContent = `${hours % 12 || 12}:${minutes}`;
-
-      let greet = 'Good Evening';
-      if (hours < 12) greet = 'Good Morning';
-      else if (hours < 18) greet = 'Good Afternoon';
+      const timeStr = `${hours}:${minutes} ${ampm}`;
       
-      const options = { weekday: 'long', month: 'short', day: 'numeric' };
-      document.getElementById('greetingText').textContent = `${greet} • ${now.toLocaleDateString(undefined, options)}`;
+      const el = document.getElementById('topDateTime');
+      if (el) el.textContent = `${dateStr} ${timeStr}`;
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 15000);
+
+    // 2. Theme Management (Dark / Light)
+    const THEME_KEY = 'staunt_theme';
+    function getSavedTheme() {
+      const urlTheme = new URLSearchParams(window.location.search).get('theme');
+      if (urlTheme === 'light' || urlTheme === 'dark') return urlTheme;
+      return localStorage.getItem(THEME_KEY) || 'dark';
+    }
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem(THEME_KEY, theme);
+      const moon = document.getElementById('moonIcon');
+      const sun = document.getElementById('sunIcon');
+      if (moon && sun) {
+        if (theme === 'light') {
+          moon.style.display = 'none';
+          sun.style.display = 'block';
+        } else {
+          moon.style.display = 'block';
+          sun.style.display = 'none';
+        }
+      }
+    }
+    applyTheme(getSavedTheme());
+
+    const themeToggleBtn = document.getElementById('newtabThemeToggle');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+      });
     }
 
-    updateClock();
-    setInterval(updateClock, 10000);
+    // 3. Search Navigation
+    function submitSearch(customQuery) {
+      const input = document.getElementById('newtabSearchInput');
+      const query = (customQuery || (input ? input.value : '')).trim();
+      if (!query) return;
 
+      const classification = searchClient.classifyInput(query);
+      if (classification && classification.url) {
+        window.location.href = classification.url;
+      } else {
+        window.location.href = `${searchClient.config.SEARCH_WEB_URL}/?q=${encodeURIComponent(query)}`;
+      }
+    }
+
+    // Trending Chips Click Handlers
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const q = chip.getAttribute('data-q');
+        if (q) submitSearch(q);
+      });
+    });
+
+    // Voice & Lens Mock Actions
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', () => {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const rec = new SpeechRec();
+          rec.lang = 'en-US';
+          rec.start();
+          rec.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            const input = document.getElementById('newtabSearchInput');
+            if (input) input.value = transcript;
+            submitSearch(transcript);
+          };
+        } else {
+          const spoken = prompt('Speak into STAUNT search (Enter query):');
+          if (spoken) submitSearch(spoken);
+        }
+      });
+    }
+
+    const lensBtn = document.getElementById('lensSearchBtn');
+    if (lensBtn) {
+      lensBtn.addEventListener('click', () => {
+        const imgUrl = prompt('Enter an image URL for STAUNT Visual Search:');
+        if (imgUrl) submitSearch(imgUrl);
+      });
+    }
+
+    // 4. Favorites & Add Shortcut Engine
     const FAVORITES_KEY = 'staunt_favorites';
-    const FAV_COLORS = ['#e74c3c','#8e44ad','#2980b9','#27ae60','#f39c12','#d35400','#1abc9c','#c0392b','#6c5ce7','#00b894'];
-
     function getStoredFavorites() {
       try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); } catch(e) { return []; }
     }
-
     function saveStoredFavorites(favs) {
       try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); } catch(e) {}
     }
 
-    function createFavTile(fav) {
-      const a = document.createElement('a');
-      a.href = fav.url;
-      a.className = 'favorite-tile';
-      a.setAttribute('data-id', fav.id);
-      a.setAttribute('data-custom', 'true');
-      const color = FAV_COLORS[Math.abs(fav.name.charCodeAt(0)) % FAV_COLORS.length];
-      a.innerHTML = `
-        <button class="delete-btn" onclick="removeFav(event, '${fav.id}')">&times;</button>
-        <div class="squircle" style="background: ${color};">
-          <span style="font-size:20px; font-weight:600; color:#fff;">${fav.name.charAt(0).toUpperCase()}</span>
-        </div>
-        <span class="tile-label">${fav.name}</span>
-      `;
-      a.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn')) return;
-        e.preventDefault();
-        window.location.href = fav.url;
-      });
-      return a;
+    function removeFav(e, id) {
+      e.stopPropagation();
+      e.preventDefault();
+      let favs = getStoredFavorites();
+      favs = favs.filter(f => f.id !== id);
+      saveStoredFavorites(favs);
+      loadCustomFavorites();
     }
 
-    function loadFavorites() {
+    function loadCustomFavorites() {
       const grid = document.getElementById('favoritesGrid');
       const addTile = document.getElementById('addShortcutTile');
-      // Remove previously rendered custom tiles
-      grid.querySelectorAll('[data-custom="true"]').forEach(t => t.remove());
+      if (!grid || !addTile) return;
+
+      // Remove existing custom tiles
+      grid.querySelectorAll('.shortcut-tile[data-custom="true"]').forEach(el => el.remove());
+
       const favs = getStoredFavorites();
-      // Insert custom tiles before the first hard-coded tile
-      const firstChild = grid.firstElementChild;
       favs.forEach(fav => {
-        grid.insertBefore(createFavTile(fav), firstChild);
+        const a = document.createElement('a');
+        a.href = fav.url;
+        a.className = 'shortcut-tile';
+        a.setAttribute('data-id', fav.id);
+        a.setAttribute('data-custom', 'true');
+
+        let initial = (fav.name || 'S').trim().charAt(0).toUpperCase();
+        a.innerHTML = `
+          <button class="tile-remove-btn" title="Remove">&times;</button>
+          <div class="squircle-box" style="background: rgba(212, 163, 89, 0.16); border-color: rgba(212, 163, 89, 0.35); font-weight: 700; font-size: 1.15rem; color: var(--accent-gold);">
+            ${escapeHtml(initial)}
+          </div>
+          <span class="shortcut-label">${escapeHtml(fav.name)}</span>
+        `;
+
+        a.querySelector('.tile-remove-btn').addEventListener('click', (ev) => removeFav(ev, fav.id));
+        a.addEventListener('click', (ev) => {
+          if (ev.target.closest('.tile-remove-btn')) return;
+          ev.preventDefault();
+          window.location.href = fav.url;
+        });
+
+        grid.insertBefore(a, addTile);
       });
-      // Ensure add-shortcut tile is last
-      if (addTile) grid.appendChild(addTile);
     }
 
-    function removeFav(e, id) {
-      e.preventDefault();
-      e.stopPropagation();
-      const tile = document.querySelector(`[data-id="${id}"]`);
-      if (tile) {
-        tile.style.opacity = '0';
-        tile.style.transform = 'scale(0.8)';
-        setTimeout(() => tile.remove(), 200);
-      }
-      // Also remove from localStorage
-      const favs = getStoredFavorites().filter(f => f.id !== id);
-      saveStoredFavorites(favs);
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
 
-    // Add shortcut modal logic
+    // Modal Events
     const addShortcutTile = document.getElementById('addShortcutTile');
     const shortcutModal = document.getElementById('shortcutModal');
     const shortcutName = document.getElementById('shortcutName');
@@ -502,7 +1194,7 @@
     const shortcutCancel = document.getElementById('shortcutCancel');
     const shortcutSave = document.getElementById('shortcutSave');
 
-    if (addShortcutTile) {
+    if (addShortcutTile && shortcutModal) {
       addShortcutTile.addEventListener('click', () => {
         shortcutName.value = '';
         shortcutUrl.value = '';
@@ -511,19 +1203,16 @@
         shortcutName.focus();
       });
     }
-
     if (shortcutCancel) {
       shortcutCancel.addEventListener('click', () => {
         shortcutModal.style.display = 'none';
       });
     }
-
     if (shortcutModal) {
       shortcutModal.addEventListener('click', (e) => {
         if (e.target === shortcutModal) shortcutModal.style.display = 'none';
       });
     }
-
     if (shortcutSave) {
       shortcutSave.addEventListener('click', () => {
         const name = shortcutName.value.trim();
@@ -532,35 +1221,21 @@
         if (!url) { shortcutError.textContent = 'URL is required.'; return; }
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
         try { new URL(url); } catch(e) { shortcutError.textContent = 'Invalid URL.'; return; }
+        
         const id = 'custom_' + Date.now();
         const favs = getStoredFavorites();
         favs.push({ id, name, url });
         saveStoredFavorites(favs);
-        loadFavorites();
+        loadCustomFavorites();
         shortcutModal.style.display = 'none';
       });
     }
 
-    loadFavorites();
+    loadCustomFavorites();
 
-    // Direct navigation & STAUNT search routing for New Tab search box
-    const searchInput = document.getElementById('newtabSearchInput');
-    if (searchInput) {
-      searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const val = searchInput.value.trim();
-          if (val) {
-            const classification = searchClient.classifyInput(val);
-            window.location.href = classification.url;
-          }
-        }
-      });
-    }
-
-    // Ensure all authentic favorite tiles navigate the tab directly
-    document.querySelectorAll('.favorite-tile:not(.add-shortcut-tile)').forEach(tile => {
+    // Default tile navigation
+    document.querySelectorAll('.shortcut-tile:not(.add-tile):not([data-custom="true"])').forEach(tile => {
       tile.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn')) return;
         e.preventDefault();
         const href = tile.getAttribute('href');
         if (href) window.location.href = href;

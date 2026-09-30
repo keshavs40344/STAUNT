@@ -1153,7 +1153,7 @@ function setupWebContentsEvents(tabObj) {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>${escapeHtml(titleText)} • Staunt Browser</title>
+        <title>Connection Error • Staunt Browser</title>
         <style>
           body { margin: 0; background: #0c0e14; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
           .card { text-align: center; max-width: 480px; padding: 32px; }
@@ -1509,6 +1509,9 @@ const STAUNT_SEARCH_URL = (
   'http://127.0.0.1:5000'
 );
 
+// Smart routing helpers for localhost, domain, and search URL resolution
+const isLocalhost = (str) => nativeSearchClient.classifyInput(str).type === 'DOMAIN' || /^localhost/i.test(str);
+const isDomain = (str) => nativeSearchClient.classifyInput(str).type === 'DOMAIN';
 
 function formatUrlOrSearch(input) {
   const trimmed = (input || '').trim().slice(0, 2048);

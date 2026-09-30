@@ -9,16 +9,17 @@
        1. macOS SEQUOIA DESIGN SYSTEM (Obsidian Frosted Glass)
        ========================================================================== */
     :root {
-      --bg-topbar: rgba(14, 16, 24, 0.96);
+      --bg-topbar: rgba(18, 20, 26, 0.98);
       --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-focus: #8b5cf6;
-      --accent-purple: #8b5cf6;
-      --accent-blue: #0a84ff;
+      --border-focus: #d4a359;
+      --accent-purple: #d4a359;
+      --accent-gold: #d4a359;
+      --accent-blue: #5b9bf8;
       --accent-emerald: #30d158;
       --text-main: rgba(255, 255, 255, 0.95);
-      --text-muted: rgba(255, 255, 255, 0.48);
-      --text-dim: rgba(255, 255, 255, 0.28);
-      --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      --text-muted: rgba(255, 255, 255, 0.52);
+      --text-dim: rgba(255, 255, 255, 0.32);
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
       --header-height: 44px;
     }
 
@@ -880,8 +881,16 @@
         <span id="shieldCount">Shield</span>
       </div>
 
+      <button class="action-icon-btn" id="btnSplitView" title="Split View" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
+      </button>
+
       <button class="action-icon-btn" id="btnDeskDownloads" title="Downloads (Ctrl+J)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+
+      <button class="action-icon-btn" id="btnDevTools" title="Developer Tools (F12)" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
       </button>
 
       <button class="action-icon-btn" id="btnDeskSettings" title="Settings / Clear Browsing Data (Ctrl+Shift+Del)">
