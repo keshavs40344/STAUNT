@@ -93,7 +93,7 @@ class StauntWebViewClient(
                 "Unable to connect to STAUNT Search. Please check your network connection." 
                 else "Connection timed out or network offline."
             val queryBadge = if (isSearchFailure) 
-                """<div style="margin-bottom:12px;font-size:14px;color:#60a5fa;background:rgba(96,165,250,0.1);padding:6px 12px;border-radius:6px;display:inline-block;">Query: &ldquo;${searchQuery}&rdquo;</div>""" 
+                """<div style="margin-bottom:12px;font-size:14px;color:#d4a359;background:rgba(212,163,89,0.12);border:1px solid rgba(212,163,89,0.25);padding:6px 12px;border-radius:6px;display:inline-block;">Query: &ldquo;${searchQuery}&rdquo;</div>""" 
                 else ""
 
             val errorHtml = """
@@ -102,11 +102,11 @@ class StauntWebViewClient(
                 <head>
                     <meta name="viewport" content="width=device-width, initial-scale=1">
                     <style>
-                        body { margin: 0; background: #12141a; color: #f1f5f9; font-family: -apple-system, Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+                        body { margin: 0; background: #0e1017; color: #e6e8ec; font-family: -apple-system, Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
                         .box { padding: 24px; max-width: 400px; }
-                        h2 { font-size: 18px; margin: 12px 0 6px; font-weight: 700; }
-                        p { font-size: 13px; color: #94a3b8; line-height: 1.5; margin: 0 0 20px; }
-                        button { background: #3b82f6; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+                        h2 { font-size: 18px; margin: 12px 0 6px; font-weight: 700; color: #f0f2f5; }
+                        p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0 0 20px; }
+                        button { background: #d4a359; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
                     </style>
                 </head>
                 <body>

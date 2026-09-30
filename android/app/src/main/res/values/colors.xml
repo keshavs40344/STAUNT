@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="staunt_bg_canvas">#12141a</color>
-    <color name="staunt_bg_toolbar">#1a1c24</color>
-    <color name="staunt_bg_surface">#1b1e27</color>
-    <color name="staunt_accent">#3b82f6</color>
-    <color name="staunt_accent_hover">#2563eb</color>
-    <color name="staunt_text_white">#f1f5f9</color>
-    <color name="staunt_text_dim">#94a3b8</color>
+    <!-- STAUNT Premium Palette — Warm Obsidian + Champagne Gold -->
+    <color name="staunt_bg_canvas">#0e1017</color>
+    <color name="staunt_bg_toolbar">#161920</color>
+    <color name="staunt_bg_surface">#1c202a</color>
+    <color name="staunt_accent">#d4a359</color>
+    <color name="staunt_accent_hover">#b8860b</color>
+    <color name="staunt_text_white">#e6e8ec</color>
+    <color name="staunt_text_dim">#9ca3af</color>
     <color name="staunt_text_muted">#64748b</color>
-    <color name="staunt_incognito_bg">#0d0f14</color>
+    <color name="staunt_incognito_bg">#0a0c12</color>
     <color name="staunt_error">#ef4444</color>
     <color name="staunt_success">#22c55e</color>
+    <color name="staunt_bottomnav_bg">#161920</color>
+    <color name="staunt_bottomnav_border">#1e2230</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 </resources>

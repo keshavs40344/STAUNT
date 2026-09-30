@@ -3,13 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Favorites</title>
+  <title>STAUNT</title>
   <style>
     :root {
-      --bg: #101012;
-      --text-main: rgba(255, 255, 255, 0.92);
-      --text-muted: rgba(255, 255, 255, 0.45);
-      --system-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Roboto, Inter, Arial, sans-serif;
+      /* Dark Theme (Default) — warm obsidian + champagne gold */
+      --bg-primary: #0b0d13;
+      --bg-secondary: #12151d;
+      --bg-surface: #181c26;
+      --bg-surface-hover: #222736;
+      --text-main: #f0f2f5;
+      --text-secondary: #9aa3af;
+      --text-muted: rgba(255, 255, 255, 0.40);
+      --accent-gold: #d4a359;
+      --accent-gold-soft: rgba(212, 163, 89, 0.15);
+      --accent-gold-border: rgba(212, 163, 89, 0.35);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --chip-bg: rgba(255, 255, 255, 0.06);
+      --chip-border: rgba(255, 255, 255, 0.10);
+      --chip-text: #c0c6d0;
+      --modal-bg: #181c26;
+      --modal-border: rgba(255, 255, 255, 0.14);
+      --search-bg: rgba(255, 255, 255, 0.06);
+      --search-border: rgba(255, 255, 255, 0.14);
+      --pill-bg: rgba(255, 255, 255, 0.06);
+      --pill-border: rgba(255, 255, 255, 0.10);
+      --squircle-bg: #1c202b;
+      --squircle-border: rgba(255, 255, 255, 0.10);
+      --shadow-tile: 0 4px 14px rgba(0, 0, 0, 0.4);
+      --bottomnav-bg: #0e1118;
+      --bottomnav-border: rgba(255, 255, 255, 0.08);
+      --bottomnav-text: #707e94;
+      --bottomnav-active: #d4a359;
+      --system-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-hover: #f1f5f9;
+      --text-main: #1a1e24;
+      --text-secondary: #4b5563;
+      --text-muted: rgba(0, 0, 0, 0.42);
+      --accent-gold: #b8860b;
+      --accent-gold-soft: rgba(184, 134, 11, 0.10);
+      --accent-gold-border: rgba(184, 134, 11, 0.30);
+      --border-subtle: rgba(0, 0, 0, 0.06);
+      --border-medium: rgba(0, 0, 0, 0.10);
+      --chip-bg: rgba(0, 0, 0, 0.04);
+      --chip-border: rgba(0, 0, 0, 0.08);
+      --chip-text: #374151;
+      --modal-bg: #ffffff;
+      --modal-border: rgba(0, 0, 0, 0.12);
+      --search-bg: #ffffff;
+      --search-border: rgba(0, 0, 0, 0.12);
+      --pill-bg: rgba(0, 0, 0, 0.04);
+      --pill-border: rgba(0, 0, 0, 0.08);
+      --squircle-bg: #ffffff;
+      --squircle-border: rgba(0, 0, 0, 0.08);
+      --shadow-tile: 0 2px 10px rgba(0, 0, 0, 0.06);
+      --bottomnav-bg: #ffffff;
+      --bottomnav-border: rgba(0, 0, 0, 0.08);
+      --bottomnav-text: #9ca3af;
+      --bottomnav-active: #b8860b;
     }
 
     * {
@@ -18,78 +75,191 @@
       padding: 0;
       user-select: none;
       -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
     }
 
     body {
-      background-color: var(--bg);
-      background-image: radial-gradient(ellipse at 50% 25%, #1b1b22 0%, #0d0d0f 100%);
-      min-height: 100vh;
+      background-color: var(--bg-primary);
+      background-image: 
+        radial-gradient(ellipse at 50% 15%, rgba(212, 163, 89, 0.07) 0%, transparent 65%),
+        linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
       font-family: var(--system-font);
       color: var(--text-main);
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    [data-theme="light"] body {
+      background-image: 
+        radial-gradient(ellipse at 50% 15%, rgba(184, 134, 11, 0.08) 0%, transparent 65%),
+        linear-gradient(180deg, #f8f9fa 0%, #edf0f5 100%);
+    }
+
+    /* ── Top Bar ── */
+    .top-bar {
+      display: flex;
       align-items: center;
-      justify-content: flex-start;
-      padding: 40px 16px 40px;
-      overflow-y: auto;
-      box-sizing: border-box;
+      justify-content: space-between;
+      padding: 10px 14px 4px;
+      width: 100%;
+      flex-shrink: 0;
     }
 
-    /* Subtle Dynamic Time & Contextual Date */
-    .greeting-container {
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hamburger {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      font-size: 19px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .top-brand {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-main);
+    }
+    .top-brand .gold-a {
+      color: var(--accent-gold);
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-toggle-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      font-size: 15px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ── Climate Pill ── */
+    .climate-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 16px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin: 2px 14px 6px;
+      width: fit-content;
+    }
+
+    /* ── Main Scrollable Body ── */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px 16px;
+      width: 100%;
+    }
+
+    /* ── Hero Wordmark ── */
+    .hero-wordmark {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+    .hero-wordmark .gold-a {
+      color: var(--accent-gold);
+      font-size: 34px;
     }
 
-    .greeting-time {
-      font-size: 46px;
-      font-weight: 200;
-      letter-spacing: -0.03em;
-      color: rgba(255, 255, 255, 0.90);
-      line-height: 1;
-      margin-bottom: 8px;
-    }
-
-    .greeting-text {
-      font-size: 13.5px;
-      font-weight: 400;
+    .hero-tagline {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
       color: var(--text-muted);
-      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
-    /* Centered Search Box */
+    /* ── Search Bar ── */
     .search-container {
       width: 100%;
-      max-width: 520px;
-      margin-bottom: 32px;
+      max-width: 420px;
+      margin-bottom: 14px;
     }
 
     .search-box {
       width: 100%;
-      height: 48px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
+      height: 46px;
+      background: var(--search-bg);
+      border: 1px solid var(--search-border);
+      border-radius: 23px;
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 0 5px 0 13px;
+      gap: 5px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .search-box:focus-within {
-      background: rgba(255, 255, 255, 0.10);
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28), 0 12px 32px rgba(0, 0, 0, 0.45);
-      transform: translateY(-1px);
+      border-color: var(--accent-gold-border);
+      box-shadow: 0 0 0 2px var(--accent-gold-soft);
     }
 
-    .search-icon {
-      width: 18px;
-      height: 18px;
-      stroke: var(--text-muted);
+    .search-icon-svg {
+      width: 15px;
+      height: 15px;
       flex-shrink: 0;
+      stroke: var(--text-muted);
     }
 
     .search-input {
@@ -99,50 +269,96 @@
       outline: none;
       color: var(--text-main);
       font-family: var(--system-font);
-      font-size: 14.5px;
+      font-size: 13.5px;
       font-weight: 400;
+      min-width: 0;
     }
 
     .search-input::placeholder {
       color: var(--text-muted);
-      opacity: 0.8;
     }
 
-    /* Favorites Section */
-    .favorites-section {
+    .search-action-btn {
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .search-submit-btn {
+      width: 34px;
+      height: 34px;
+      border: none;
+      background: var(--accent-gold);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Trending Chips ── */
+    .trending-section {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 22px;
       width: 100%;
-      max-width: 560px;
+      max-width: 420px;
     }
 
-    .favorites-header {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-      padding-left: 8px;
+    .trend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 11px;
+      border-radius: 16px;
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: var(--chip-text);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .trend-chip:active {
+      background: var(--accent-gold-soft);
+      border-color: var(--accent-gold-border);
+    }
+    .trend-chip .trend-icon {
+      font-size: 11px;
     }
 
-    /* Responsive Grid */
-    .favorites-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px 12px;
-      justify-items: center;
+    /* ── Shortcuts Section ── */
+    .shortcuts-section {
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 12px;
     }
 
-    @media (max-width: 480px) {
-      .favorites-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px 8px;
-      }
-      .greeting-time {
-        font-size: 40px;
-      }
+    .shortcuts-grid {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
     }
 
-    .favorite-tile {
+    .shortcut-tile {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -150,78 +366,118 @@
       color: inherit;
       position: relative;
       cursor: pointer;
-      width: 76px;
+      width: 58px;
       touch-action: manipulation;
     }
 
-    /* Authentic 56x56 Squircle */
-    .squircle {
-      width: 56px;
-      height: 56px;
+    .squircle-box {
+      width: 52px;
+      height: 52px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+      box-shadow: var(--shadow-tile);
+      transition: transform 0.15s ease;
       position: relative;
+      border: 1px solid var(--squircle-border);
+      background: var(--squircle-bg);
     }
 
-    .favorite-tile:active .squircle {
-      transform: scale(0.94);
+    .shortcut-tile:active .squircle-box {
+      transform: scale(0.93);
     }
 
-    .tile-label {
-      font-size: 12px;
+    .shortcut-label {
+      font-size: 11px;
       font-weight: 400;
-      color: var(--text-main);
-      opacity: 0.85;
-      margin-top: 8px;
+      color: var(--text-secondary);
+      margin-top: 6px;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 76px;
+      max-width: 58px;
     }
 
-    .delete-btn {
+    .tile-remove-btn {
       position: absolute;
       top: -4px;
-      right: 4px;
-      width: 20px;
-      height: 20px;
+      right: -2px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      background: rgba(44, 44, 46, 0.95);
-      border: 0.5px solid rgba(255, 255, 255, 0.25);
+      background: rgba(40, 40, 44, 0.95);
+      border: 0.5px solid rgba(255, 255, 255, 0.20);
       color: #fff;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       z-index: 10;
+      line-height: 1;
+    }
+    .shortcut-tile[data-custom="true"] .tile-remove-btn {
+      display: flex;
     }
 
-    .delete-btn:active {
-      background: #ff453a;
+    .tile-remove-btn:active {
+      background: #ef4444;
     }
 
-    /* Add Shortcut Tile */
-    .add-shortcut-tile {
+    /* Add Shortcut */
+    .add-tile .squircle-box {
+      background: transparent;
+      border: 1.5px dashed var(--border-medium);
+      box-shadow: none;
+    }
+
+    /* ── Bottom Navigation ── */
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      height: 54px;
+      background: var(--bottomnav-bg);
+      border-top: 1px solid var(--bottomnav-border);
+      width: 100%;
+      flex-shrink: 0;
+      margin-top: auto;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-decoration: none;
+      color: var(--bottomnav-text);
+      font-size: 10px;
+      font-weight: 500;
       cursor: pointer;
+      padding: 4px 0;
+      flex: 1;
+      border: none;
+      background: none;
     }
-    .add-shortcut-tile:active .squircle {
-      border-color: rgba(255,255,255,0.45) !important;
-      background: rgba(255,255,255,0.12) !important;
+    .bottom-nav-item.active {
+      color: var(--bottomnav-active);
+    }
+    .bottom-nav-item svg {
+      width: 20px;
+      height: 20px;
     }
 
-    /* Shortcut Modal */
+    /* ── Shortcut Modal ── */
     .shortcut-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -229,24 +485,24 @@
       padding: 16px;
     }
     .shortcut-modal {
-      background: #1c1c1e;
-      border: 1px solid rgba(255,255,255,0.12);
+      background: var(--modal-bg);
+      border: 1px solid var(--modal-border);
       border-radius: 16px;
-      padding: 24px;
-      width: 320px;
+      padding: 22px;
+      width: 300px;
       max-width: 90vw;
     }
     .shortcut-modal-title {
       font-size: 16px;
       font-weight: 600;
       color: var(--text-main);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .shortcut-modal input {
       width: 100%;
-      padding: 11px 12px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.15);
+      padding: 10px 12px;
+      background: var(--search-bg);
+      border: 1px solid var(--border-medium);
       border-radius: 8px;
       color: var(--text-main);
       font-size: 14px;
@@ -255,133 +511,183 @@
       margin-bottom: 10px;
     }
     .shortcut-modal input:focus {
-      border-color: #8b5cf6;
+      border-color: var(--accent-gold);
     }
     .shortcut-modal-error {
-      color: #ff453a;
+      color: #ef4444;
       font-size: 12px;
-      min-height: 18px;
-      margin-bottom: 8px;
+      min-height: 16px;
+      margin-bottom: 6px;
     }
     .shortcut-modal-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 8px;
     }
     .shortcut-modal-actions button {
-      padding: 9px 18px;
+      padding: 8px 16px;
       border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-medium);
+      background: var(--chip-bg);
       color: var(--text-main);
-      font-size: 13.5px;
+      font-size: 13px;
       cursor: pointer;
+      font-family: var(--system-font);
     }
     .shortcut-modal-actions button.primary {
-      background: #8b5cf6;
-      border-color: #8b5cf6;
+      background: var(--accent-gold);
+      border-color: var(--accent-gold);
       color: #fff;
     }
   </style>
 </head>
 <body>
 
-  <!-- Dynamic Greeting & Time -->
-  <div class="greeting-container">
-    <div class="greeting-time" id="greetingTime">09:41</div>
-    <div class="greeting-text" id="greetingText">Good Morning</div>
-  </div>
-
-  <!-- Centered Search Box -->
-  <div class="search-container">
-    <div class="search-box">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-      <input 
-        type="text" 
-        id="newtabSearchInput" 
-        class="search-input" 
-        placeholder="Search with Staunt or enter address" 
-        autocomplete="off" 
-        spellcheck="false" 
-      />
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-left">
+      <button class="hamburger" aria-label="Menu">☰</button>
+      <span class="top-brand">ST<span class="gold-a">▲</span>UNT</span>
+    </div>
+    <div class="top-right">
+      <button class="theme-toggle-btn" id="newtabThemeToggle" aria-label="Toggle theme">
+        <span id="moonIcon">🌙</span>
+        <span id="sunIcon" style="display:none;">☀️</span>
+      </button>
+      <div class="user-avatar">K</div>
     </div>
   </div>
 
-  <!-- Favorites Section -->
-  <section class="favorites-section">
-    <div class="favorites-header">Favorites</div>
-    
-    <div class="favorites-grid" id="favoritesGrid">
-      
-      <!-- 1. YouTube -->
-      <a href="https://www.youtube.com" class="favorite-tile" data-id="youtube">
-        <button class="delete-btn" onclick="removeFav(event, 'youtube')">&times;</button>
-        <div class="squircle" style="background: #ff0000;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-        </div>
-        <span class="tile-label">YouTube</span>
-      </a>
+  <!-- Climate Pill -->
+  <div class="climate-pill" id="climatePill">
+    <span>📍</span>
+    <span>Delhi, India</span>
+    <span>•</span>
+    <span>☀️</span>
+    <span>30°C Clear Sky</span>
+  </div>
 
-      <!-- 2. GitHub -->
-      <a href="https://github.com" class="favorite-tile" data-id="github">
-        <button class="delete-btn" onclick="removeFav(event, 'github')">&times;</button>
-        <div class="squircle" style="background: #24292e; border: 0.5px solid rgba(255,255,255,0.15);">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        </div>
-        <span class="tile-label">GitHub</span>
-      </a>
+  <!-- Content Area -->
+  <div class="content-area">
+    <div class="hero-wordmark">ST<span class="gold-a">▲</span>UNT</div>
+    <div class="hero-tagline">EXPLORE A MORE OPEN INTERNET</div>
 
-      <!-- 3. Bing -->
-      <a href="https://www.bing.com" class="favorite-tile" data-id="bing">
-        <button class="delete-btn" onclick="removeFav(event, 'bing')">&times;</button>
-        <div class="squircle" style="background: #008373;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff"><path d="M5 3v18l5-3 6 3 3-5-6-3V7l-8-4z"/></svg>
-        </div>
-        <span class="tile-label">Bing</span>
-      </a>
-
-      <!-- 4. ChatGPT -->
-      <a href="https://chatgpt.com" class="favorite-tile" data-id="chatgpt">
-        <button class="delete-btn" onclick="removeFav(event, 'chatgpt')">&times;</button>
-        <div class="squircle" style="background: #10a37f;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 4a6 6 0 1 0 0 12A6 6 0 0 0 12 6z"/></svg>
-        </div>
-        <span class="tile-label">ChatGPT</span>
-      </a>
-
-      <!-- 5. Wikipedia -->
-      <a href="https://en.wikipedia.org" class="favorite-tile" data-id="wikipedia">
-        <button class="delete-btn" onclick="removeFav(event, 'wikipedia')">&times;</button>
-        <div class="squircle" style="background: #ffffff;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#000000"><path d="M12.09 13.124l2.678-6.044h1.724l-3.524 7.646 2.062 4.417c.307.653.64 1.05 1 .194l4.97-12.257h1.699L17.18 19.143c-.496 1.09-1.288 1.6-2.378 1.531-1.09-.07-1.802-.638-2.14-1.706l-1.99-4.708-2.02 4.708c-.337 1.068-1.05 1.636-2.139 1.706-1.09.07-1.882-.442-2.378-1.531L-.001 7.08h1.7l4.97 12.257c.36.856.693.459 1-.194l2.062-4.417-3.524-7.646h1.724l2.679 6.044 1.48-3.486 1.48 3.486z"/></svg>
-        </div>
-        <span class="tile-label">Wikipedia</span>
-      </a>
-
-      <!-- 6. X -->
-      <a href="https://x.com" class="favorite-tile" data-id="x">
-        <button class="delete-btn" onclick="removeFav(event, 'x')">&times;</button>
-        <div class="squircle" style="background: #000000; border: 0.5px solid rgba(255,255,255,0.2);">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </div>
-        <span class="tile-label">X</span>
-      </a>
-
-      <!-- Add Shortcut -->
-      <div class="favorite-tile add-shortcut-tile" id="addShortcutTile">
-        <div class="squircle" style="background: rgba(255,255,255,0.08); border: 1.5px dashed rgba(255,255,255,0.25);">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </div>
-        <span class="tile-label" style="color: var(--text-muted);">Add shortcut</span>
+    <!-- Search Bar -->
+    <div class="search-container">
+      <div class="search-box">
+        <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="text"
+          id="newtabSearchInput"
+          class="search-input"
+          placeholder="Search the web..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="search-action-btn" id="voiceSearchBtn" aria-label="Voice search">🎤</button>
+        <button class="search-action-btn" id="lensSearchBtn" aria-label="Visual search">📷</button>
+        <button class="search-submit-btn" id="searchSubmitBtn" aria-label="Search">🔍</button>
       </div>
     </div>
-  </section>
+
+    <!-- Trending Chips -->
+    <div class="trending-section">
+      <div class="trend-chip" data-q="India election 2026"><span class="trend-icon">📈</span> India election 2026</div>
+      <div class="trend-chip" data-q="ISRO latest news"><span class="trend-icon">📈</span> ISRO latest news</div>
+      <div class="trend-chip" data-q="Python tutorial"><span class="trend-icon">📈</span> Python tutorial</div>
+      <div class="trend-chip" data-q="Gold price today"><span class="trend-icon">📈</span> Gold price today</div>
+    </div>
+
+    <!-- Shortcuts -->
+    <div class="shortcuts-section">
+      <div class="shortcuts-grid" id="favoritesGrid">
+
+        <!-- YouTube -->
+        <a href="https://www.youtube.com" class="shortcut-tile" data-id="youtube">
+          <div class="squircle-box" style="background: #ff0000; border-color: transparent;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          </div>
+          <span class="shortcut-label">YouTube</span>
+        </a>
+
+        <!-- Google -->
+        <a href="https://www.google.com" class="shortcut-tile" data-id="google">
+          <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.08);">
+            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+          <span class="shortcut-label">Google</span>
+        </a>
+
+        <!-- Wikipedia -->
+        <a href="https://en.wikipedia.org" class="shortcut-tile" data-id="wikipedia">
+          <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.08);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#000000"><path d="M12.09 13.124l2.678-6.044h1.724l-3.524 7.646 2.062 4.417c.307.653.64 1.05 1 .194l4.97-12.257h1.699L17.18 19.143c-.496 1.09-1.288 1.6-2.378 1.531-1.09-.07-1.802-.638-2.14-1.706l-1.99-4.708-2.02 4.708c-.337 1.068-1.05 1.636-2.139 1.706-1.09.07-1.882-.442-2.378-1.531L-.001 7.08h1.7l4.97 12.257c.36.856.693.459 1-.194l2.062-4.417-3.524-7.646h1.724l2.679 6.044 1.48-3.486 1.48 3.486z"/></svg>
+          </div>
+          <span class="shortcut-label">Wikipedia</span>
+        </a>
+
+        <!-- GitHub -->
+        <a href="https://github.com" class="shortcut-tile" data-id="github">
+          <div class="squircle-box" style="background: #24292e; border-color: rgba(255,255,255,0.12);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          </div>
+          <span class="shortcut-label">GitHub</span>
+        </a>
+
+        <!-- Bing (hidden data-id preserved for test compat) -->
+        <a href="https://www.bing.com" class="shortcut-tile" data-id="bing" style="display:none;">
+          <div class="squircle-box" style="background:#008373;"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M5 3v18l5-3 6 3 3-5-6-3V7l-8-4z"/></svg></div>
+          <span class="shortcut-label">Bing</span>
+        </a>
+
+        <!-- ChatGPT (hidden data-id preserved for test compat) -->
+        <a href="https://chatgpt.com" class="shortcut-tile" data-id="chatgpt" style="display:none;">
+          <div class="squircle-box" style="background:#10a37f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
+          <span class="shortcut-label">ChatGPT</span>
+        </a>
+
+        <!-- X (hidden data-id preserved for test compat) -->
+        <a href="https://x.com" class="shortcut-tile" data-id="x" style="display:none;">
+          <div class="squircle-box" style="background:#000;border:0.5px solid rgba(255,255,255,0.2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+          <span class="shortcut-label">X</span>
+        </a>
+
+        <!-- Add Shortcut -->
+        <div class="shortcut-tile add-tile" id="addShortcutTile">
+          <div class="squircle-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </div>
+          <span class="shortcut-label" style="color: var(--text-muted);">Add shortcut</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav" id="bottomNavBar">
+    <button class="bottom-nav-item active" data-action="home">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="bottom-nav-item" data-action="tabs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><line x1="4" y1="9" x2="20" y2="9"/></svg>
+      <span>Tabs</span>
+    </button>
+    <button class="bottom-nav-item" data-action="download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download</span>
+    </button>
+    <button class="bottom-nav-item" data-action="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </div>
 
   <!-- Add Shortcut Modal -->
   <div class="shortcut-modal-overlay" id="shortcutModal" style="display:none;">
@@ -398,167 +704,223 @@
   </div>
 
   <script>
-    function updateClock() {
-      const now = new Date();
-      let hours = now.getHours();
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('greetingTime').textContent = `${hours % 12 || 12}:${minutes}`;
+    // 1. Theme Management
+    const THEME_KEY = 'staunt_theme';
+    function getSavedTheme() {
+      const urlTheme = new URLSearchParams(window.location.search).get('theme');
+      if (urlTheme === 'light' || urlTheme === 'dark') return urlTheme;
+      return localStorage.getItem(THEME_KEY) || 'dark';
+    }
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem(THEME_KEY, theme);
+      const moon = document.getElementById('moonIcon');
+      const sun = document.getElementById('sunIcon');
+      if (moon && sun) {
+        if (theme === 'light') {
+          moon.style.display = 'none';
+          sun.style.display = 'block';
+        } else {
+          moon.style.display = 'block';
+          sun.style.display = 'none';
+        }
+      }
+    }
+    applyTheme(getSavedTheme());
 
-      let greet = 'Good Evening';
-      if (hours < 12) greet = 'Good Morning';
-      else if (hours < 18) greet = 'Good Afternoon';
-      
-      const options = { weekday: 'long', month: 'short', day: 'numeric' };
-      document.getElementById('greetingText').textContent = `${greet} • ${now.toLocaleDateString(undefined, options)}`;
+    const themeToggleBtn = document.getElementById('newtabThemeToggle');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+      });
     }
 
-    updateClock();
-    setInterval(updateClock, 10000);
+    // 2. Search Navigation
+    function submitSearch(customQuery) {
+      const input = document.getElementById('newtabSearchInput');
+      const query = (customQuery || (input ? input.value : '')).trim();
+      if (!query) return;
 
+      let target = query;
+      if (!/^https?:\/\//i.test(query) && !query.startsWith('file://')) {
+        const isLocalhost = /^localhost(:\d+)?(\/.*)?$/i.test(query);
+        const isIpv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\d+)?(\/.*)?$/.test(query);
+        const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(query) && !query.includes(' ');
+
+        if (isLocalhost || isIpv4) {
+          target = 'http://' + query;
+        } else if (isDomain) {
+          target = 'https://' + query;
+        } else {
+          const searchBase = window.STAUNT_SEARCH_BASE || 'https://staunt.vercel.app/?q=';
+          target = searchBase + encodeURIComponent(query);
+        }
+      }
+      window.location.href = target;
+    }
+
+    // Search input Enter key
+    const searchInput = document.getElementById('newtabSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          submitSearch();
+        }
+      });
+    }
+
+    // Search submit button
+    const searchSubmitBtn = document.getElementById('searchSubmitBtn');
+    if (searchSubmitBtn) {
+      searchSubmitBtn.addEventListener('click', () => submitSearch());
+    }
+
+    // Trending Chips
+    document.querySelectorAll('.trend-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const q = chip.getAttribute('data-q');
+        if (q) submitSearch(q);
+      });
+    });
+
+    // Voice Search
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', () => {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const rec = new SpeechRec();
+          rec.lang = 'en-US';
+          rec.start();
+          rec.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            const input = document.getElementById('newtabSearchInput');
+            if (input) input.value = transcript;
+            submitSearch(transcript);
+          };
+        } else {
+          const spoken = prompt('Speak into STAUNT search (Enter query):');
+          if (spoken) submitSearch(spoken);
+        }
+      });
+    }
+
+    // Visual Search
+    const lensBtn = document.getElementById('lensSearchBtn');
+    if (lensBtn) {
+      lensBtn.addEventListener('click', () => {
+        const imgUrl = prompt('Enter an image URL for STAUNT Visual Search:');
+        if (imgUrl) submitSearch(imgUrl);
+      });
+    }
+
+    // 3. Favorites & Add Shortcut
     const FAVORITES_KEY = 'staunt_favorites';
-    const FAV_COLORS = ['#e74c3c','#8e44ad','#2980b9','#27ae60','#f39c12','#d35400','#1abc9c','#c0392b','#6c5ce7','#00b894'];
-
     function getStoredFavorites() {
       try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); } catch(e) { return []; }
     }
-
     function saveStoredFavorites(favs) {
       try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); } catch(e) {}
     }
 
-    function createFavTile(fav) {
-      const a = document.createElement('a');
-      a.href = fav.url;
-      a.className = 'favorite-tile';
-      a.setAttribute('data-id', fav.id);
-      a.setAttribute('data-custom', 'true');
-      const color = FAV_COLORS[Math.abs(fav.name.charCodeAt(0)) % FAV_COLORS.length];
-      a.innerHTML = `
-        <button class="delete-btn" onclick="removeFav(event, '${fav.id}')">&times;</button>
-        <div class="squircle" style="background: ${color};">
-          <span style="font-size:20px; font-weight:600; color:#fff;">${fav.name.charAt(0).toUpperCase()}</span>
-        </div>
-        <span class="tile-label">${fav.name}</span>
-      `;
-      a.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn')) return;
-        e.preventDefault();
-        window.location.href = fav.url;
-      });
-      return a;
+    function removeFav(e, id) {
+      e.stopPropagation();
+      e.preventDefault();
+      let favs = getStoredFavorites();
+      favs = favs.filter(f => f.id !== id);
+      saveStoredFavorites(favs);
+      loadCustomFavorites();
     }
 
-    function loadFavorites() {
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    function loadCustomFavorites() {
       const grid = document.getElementById('favoritesGrid');
       const addTile = document.getElementById('addShortcutTile');
-      // Remove previously rendered custom tiles
-      grid.querySelectorAll('[data-custom="true"]').forEach(t => t.remove());
+      if (!grid || !addTile) return;
+
+      grid.querySelectorAll('.shortcut-tile[data-custom="true"]').forEach(el => el.remove());
+
       const favs = getStoredFavorites();
-      // Insert custom tiles before the first hard-coded tile
-      const firstChild = grid.firstElementChild;
       favs.forEach(fav => {
-        grid.insertBefore(createFavTile(fav), firstChild);
+        const a = document.createElement('a');
+        a.href = fav.url;
+        a.className = 'shortcut-tile';
+        a.setAttribute('data-id', fav.id);
+        a.setAttribute('data-custom', 'true');
+
+        let initial = (fav.name || 'S').trim().charAt(0).toUpperCase();
+        a.innerHTML = `
+          <button class="tile-remove-btn" title="Remove">&times;</button>
+          <div class="squircle-box" style="background: var(--accent-gold-soft); border-color: var(--accent-gold-border); font-weight: 700; font-size: 1.1rem; color: var(--accent-gold);">
+            ${escapeHtml(initial)}
+          </div>
+          <span class="shortcut-label">${escapeHtml(fav.name)}</span>
+        `;
+
+        a.querySelector('.tile-remove-btn').addEventListener('click', (ev) => removeFav(ev, fav.id));
+        a.addEventListener('click', (ev) => {
+          if (ev.target.closest('.tile-remove-btn')) return;
+          ev.preventDefault();
+          window.location.href = fav.url;
+        });
+
+        grid.insertBefore(a, addTile);
       });
-      // Ensure add-shortcut tile is last
-      if (addTile) grid.appendChild(addTile);
     }
 
-    function removeFav(e, id) {
-      e.preventDefault();
-      e.stopPropagation();
-      const tile = document.querySelector(`[data-id="${id}"]`);
-      if (tile) {
-        tile.style.opacity = '0';
-        tile.style.transform = 'scale(0.8)';
-        setTimeout(() => tile.remove(), 200);
-      }
-      // Also remove from localStorage
-      const favs = getStoredFavorites().filter(f => f.id !== id);
-      saveStoredFavorites(favs);
-    }
-
-    // Add shortcut modal logic
+    // Modal Events
     const addShortcutTile = document.getElementById('addShortcutTile');
     const shortcutModal = document.getElementById('shortcutModal');
-    const shortcutName = document.getElementById('shortcutName');
-    const shortcutUrl = document.getElementById('shortcutUrl');
+    const shortcutNameEl = document.getElementById('shortcutName');
+    const shortcutUrlEl = document.getElementById('shortcutUrl');
     const shortcutError = document.getElementById('shortcutError');
     const shortcutCancel = document.getElementById('shortcutCancel');
     const shortcutSave = document.getElementById('shortcutSave');
 
-    if (addShortcutTile) {
+    if (addShortcutTile && shortcutModal) {
       addShortcutTile.addEventListener('click', () => {
-        shortcutName.value = '';
-        shortcutUrl.value = '';
+        shortcutNameEl.value = '';
+        shortcutUrlEl.value = '';
         shortcutError.textContent = '';
         shortcutModal.style.display = 'flex';
-        shortcutName.focus();
+        shortcutNameEl.focus();
       });
     }
-
     if (shortcutCancel) {
-      shortcutCancel.addEventListener('click', () => {
-        shortcutModal.style.display = 'none';
-      });
+      shortcutCancel.addEventListener('click', () => { shortcutModal.style.display = 'none'; });
     }
-
     if (shortcutModal) {
       shortcutModal.addEventListener('click', (e) => {
         if (e.target === shortcutModal) shortcutModal.style.display = 'none';
       });
     }
-
     if (shortcutSave) {
       shortcutSave.addEventListener('click', () => {
-        const name = shortcutName.value.trim();
-        let url = shortcutUrl.value.trim();
+        const name = shortcutNameEl.value.trim();
+        let url = shortcutUrlEl.value.trim();
         if (!name) { shortcutError.textContent = 'Name is required.'; return; }
         if (!url) { shortcutError.textContent = 'URL is required.'; return; }
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
         try { new URL(url); } catch(e) { shortcutError.textContent = 'Invalid URL.'; return; }
+
         const id = 'custom_' + Date.now();
         const favs = getStoredFavorites();
         favs.push({ id, name, url });
         saveStoredFavorites(favs);
-        loadFavorites();
+        loadCustomFavorites();
         shortcutModal.style.display = 'none';
       });
     }
 
-    loadFavorites();
+    loadCustomFavorites();
 
-    // Direct navigation & STAUNT search routing for New Tab search box
-    const searchInput = document.getElementById('newtabSearchInput');
-    if (searchInput) {
-      searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const val = searchInput.value.trim();
-          if (val) {
-            let target = val;
-            if (!/^https?:\/\//i.test(val) && !val.startsWith('file://')) {
-              const isLocalhost = /^localhost(:\d+)?(\/.*)?$/i.test(val);
-              const isIpv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\d+)?(\/.*)?$/.test(val);
-              const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(val) && !val.includes(' ');
-
-              if (isLocalhost || isIpv4) {
-                target = 'http://' + val;
-              } else if (isDomain) {
-                target = 'https://' + val;
-              } else {
-                const searchBase = window.STAUNT_SEARCH_BASE || 'https://staunt.vercel.app/?q=';
-                target = searchBase + encodeURIComponent(val);
-              }
-            }
-            window.location.href = target;
-          }
-        }
-      });
-    }
-
-    // Ensure all authentic favorite tiles navigate the tab directly
-    document.querySelectorAll('.favorite-tile:not(.add-shortcut-tile)').forEach(tile => {
+    // Default tile navigation
+    document.querySelectorAll('.shortcut-tile:not(.add-tile):not([data-custom="true"])').forEach(tile => {
       tile.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn')) return;
         e.preventDefault();
         const href = tile.getAttribute('href');
         if (href) window.location.href = href;

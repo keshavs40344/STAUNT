@@ -97,6 +97,8 @@ class MainActivity : AppCompatActivity() {
             if (actionId == EditorInfo.IME_ACTION_GO || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
                 val input = etUrl.text.toString().trim()
                 if (input.isNotEmpty()) {
+                    // Smart routing: NativeSearchClient.classifyInput handles
+                    // isLocalhost, isDomain, IPv4, math expressions, and search queries
                     val classification = NativeSearchClient.classifyInput(input)
                     tabManager.getActiveTab()?.webView?.loadUrl(classification.url)
                 }
@@ -266,14 +268,21 @@ class MainActivity : AppCompatActivity() {
         btnTabCount.setOnClickListener {
             showTabSwitcher()
         }
-        findViewById<ImageButton>(R.id.btnNavHome).setOnClickListener {
+        findViewById<ImageButton>(R.id.btnNavHome)?.setOnClickListener {
             tabManager.getActiveTab()?.webView?.loadUrl(NEW_TAB_URL)
         }
-        findViewById<ImageButton>(R.id.btnNavTabs).setOnClickListener {
+        findViewById<ImageButton>(R.id.btnNavTabs)?.setOnClickListener {
             showTabSwitcher()
         }
-        findViewById<ImageButton>(R.id.btnNavMenu).setOnClickListener {
-            showOverflowMenu(it)
+        findViewById<ImageButton>(R.id.btnNavDownload)?.setOnClickListener {
+            try {
+                startActivity(Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS))
+            } catch (_: Exception) {
+                Toast.makeText(this, "Downloads folder", Toast.LENGTH_SHORT).show()
+            }
+        }
+        findViewById<ImageButton>(R.id.btnNavSettings)?.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
