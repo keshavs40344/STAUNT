@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Results Sections
   const instantAnswerCard = document.getElementById("instantAnswerCard");
+  const directAnswerCard = document.getElementById("directAnswerCard");
   const calcExpr = document.getElementById("calcExpr");
   const calcResult = document.getElementById("calcResult");
 
@@ -721,6 +722,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Reset section visibilities
     if (instantAnswerCard) instantAnswerCard.style.display = "none";
+    if (directAnswerCard) directAnswerCard.style.display = "none";
     if (destinationCard) destinationCard.style.display = "none";
     if (destHeroImgWrap) destHeroImgWrap.style.display = "none";
     if (entityProfileCard) entityProfileCard.style.display = "none";
@@ -1062,6 +1064,13 @@ document.addEventListener("DOMContentLoaded", () => {
       instantAnswerCard.style.display = "block";
     }
 
+    // 1.5. STAUNT Direct Answer Engine Card
+    if (data.answer && directAnswerCard) {
+      renderDirectAnswerCard(data.answer, query);
+    } else if (directAnswerCard) {
+      directAnswerCard.style.display = "none";
+    }
+
     // 2. Compact Inline Visual Discovery Strip (Max 4 items, never for math)
     const previewImages = data.images || [];
     if (previewImages.length > 0 && !data.instant_answer && visualStripContainer && visualStripScroll) {
@@ -1123,7 +1132,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.scrollTo({ top: 0, behavior: "smooth" });
         };
       }
-    } else if (!data.instant_answer && previewImages.length === 0 && results.length === 0) {
+    } else if (!data.instant_answer && !data.answer && previewImages.length === 0 && results.length === 0) {
       if (paginationBar) paginationBar.style.display = "none";
       showEmptyState("all", query);
     }
@@ -1618,6 +1627,131 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       copyOverviewBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="13" height="13" x="9" y="9" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
     }, 2000);
+  });
+
+  // Render STAUNT Direct Answer Engine Card
+  function renderDirectAnswerCard(ans, query) {
+    if (!directAnswerCard) return;
+    if (!ans || !ans.is_sufficient) {
+      directAnswerCard.style.display = "none";
+      return;
+    }
+
+    const answerBadge = document.getElementById("answerBadge");
+    const answerConfidence = document.getElementById("answerConfidence");
+    const answerContent = document.getElementById("answerContent");
+    const answerBullets = document.getElementById("answerBullets");
+    const answerSourcesSection = document.getElementById("answerSourcesSection");
+    const answerSourcesChips = document.getElementById("answerSourcesChips");
+    const answerFollowupSection = document.getElementById("answerFollowupSection");
+    const answerFollowupChips = document.getElementById("answerFollowupChips");
+    const answerProviderTag = document.getElementById("answerProviderTag");
+
+    // Badge based on question_type
+    const qType = ans.question_type || "general";
+    let badgeText = "Direct Answer";
+    if (qType === "comparison") badgeText = "Comparison";
+    else if (qType === "explanation") badgeText = "Explanation";
+    else if (qType === "current_info") badgeText = "Current Information";
+    else if (qType === "hindi_hinglish") badgeText = "Direct Answer";
+    else if (qType === "math_problem") badgeText = "Step-by-Step Solution";
+
+    if (answerBadge) answerBadge.textContent = badgeText;
+    if (answerConfidence) {
+      answerConfidence.textContent = ans.confidence === "verified" ? "• Verified Sources" : "• Grounded in Web";
+    }
+
+    // Convert [1], [2] to clickable citation links
+    function linkifyCitations(text) {
+      if (!text) return "";
+      return escapeHtml(text).replace(/\[(\d+)\]/g, (match, idx) => {
+        const sIndex = parseInt(idx, 10);
+        const source = (ans.sources || []).find(s => s.index === sIndex);
+        if (source && source.url) {
+          return `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer" class="answer-citation" title="${escapeHtml(source.title || source.domain || 'Source ' + idx)}">[${idx}]</a>`;
+        }
+        return `<span class="answer-citation">[${idx}]</span>`;
+      });
+    }
+
+    if (answerContent) {
+      answerContent.innerHTML = linkifyCitations(ans.direct_answer);
+    }
+
+    // Key points bullets
+    if (answerBullets) {
+      if (ans.key_points && ans.key_points.length > 0) {
+        answerBullets.innerHTML = ans.key_points.map(pt => `
+          <div class="answer-bullet-item">• ${linkifyCitations(pt)}</div>
+        `).join("");
+        answerBullets.style.display = "flex";
+      } else {
+        answerBullets.style.display = "none";
+      }
+    }
+
+    // Sources chips
+    if (answerSourcesSection && answerSourcesChips) {
+      if (ans.sources && ans.sources.length > 0) {
+        answerSourcesChips.innerHTML = ans.sources.map(s => `
+          <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="answer-source-chip" title="${escapeHtml(s.title || s.url)}">
+            <span class="chip-idx">[${s.index}]</span>
+            <span class="chip-domain">${escapeHtml(s.domain || "Source")}</span>
+          </a>
+        `).join("");
+        answerSourcesSection.style.display = "block";
+      } else {
+        answerSourcesSection.style.display = "none";
+      }
+    }
+
+    // Follow-up related questions
+    if (answerFollowupSection && answerFollowupChips) {
+      if (ans.related_questions && ans.related_questions.length > 0) {
+        answerFollowupChips.innerHTML = ans.related_questions.map(rq => `
+          <button type="button" class="answer-followup-btn" data-query="${escapeHtml(rq)}">
+            ${escapeHtml(rq)}
+          </button>
+        `).join("");
+        answerFollowupSection.style.display = "block";
+
+        answerFollowupChips.querySelectorAll(".answer-followup-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const nextQuery = btn.getAttribute("data-query");
+            if (nextQuery) {
+              if (searchInput) searchInput.value = nextQuery;
+              executeSearch(nextQuery, "all");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          });
+        });
+      } else {
+        answerFollowupSection.style.display = "none";
+      }
+    }
+
+    // Footer provider info
+    if (answerProviderTag) {
+      answerProviderTag.textContent = ans.mode && ans.mode.startsWith("neural")
+        ? "Synthesized by STAUNT AI · Grounded in sources"
+        : "Extracted from verified public web sources";
+    }
+
+    directAnswerCard.style.display = "block";
+  }
+
+  // Copy Answer Button Handler
+  const copyAnswerBtn = document.getElementById("copyAnswerBtn");
+  safeOn(copyAnswerBtn, "click", () => {
+    const textEl = document.getElementById("answerContent");
+    const text = textEl ? textEl.innerText : "";
+    if (navigator.clipboard && text) {
+      navigator.clipboard.writeText(text);
+      copyAnswerBtn.innerHTML = `✓`;
+      setTimeout(() => {
+        copyAnswerBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="13" height="13" x="9" y="9" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+      }, 2000);
+    }
   });
 
   // Sidebar Related Queries

@@ -549,6 +549,41 @@
                 </div>
               </div>
 
+              <!-- STAUNT Direct Answer Engine Card -->
+              <div class="direct-answer-card" id="directAnswerCard" style="display: none;">
+                <div class="answer-header">
+                  <div class="answer-header-left">
+                    <span class="answer-badge" id="answerBadge">Direct Answer</span>
+                    <span class="answer-confidence" id="answerConfidence"></span>
+                  </div>
+                  <div class="answer-header-right">
+                    <button class="answer-action-btn" id="copyAnswerBtn" title="Copy answer" aria-label="Copy answer">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="13" height="13" x="9" y="9" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="answer-content" id="answerContent"></div>
+                <div class="answer-bullets" id="answerBullets" style="display: none;"></div>
+                
+                <!-- Sources Citations Section -->
+                <div class="answer-sources" id="answerSourcesSection" style="display: none;">
+                  <div class="answer-sources-title">Sources</div>
+                  <div class="answer-sources-chips" id="answerSourcesChips"></div>
+                </div>
+
+                <!-- Related / Follow-up Questions -->
+                <div class="answer-followup" id="answerFollowupSection" style="display: none;">
+                  <div class="answer-followup-title">Related questions</div>
+                  <div class="answer-followup-chips" id="answerFollowupChips"></div>
+                </div>
+
+                <!-- Footer Provenance & Mode -->
+                <div class="answer-footer">
+                  <span class="answer-provider-tag" id="answerProviderTag">Grounded in web sources</span>
+                  <span class="answer-disclaimer" id="answerDisclaimer">Verify critical information independently.</span>
+                </div>
+              </div>
+
               <!-- Web Search Results List (PRIMARY CONTENT) -->
               <div class="web-results search-results-list" id="webResultsSection"></div>
               <div class="search-results-list" id="searchResultsList" style="display: none;"></div>

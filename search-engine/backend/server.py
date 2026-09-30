@@ -40,6 +40,7 @@ import spell_checker
 import entity_engine
 import calculator_engine
 import currency_engine
+import answer_engine
 from search_validator import (
     normalize_url, validate_result, deduplicate_results, safe_snippet
 )
@@ -1285,6 +1286,21 @@ def api_search():
         else None
     )
 
+    # Grounded Answer Engine synthesis for questions, explanations, comparisons, and multilingual queries
+    answer_data = None
+    q_question_intent = answer_engine.classify_question_intent(query)
+    if q_question_intent.get("is_question") and paged_results:
+        try:
+            answer_data = answer_engine.synthesize_answer(
+                query,
+                paged_results,
+                question_info=q_question_intent,
+                groq_api_key=GROQ_API_KEY,
+                http_session=http_session
+            )
+        except Exception as _ae_err:
+            logger.warning(f"Answer engine synthesis note: {_ae_err}")
+
     elapsed_ms = round((time.time() - t_start) * 1000, 1)
     logger.info(
         f"[QUERY_LOG] req_id={req_id} query='{query}' category={category} "
@@ -1300,6 +1316,7 @@ def api_search():
         "intent": intent_info,
         "provider": search_data.get("provider", "hybrid_vastuda"),
         "instant_answer": None,
+        "answer": answer_data,
         "destination": None,
         "entity": entity_data,
         "news": entity_news,
@@ -1802,6 +1819,38 @@ def api_convert():
     if not res:
         return jsonify({"status": "invalid_query", "error": "Not a valid currency conversion request"}), 400
     return jsonify({"status": "success", "data": res})
+
+
+@app.route("/api/answer", methods=["GET", "POST"])
+def api_answer():
+    if request.method == "POST":
+        data = request.get_json() or {}
+        q = data.get("query", "").strip()
+        custom_results = data.get("results")
+    else:
+        q = request.args.get("q", "").strip()
+        custom_results = None
+
+    if not q:
+        return jsonify({"status": "error", "error": "Query parameter 'q' is required"}), 400
+
+    q_intent = answer_engine.classify_question_intent(q)
+    results_to_use = custom_results
+    if results_to_use is None:
+        search_data = search_core.search_with_hybrid_ranking(q, max_results=6)
+        results_to_use = [r for r in search_data.get("results", []) if validate_result(r)]
+
+    ans = answer_engine.synthesize_answer(
+        q,
+        results_to_use,
+        question_info=q_intent,
+        groq_api_key=GROQ_API_KEY,
+        http_session=http_session
+    )
+    return jsonify({
+        "status": "success" if ans.get("is_sufficient") else "insufficient_evidence",
+        "data": ans
+    })
 
 
 @app.route("/api/crawler/status", methods=["GET"])
