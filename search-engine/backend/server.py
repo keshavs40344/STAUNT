@@ -542,38 +542,6 @@ If NO (e.g., it's a person, company, programming question, animal, or product), 
         DESTINATION_CACHE[cache_key] = None
         return None
 
-    # Fallback to Wikipedia Place Detection (Zero-Token fallback)
-    try:
-        wiki_res = search_core.search_wikipedia_fallback(clean_q, max_results=3)
-        results = wiki_res.get("results", [])
-        if results:
-            first = results[0]
-            snippet = (first.get("snippet", "")).lower()
-            place_pattern = r"\b(capital city|coastal city|tourist destination|beach resort|mountain range|island nation|district of|province of|town in|city in|state of)\b"
-            if re.search(place_pattern, snippet, re.I):
-                name = first.get("title", clean_q.title())
-                img_list = get_destination_images(name)
-                fb_data = {
-                    "is_destination": True,
-                    "name": name,
-                    "country": "Travel Destination",
-                    "tagline": (first.get("snippet", "")[:180]).rstrip() + "...",
-                    "weather": "27°C Pleasant Climate",
-                    "best_time": "October - March",
-                    "ideal_duration": "3 - 5 Days",
-                    "attractions": ["Scenic Viewpoints", "Cultural Landmarks", "Historic Sites", "Local Markets & Dining"],
-                    "image": img_list[0] if img_list else None,
-                    "images": img_list if img_list else [],
-                    "maps_url": f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(name)}",
-                    "flights_url": f"https://www.google.com/travel/flights?q=flights+to+{urllib.parse.quote(name)}",
-                    "hotels_url": f"https://www.google.com/travel/hotels?q=hotels+in+{urllib.parse.quote(name)}"
-                }
-                DESTINATION_CACHE[cache_key] = fb_data
-                return fb_data
-    except Exception as e:
-        logger.warning(f"Wiki destination fallback note: {e}")
-
-
     DESTINATION_CACHE[cache_key] = None
     return None
 
@@ -1330,7 +1298,7 @@ def api_search():
         "intent": intent_info,
         "provider": search_data.get("provider", "hybrid_vastuda"),
         "instant_answer": None,
-        "destination": destination_data,
+        "destination": None,
         "entity": entity_data,
         "news": entity_news,
         "videos": entity_videos,

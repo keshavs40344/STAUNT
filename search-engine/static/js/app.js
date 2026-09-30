@@ -125,6 +125,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const emptyTipsCard = document.getElementById("emptyTipsCard");
   const relatedQueriesCard = document.getElementById("relatedQueriesCard");
   const relatedQueriesList = document.getElementById("relatedQueriesList");
+  const knowledgeCard = document.getElementById("knowledgeCard");
+  const kcTitle = document.getElementById("kcTitle");
+  const kcSnippet = document.getElementById("kcSnippet");
+  const kcImg = document.getElementById("kcImg");
+  const kcImgWrap = document.getElementById("kcImgWrap");
+  const kcLink = document.getElementById("kcLink");
   const paginationBar = document.getElementById("paginationBar");
   const prevPageBtn = document.getElementById("prevPageBtn");
   const nextPageBtn = document.getElementById("nextPageBtn");
@@ -721,6 +727,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (visualStripContainer) visualStripContainer.style.display = "none";
     if (aiOverviewCard) aiOverviewCard.style.display = "none";
     if (researchCard) researchCard.style.display = "none";
+    if (knowledgeCard) knowledgeCard.style.display = "none";
     if (webResultsSection) webResultsSection.style.display = "none";
     if (codeSection) codeSection.style.display = "none";
     if (docsSection) docsSection.style.display = "none";
@@ -969,32 +976,44 @@ document.addEventListener("DOMContentLoaded", () => {
     entityProfileCard.style.display = "block";
   }
 
-  // 1. ALL Category (Web + Instant Answer + Destination + AI Overview + Entity)
+  // Helper: Sidebar Knowledge Card Renderer
+  function renderSidebarKnowledgeCard(entity) {
+    if (!knowledgeCard || !kcTitle || !kcSnippet) return;
+    if (!entity || !entity.name) {
+      knowledgeCard.style.display = "none";
+      return;
+    }
+    kcTitle.textContent = entity.name;
+    kcSnippet.textContent = entity.description || entity.snippet || "";
+    if (entity.image && kcImg && kcImgWrap) {
+      kcImg.src = entity.image;
+      kcImgWrap.style.display = "block";
+      kcImg.onerror = () => { if (kcImgWrap) kcImgWrap.style.display = "none"; };
+    } else if (kcImgWrap) {
+      kcImgWrap.style.display = "none";
+    }
+    if (entity.wikipedia_url && kcLink) {
+      kcLink.href = entity.wikipedia_url;
+      kcLink.style.display = "inline-flex";
+    } else if (kcLink) {
+      kcLink.style.display = "none";
+    }
+    knowledgeCard.style.display = "block";
+  }
+
+  // 1. ALL Category (Web Results Prioritized + Instant Answer + Sidebar Context)
   function renderAllCategory(data, query) {
-    // Instant Math
+    // 1. Instant Math / Calculation
     if (data.instant_answer && instantAnswerCard) {
       if (calcExpr) calcExpr.textContent = `${data.instant_answer.expression} =`;
       if (calcResult) calcResult.textContent = data.instant_answer.result;
       instantAnswerCard.style.display = "block";
     }
 
-    // Destination Card
-    if (data.destination && destinationCard) {
-      populateDestinationCard(data.destination);
-      destinationCard.style.display = "block";
-    }
-
-    // Production Entity & Person SERP Card
-    if (data.entity) {
-      renderEntityProfileCard(data.entity, data.news, data.videos);
-    } else if (entityProfileCard) {
-      entityProfileCard.style.display = "none";
-    }
-
-    // Visual Discovery Strip (All Tab)
+    // 2. Compact Inline Visual Discovery Strip (Max 4 items, never for math)
     const previewImages = data.images || [];
-    if (previewImages.length > 0 && visualStripContainer && visualStripScroll) {
-      visualStripScroll.innerHTML = previewImages.slice(0, 6).map(img => `
+    if (previewImages.length > 0 && !data.instant_answer && visualStripContainer && visualStripScroll) {
+      visualStripScroll.innerHTML = previewImages.slice(0, 4).map(img => `
         <div class="visual-strip-item" title="${escapeHtml(img.title || query)}">
           <img src="${escapeHtml(img.thumbnail || img.url)}" alt="${escapeHtml(img.title || query)}" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" />
         </div>
@@ -1025,7 +1044,7 @@ document.addEventListener("DOMContentLoaded", () => {
       visualStripContainer.style.display = "none";
     }
 
-    // Render Web Results
+    // 3. PRIMARY CONTENT: Real Web Search Results List
     const results = data.results || [];
     if (results.length > 0 && webResultsSection) {
       if (emptyState) emptyState.style.display = "none";
@@ -1052,20 +1071,17 @@ document.addEventListener("DOMContentLoaded", () => {
           window.scrollTo({ top: 0, behavior: "smooth" });
         };
       }
-
-      // Trigger AI Overview async
-      if (aiOverviewCard && aiContent) {
-        aiOverviewCard.style.display = "block";
-        aiContent.innerHTML = `<div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px;"></div><div class="skeleton" style="height: 16px; width: 75%;"></div>`;
-        if (aiSources) aiSources.innerHTML = "";
-        fetchAiOverview(query, results);
-      }
-
-    } else if (!data.instant_answer && !data.destination && previewImages.length === 0 && results.length === 0) {
+    } else if (!data.instant_answer && previewImages.length === 0 && results.length === 0) {
       if (paginationBar) paginationBar.style.display = "none";
       showEmptyState("all", query);
     }
 
+    // 4. Secondary Column Context: Sidebar Knowledge Card
+    if (data.entity && knowledgeCard) {
+      renderSidebarKnowledgeCard(data.entity);
+    } else if (knowledgeCard) {
+      knowledgeCard.style.display = "none";
+    }
   }
 
   // 2. AI Category
