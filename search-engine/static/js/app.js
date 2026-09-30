@@ -125,6 +125,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const emptyTipsCard = document.getElementById("emptyTipsCard");
   const relatedQueriesCard = document.getElementById("relatedQueriesCard");
   const relatedQueriesList = document.getElementById("relatedQueriesList");
+  const paginationBar = document.getElementById("paginationBar");
+  const prevPageBtn = document.getElementById("prevPageBtn");
+  const nextPageBtn = document.getElementById("nextPageBtn");
+  const pageIndicator = document.getElementById("pageIndicator");
 
   // Modals
   const authModal = document.getElementById("authModal");
@@ -635,8 +639,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  let activeSearchId = 0;
+  let currentSearchPage = 1;
+
   // --- Core Search Execution ---
-  async function executeSearch(query, category = "all", time = "") {
+  async function executeSearch(query, category = "all", time = "", page = 1) {
+    activeSearchId++;
+    const thisSearchId = activeSearchId;
+    currentSearchPage = page || 1;
+
     currentQuery = query;
     activeTab = category;
     currentTimeFilter = time || "";
@@ -690,7 +701,16 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         url.searchParams.delete("time");
       }
-      window.history.replaceState({ query, category, time: currentTimeFilter }, "", url);
+      if (page && page > 1) {
+        url.searchParams.set("page", page);
+      } else {
+        url.searchParams.delete("page");
+      }
+      if (window.location.search !== url.search) {
+        window.history.pushState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
+      } else {
+        window.history.replaceState({ query, category, time: currentTimeFilter, page: currentSearchPage }, "", url);
+      }
     } catch (e) {}
 
     // Reset section visibilities
@@ -709,23 +729,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (videosSection) videosSection.style.display = "none";
     if (imagesSection) imagesSection.style.display = "none";
     if (emptyState) emptyState.style.display = "none";
+    if (paginationBar) paginationBar.style.display = "none";
     if (resultsCountNotice) resultsCountNotice.textContent = "Searching...";
 
     // Show loading skeleton in web results
     if (webResultsSection) {
       webResultsSection.style.display = "flex";
       webResultsSection.innerHTML = `
-        <div class="result-card">
-          <div class="skeleton" style="height: 18px; width: 40%; margin-bottom: 8px;"></div>
-          <div class="skeleton" style="height: 24px; width: 70%; margin-bottom: 10px;"></div>
-          <div class="skeleton" style="height: 14px; width: 95%; margin-bottom: 6px;"></div>
-          <div class="skeleton" style="height: 14px; width: 85%;"></div>
+        <div class="result-skeleton-card">
+          <div class="skeleton-source-row">
+            <div class="skeleton-shimmer skeleton-favicon"></div>
+            <div class="skeleton-shimmer skeleton-domain"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-title"></div>
+          <div class="skeleton-shimmer skeleton-snippet-1"></div>
+          <div class="skeleton-shimmer skeleton-snippet-2"></div>
         </div>
-        <div class="result-card">
-          <div class="skeleton" style="height: 18px; width: 35%; margin-bottom: 8px;"></div>
-          <div class="skeleton" style="height: 24px; width: 65%; margin-bottom: 10px;"></div>
-          <div class="skeleton" style="height: 14px; width: 90%; margin-bottom: 6px;"></div>
-          <div class="skeleton" style="height: 14px; width: 75%;"></div>
+        <div class="result-skeleton-card">
+          <div class="skeleton-source-row">
+            <div class="skeleton-shimmer skeleton-favicon"></div>
+            <div class="skeleton-shimmer skeleton-domain"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-title"></div>
+          <div class="skeleton-shimmer skeleton-snippet-1"></div>
+          <div class="skeleton-shimmer skeleton-snippet-2"></div>
+        </div>
+        <div class="result-skeleton-card">
+          <div class="skeleton-source-row">
+            <div class="skeleton-shimmer skeleton-favicon"></div>
+            <div class="skeleton-shimmer skeleton-domain"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-title"></div>
+          <div class="skeleton-shimmer skeleton-snippet-1"></div>
+          <div class="skeleton-shimmer skeleton-snippet-2"></div>
         </div>
       `;
     }
@@ -735,8 +771,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentTimeFilter) {
         fetchUrl += `&time=${encodeURIComponent(currentTimeFilter)}`;
       }
+      if (page && page > 1) {
+        fetchUrl += `&page=${encodeURIComponent(page)}`;
+      }
       const resp = await apiFetch(fetchUrl);
       const data = await resp.json();
+
+      // Guard against race conditions from previous slow searches
+      if (thisSearchId !== activeSearchId) {
+        return;
+      }
 
       if (webResultsSection) webResultsSection.innerHTML = "";
 
@@ -775,6 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateRelatedQueries(query, data);
 
     } catch (err) {
+      if (thisSearchId !== activeSearchId) return;
       console.error("Search failed:", err);
       showEmptyState(category, query, true, "Search request failed. Please check your network connection and try again.");
       if (resultsCountNotice) resultsCountNotice.textContent = "";
@@ -989,6 +1034,25 @@ document.addEventListener("DOMContentLoaded", () => {
         webResultsSection.appendChild(createWebResultCard(item));
       });
 
+      // Pagination Controls
+      if (paginationBar && prevPageBtn && nextPageBtn && pageIndicator) {
+        paginationBar.style.display = "flex";
+        pageIndicator.textContent = `Page ${currentSearchPage}`;
+        prevPageBtn.disabled = currentSearchPage <= 1;
+        nextPageBtn.disabled = results.length < 10;
+
+        prevPageBtn.onclick = () => {
+          if (currentSearchPage > 1) {
+            executeSearch(currentQuery, activeTab, currentTimeFilter, currentSearchPage - 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        };
+        nextPageBtn.onclick = () => {
+          executeSearch(currentQuery, activeTab, currentTimeFilter, currentSearchPage + 1);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+      }
+
       // Trigger AI Overview async
       if (aiOverviewCard && aiContent) {
         aiOverviewCard.style.display = "block";
@@ -998,6 +1062,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
     } else if (!data.instant_answer && !data.destination && previewImages.length === 0 && results.length === 0) {
+      if (paginationBar) paginationBar.style.display = "none";
       showEmptyState("all", query);
     }
 
@@ -1307,30 +1372,79 @@ document.addEventListener("DOMContentLoaded", () => {
     const card = document.createElement("div");
     card.className = "result-card";
 
-    const favicon = item.favicon || (item.domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(item.domain)}&sz=64` : '');
+    let domainName = item.domain || "web";
+    if (!domainName || domainName === "web") {
+      try { domainName = new URL(item.url).hostname.replace("www.", ""); } catch(e) {}
+    }
+    const favicon = item.favicon || (domainName && domainName !== "web" ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domainName)}&sz=64` : '');
     const dateBadge = item.published_date ? `<span class="result-date-badge">${escapeHtml(item.published_date)}</span>` : '';
 
     card.innerHTML = `
-      <div class="result-meta">
-        <div class="result-meta-left">
-          ${favicon ? `<img src="${escapeHtml(favicon)}" class="result-favicon" alt="" onerror="this.style.display='none'" />` : ''}
-          <span class="domain-pill">${escapeHtml(item.domain || "web")}</span>
+      <div class="result-source-row">
+        <div class="result-source-left">
+          <div class="result-favicon-wrap">
+            ${favicon ? `<img src="${escapeHtml(favicon)}" class="result-favicon" alt="" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';" /><span class="result-favicon-fallback" style="display:none;">🌐</span>` : `<span class="result-favicon-fallback">🌐</span>`}
+          </div>
+          <div class="result-source-info">
+            <span class="result-domain">${escapeHtml(domainName)}</span>
+            <span class="result-breadcrumb">${escapeHtml(item.url || "")}</span>
+          </div>
           ${dateBadge}
         </div>
         <div class="result-actions">
-          <button class="reader-mode-btn" title="Ad-free Reader View">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            <span>Reader View</span>
+          <button type="button" class="copy-link-btn" title="Copy link" data-url="${escapeHtml(item.url)}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span class="copy-link-text">Copy</span>
           </button>
-          <button class="save-bookmark-btn" title="Save to Collection">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <button type="button" class="reader-mode-btn" title="Ad-free Reader View">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span>Reader</span>
+          </button>
+          <button type="button" class="save-bookmark-btn" title="Save to Collection">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <span>Save</span>
           </button>
         </div>
       </div>
-      <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="result-title">${escapeHtml(item.title)}</a>
-      <p class="result-snippet">${escapeHtml(item.snippet)}</p>
+      <div class="result-title-wrap">
+        <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="result-title">${escapeHtml(item.title)}</a>
+      </div>
+      <div class="result-body-row">
+        <p class="result-snippet">${escapeHtml(item.snippet)}</p>
+        ${item.thumbnail ? `
+          <div class="result-thumb-wrap">
+            <img src="${escapeHtml(item.thumbnail)}" class="result-thumb" alt="" loading="lazy" onerror="this.parentElement.style.display='none'" />
+          </div>
+        ` : ''}
+      </div>
     `;
+
+    // Copy Link Action
+    const copyBtn = card.querySelector(".copy-link-btn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(item.url);
+          const textSpan = copyBtn.querySelector(".copy-link-text");
+          if (textSpan) {
+            textSpan.textContent = "✓ Copied";
+            setTimeout(() => { textSpan.textContent = "Copy"; }, 2000);
+          }
+        } catch (e) {
+          const ta = document.createElement("textarea");
+          ta.value = item.url;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          const textSpan = copyBtn.querySelector(".copy-link-text");
+          if (textSpan) {
+            textSpan.textContent = "✓ Copied";
+            setTimeout(() => { textSpan.textContent = "Copy"; }, 2000);
+          }
+        }
+      });
+    }
 
     // Reader Mode Click
     card.querySelector(".reader-mode-btn").addEventListener("click", () => {
@@ -1959,6 +2073,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     const cat = params.get("category") || "all";
+    const page = parseInt(params.get("page") || "1", 10) || 1;
+    const time = params.get("time") || "";
     if (q && q.trim()) {
       homeInput.value = q.trim();
       headerInput.value = q.trim();
@@ -1969,7 +2085,19 @@ document.addEventListener("DOMContentLoaded", () => {
           btn.classList.remove("active");
         }
       });
-      executeSearch(q.trim(), cat);
+      executeSearch(q.trim(), cat, time, page);
+    } else {
+      // Cleanly reset back to homeView when navigating back with browser button
+      document.body.classList.remove("in-search-mode");
+      if (resultsView) {
+        resultsView.style.display = "none";
+        resultsView.classList.remove("active");
+      }
+      if (homeView) homeView.style.display = "flex";
+      if (headerSearchWrap) headerSearchWrap.style.display = "none";
+      if (homeInput) homeInput.value = "";
+      if (headerInput) headerInput.value = "";
+      if (paginationBar) paginationBar.style.display = "none";
     }
   }
 

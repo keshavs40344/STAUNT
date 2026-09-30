@@ -428,6 +428,28 @@ def extract_web_media_images(query, max_results=8):
     images = []
     seen = set()
     query_tokens = [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) >= 2]
+
+    # 0. Direct developer / username query resolution (e.g., "KESHAVS40344")
+    clean_q = query.strip()
+    if re.match(r"^[a-zA-Z0-9_-]{3,39}$", clean_q) and not any(w in clean_q.lower() for w in ("the", "and", "news", "video", "photo", "image", "what", "how", "why")):
+        gh_user = clean_q
+        try:
+            head_resp = http_session.head(f"https://github.com/{gh_user}", headers={"User-Agent": "STAUNT-Search-Engine"}, timeout=(0.8, 1.2), allow_redirects=True)
+            if head_resp.status_code == 200:
+                gh_avatar = f"https://github.com/{gh_user}.png"
+                item = validate_image({
+                    "url": gh_avatar,
+                    "thumbnail": gh_avatar,
+                    "title": f"{gh_user} — GitHub Profile",
+                    "source": "github",
+                    "source_url": f"https://github.com/{gh_user}"
+                })
+                if item:
+                    seen.add(gh_avatar)
+                    images.append(item)
+        except Exception:
+            pass
+
     try:
         web_data = execute_web_query(query, max_results=max_results)
         for r in web_data.get("results", []):
