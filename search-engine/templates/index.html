@@ -248,14 +248,20 @@
               <button type="button" class="hero-action-btn lucky-btn" id="homeLuckyBtn">I'm Feeling Lucky</button>
             </div>
 
-            <!-- Search Suggestion Chips (Reference Match) -->
-            <div class="search-chips-row" id="searchChipsRow">
-              <button type="button" class="query-chip" data-query="India election 2026">India election 2026</button>
-              <button type="button" class="query-chip" data-query="ISRO latest news">ISRO latest news</button>
-              <button type="button" class="query-chip" data-query="Python tutorial">Python tutorial</button>
-              <button type="button" class="query-chip" data-query="Gold price today">Gold price today</button>
-              <button type="button" class="query-chip" data-query="Why is the sky blue">Why is the sky blue</button>
-              <button type="button" class="query-chip" data-query="CA vs CMA">CA vs CMA</button>
+            <!-- Search Suggestion Chips Carousel with Left/Right Scroll Controls -->
+            <div class="chips-carousel-wrap">
+              <button type="button" class="chip-scroll-btn chip-scroll-prev" id="chipsNavPrev" aria-label="Scroll suggestions left" title="Scroll left">‹</button>
+              <div class="search-chips-row" id="searchChipsRow" role="region" aria-label="Suggested search queries">
+                <button type="button" class="query-chip" data-query="India election 2026">India election 2026</button>
+                <button type="button" class="query-chip" data-query="ISRO latest news">ISRO latest news</button>
+                <button type="button" class="query-chip" data-query="Python tutorial">Python tutorial</button>
+                <button type="button" class="query-chip" data-query="Gold price today">Gold price today</button>
+                <button type="button" class="query-chip" data-query="Why is the sky blue">Why is the sky blue</button>
+                <button type="button" class="query-chip" data-query="CA vs CMA">CA vs CMA</button>
+                <button type="button" class="query-chip" data-query="Chandrayaan 4 mission">Chandrayaan 4 mission</button>
+                <button type="button" class="query-chip" data-query="AI technology in India">AI in India</button>
+              </div>
+              <button type="button" class="chip-scroll-btn chip-scroll-next" id="chipsNavNext" aria-label="Scroll suggestions right" title="Scroll right">›</button>
             </div>
 
             <!-- Shortcuts Row (Reference Match) -->
@@ -267,11 +273,11 @@
 
             <!-- Hero Bottom-Right Landscape Wallpaper Info & Controls -->
             <div class="wallpaper-credit-widget" id="wallpaperCreditWidget">
-              <span class="wp-loc-pin">📍</span>
+              <span class="wp-loc-pin" aria-hidden="true">📍</span>
               <span class="wp-loc-text" id="wallpaperLocation">Himachal Pradesh, India</span>
               <div class="wp-nav-arrows">
-                <button class="wp-arrow-btn" id="prevWallpaperBtn" title="Previous Wallpaper">‹</button>
-                <button class="wp-arrow-btn" id="nextWallpaperBtn" title="Next Wallpaper">›</button>
+                <button type="button" class="wp-arrow-btn" id="prevWallpaperBtn" aria-label="Previous Wallpaper" title="Previous Wallpaper">‹</button>
+                <button type="button" class="wp-arrow-btn" id="nextWallpaperBtn" aria-label="Next Wallpaper" title="Next Wallpaper">›</button>
               </div>
             </div>
           </section>

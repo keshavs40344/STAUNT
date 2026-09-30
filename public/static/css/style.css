@@ -5903,7 +5903,7 @@ body.in-search-mode .app-main {
    STAUNT DESKTOP-FIRST WEB SEARCH ENGINE UX & ZERO-OVERFLOW SYSTEM
    ========================================================================== */
 
-/* 1. Universal Zero Horizontal Overflow */
+/* 1. Universal Zero Horizontal Overflow (Except explicit scroll containers) */
 html,
 body,
 .app-shell,
@@ -5990,7 +5990,7 @@ body.in-search-mode .app-header .brand-logo {
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
-  max-width: 700px !important;
+  max-width: 760px !important;
   margin: auto auto !important;
   padding: 32px 20px 24px 20px !important;
   text-align: center !important;
@@ -6066,7 +6066,7 @@ body.in-search-mode .app-header .brand-logo {
   justify-content: center;
   align-items: center;
   margin-top: 22px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .hero-action-btn {
@@ -6104,14 +6104,118 @@ body.in-search-mode .app-header .brand-logo {
   color: #2563eb;
 }
 
-/* 7. Refined Suggestion Chips */
+/* 7. Search Chips Carousel & Left/Right Navigation */
+.chips-carousel-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 740px;
+  margin: 0 auto 16px auto;
+  position: relative;
+  box-sizing: border-box;
+}
+
 .search-chips-row {
   display: flex !important;
+  align-items: center !important;
   gap: 8px !important;
-  justify-content: center !important;
-  flex-wrap: wrap !important;
-  max-width: 700px !important;
-  margin-bottom: 20px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+  padding: 4px 6px !important;
+  box-sizing: border-box !important;
+  max-width: 660px !important;
+  width: 100% !important;
+}
+
+.search-chips-row::-webkit-scrollbar {
+  display: none !important;
+}
+
+.query-chip {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: var(--text-primary) !important;
+  padding: 6px 14px !important;
+  border-radius: 16px !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.query-chip:hover {
+  background: rgba(56, 189, 248, 0.18) !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme="light"] .query-chip {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .query-chip:hover {
+  background: #e2e8f0 !important;
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+
+.chip-scroll-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.chip-scroll-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: scale(1.06);
+}
+
+.chip-scroll-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+[data-theme="light"] .chip-scroll-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+[data-theme="light"] .chip-scroll-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  border-color: #2563eb;
+  color: #2563eb;
 }
 
 /* 8. Pinned Clean Footer */
@@ -6145,15 +6249,61 @@ body.in-search-mode .app-header .brand-logo {
 /* 10. Wallpaper Controls in Bottom Right */
 .wallpaper-credit-widget {
   position: fixed !important;
-  right: 20px !important;
-  bottom: 60px !important;
+  right: 24px !important;
+  bottom: 56px !important;
   z-index: 10 !important;
-  opacity: 0.75 !important;
+  opacity: 0.8 !important;
   transition: opacity 0.2s ease !important;
+  background: rgba(7, 10, 18, 0.75) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+}
+
+[data-theme="light"] .wallpaper-credit-widget {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .wallpaper-credit-widget .wp-loc-text {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .wallpaper-credit-widget .wp-arrow-btn {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="light"] .wallpaper-credit-widget .wp-arrow-btn:hover {
+  color: #2563eb !important;
 }
 
 .wallpaper-credit-widget:hover {
   opacity: 1 !important;
+}
+
+.wp-arrow-btn {
+  min-width: 28px !important;
+  min-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2px 6px !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.wp-arrow-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme="light"] .wp-arrow-btn:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #2563eb !important;
 }
 
 body.in-search-mode .wallpaper-credit-widget {

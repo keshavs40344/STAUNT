@@ -2488,8 +2488,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let wpTransitionTimer = null;
+  let currentWpRequestId = 0;
+
   function applyWallpaper(index, crossfade = true) {
     if (!wallpapers || wallpapers.length === 0) return;
+    const thisReqId = ++currentWpRequestId;
     const wp = wallpapers[index];
     const targetUrl = wp.local_url || wp.url || wp.fallback_url;
     const locName = wp.location || wp.title || "India";
@@ -2499,57 +2503,66 @@ document.addEventListener("DOMContentLoaded", () => {
     const wpLocText = document.getElementById("wallpaperLocation");
 
     if (!layerA || !layerB) return;
-
     if (wpLocText) wpLocText.textContent = locName;
 
     const reducedMotion = document.body.classList.contains("reduced-motion") ||
       (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
-    // Preload image before displaying
-    const imgLoader = new Image();
-    let loaded = false;
-
     function activateTarget(src) {
+      if (thisReqId !== currentWpRequestId) return;
+      if (wpTransitionTimer) {
+        clearTimeout(wpTransitionTimer);
+        wpTransitionTimer = null;
+      }
+
       if (activeWpLayer === "A") {
         layerB.style.backgroundImage = `url('${src}')`;
+        layerB.classList.add("active");
         if (reducedMotion || !crossfade) {
-          layerB.classList.add("active");
           layerA.classList.remove("active");
         } else {
-          layerB.classList.add("active");
-          setTimeout(() => layerA.classList.remove("active"), 800);
+          wpTransitionTimer = setTimeout(() => {
+            layerA.classList.remove("active");
+            wpTransitionTimer = null;
+          }, 350);
         }
         activeWpLayer = "B";
       } else {
         layerA.style.backgroundImage = `url('${src}')`;
+        layerA.classList.add("active");
         if (reducedMotion || !crossfade) {
-          layerA.classList.add("active");
           layerB.classList.remove("active");
         } else {
-          layerA.classList.add("active");
-          setTimeout(() => layerB.classList.remove("active"), 800);
+          wpTransitionTimer = setTimeout(() => {
+            layerB.classList.remove("active");
+            wpTransitionTimer = null;
+          }, 350);
         }
         activeWpLayer = "A";
       }
     }
 
+    // Direct preloading with fallback
+    const imgLoader = new Image();
+    let loaded = false;
+
     imgLoader.onload = () => {
+      if (thisReqId !== currentWpRequestId) return;
       loaded = true;
       activateTarget(targetUrl);
     };
 
     imgLoader.onerror = () => {
-      // Fallback to verified local asset
+      if (thisReqId !== currentWpRequestId) return;
       const fb = wp.fallback_url || "/static/wallpapers/himachal.svg";
       activateTarget(fb);
     };
 
-    // Timeout guard: 3.0s max wait for external URLs
     setTimeout(() => {
-      if (!loaded) {
+      if (thisReqId === currentWpRequestId && !loaded) {
         activateTarget(wp.fallback_url || "/static/wallpapers/himachal.svg");
       }
-    }, 3000);
+    }, 1200);
 
     imgLoader.src = targetUrl;
   }
@@ -2990,17 +3003,37 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Horizontal scroll for Explore Topics strip
+    // Horizontal scroll for Explore Topics strip with state tracking
+    function updateExploreNavState() {
+      if (!explorePrevBtn || !exploreNextBtn || !exploreScroll) return;
+      const atStart = exploreScroll.scrollLeft <= 5;
+      const atEnd = exploreScroll.scrollLeft + exploreScroll.clientWidth >= exploreScroll.scrollWidth - 5;
+      explorePrevBtn.disabled = atStart;
+      exploreNextBtn.disabled = atEnd;
+      explorePrevBtn.style.opacity = atStart ? "0.35" : "1";
+      nextBtnStyle = atEnd ? "0.35" : "1";
+      exploreNextBtn.style.opacity = nextBtnStyle;
+      explorePrevBtn.style.pointerEvents = atStart ? "none" : "auto";
+      exploreNextBtn.style.pointerEvents = atEnd ? "none" : "auto";
+    }
+
     if (explorePrevBtn && exploreScroll) {
       explorePrevBtn.addEventListener("click", () => {
         exploreScroll.scrollBy({ left: -220, behavior: "smooth" });
+        setTimeout(updateExploreNavState, 350);
       });
     }
 
     if (exploreNextBtn && exploreScroll) {
       exploreNextBtn.addEventListener("click", () => {
         exploreScroll.scrollBy({ left: 220, behavior: "smooth" });
+        setTimeout(updateExploreNavState, 350);
       });
+    }
+
+    if (exploreScroll) {
+      exploreScroll.addEventListener("scroll", updateExploreNavState, { passive: true });
+      updateExploreNavState();
     }
   }
 
@@ -3373,7 +3406,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 11. KEYBOARD NAVIGATION (ArrowLeft / ArrowRight) ---
+  // --- 11. SEARCH CHIPS CAROUSEL (Left/Right Scroll Controls) ---
+  function initChipsCarousel() {
+    const chipsRow = document.getElementById("searchChipsRow");
+    const prevBtn = document.getElementById("chipsNavPrev");
+    const nextBtn = document.getElementById("chipsNavNext");
+    if (!chipsRow) return;
+
+    function updateNavState() {
+      if (!prevBtn || !nextBtn) return;
+      const atStart = chipsRow.scrollLeft <= 4;
+      const atEnd = chipsRow.scrollLeft + chipsRow.clientWidth >= chipsRow.scrollWidth - 4;
+      prevBtn.disabled = atStart;
+      nextBtn.disabled = atEnd;
+      prevBtn.style.opacity = atStart ? "0.3" : "1";
+      nextBtn.style.opacity = atEnd ? "0.3" : "1";
+      prevBtn.style.pointerEvents = atStart ? "none" : "auto";
+      nextBtn.style.pointerEvents = atEnd ? "none" : "auto";
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        chipsRow.scrollBy({ left: -220, behavior: "smooth" });
+        setTimeout(updateNavState, 350);
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        chipsRow.scrollBy({ left: 220, behavior: "smooth" });
+        setTimeout(updateNavState, 350);
+      });
+    }
+
+    chipsRow.addEventListener("scroll", updateNavState, { passive: true });
+    window.addEventListener("resize", updateNavState);
+    updateNavState();
+  }
+
+  // --- 12. KEYBOARD NAVIGATION (ArrowLeft / ArrowRight) ---
   function initKeyboardNavigation() {
     window.addEventListener("keydown", (e) => {
       // 1. Never intercept when user is typing inside any input, textarea, select, or contenteditable
@@ -3399,8 +3470,13 @@ document.addEventListener("DOMContentLoaded", () => {
             prevPageBtn.click();
           }
         } else {
+          const chipsPrev = document.getElementById("chipsNavPrev");
+          const chipsRow = document.getElementById("searchChipsRow");
           const prevWpBtn = document.getElementById("prevWallpaperBtn");
-          if (prevWpBtn) {
+          if (chipsRow && chipsRow.scrollLeft > 5 && chipsPrev && !chipsPrev.disabled) {
+            e.preventDefault();
+            chipsPrev.click();
+          } else if (prevWpBtn) {
             e.preventDefault();
             prevWpBtn.click();
           }
@@ -3412,8 +3488,13 @@ document.addEventListener("DOMContentLoaded", () => {
             nextPageBtn.click();
           }
         } else {
+          const chipsNext = document.getElementById("chipsNavNext");
+          const chipsRow = document.getElementById("searchChipsRow");
           const nextWpBtn = document.getElementById("nextWallpaperBtn");
-          if (nextWpBtn) {
+          if (chipsRow && chipsRow.scrollLeft + chipsRow.clientWidth < chipsRow.scrollWidth - 5 && chipsNext && !chipsNext.disabled) {
+            e.preventDefault();
+            chipsNext.click();
+          } else if (nextWpBtn) {
             e.preventDefault();
             nextWpBtn.click();
           }
@@ -3433,6 +3514,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initSettingsModal();
   initVoiceAndVisualSearch();
   initHeroSearchActions();
+  initChipsCarousel();
   initKeyboardNavigation();
 
   // Initial Auth & URL Check
