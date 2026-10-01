@@ -126,7 +126,7 @@ def resolve_entity_profile(query: str, session: requests.Session = None) -> dict
     try:
         # Step 1: Search Wikidata entities
         search_url = f"https://www.wikidata.org/w/api.php?action=wbsearchentities&search={urllib.parse.quote(clean_q)}&language=en&format=json&limit=3"
-        resp = http.get(search_url, headers=headers, timeout=(2.0, 2.5))
+        resp = http.get(search_url, headers=headers, timeout=(1.0, 1.5))
         if resp.status_code != 200:
             return None
 
@@ -151,7 +151,7 @@ def resolve_entity_profile(query: str, session: requests.Session = None) -> dict
 
         # Step 2: Fetch detailed entity claims & sitelinks
         details_url = f"https://www.wikidata.org/w/api.php?action=wbgetentities&ids={qid}&props=claims|descriptions|labels|sitelinks&languages=en&format=json"
-        resp_details = http.get(details_url, headers=headers, timeout=(2.0, 2.5))
+        resp_details = http.get(details_url, headers=headers, timeout=(1.0, 1.5))
         if resp_details.status_code != 200:
             return None
 

@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>STAUNT — Sovereign Search Engine & Neural Discovery</title>
+  <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#070a12" />
+  <meta name="description" content="STAUNT is a high-speed, sovereign Indian search engine with dynamic landscapes, live weather, verified markets, and AI discovery." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <meta name="referrer" content="no-referrer" />
+  <link rel="stylesheet" href="/static/css/style.css?v=70" />
+</head>
+
+<body>
+  <!-- DYNAMIC WALLPAPER BACKGROUND STAGE -->
+  <div class="wallpaper-stage" id="wallpaperStage">
+    <div class="wallpaper-layer active" id="wallpaperLayerA" style="background-image: url('/static/wallpapers/himachal.svg');"></div>
+    <div class="wallpaper-layer" id="wallpaperLayerB"></div>
+    <div class="wallpaper-overlay"></div>
+  </div>
+
+  <!-- APP SHELL WRAPPER -->
+  <div class="app-shell" id="appShell">
+
+    <!-- TOP BAR -->
+    <header class="app-header" id="appHeader">
+      <div class="header-left">
+        <!-- Hamburger Menu Button to Toggle Left Navigation Rail -->
+        <button class="icon-btn rail-toggle-btn" id="navRailToggleBtn" title="Toggle Navigation Menu" aria-label="Toggle Navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+
+        <!-- Brand Logo with Gradient A -->
+        <div class="brand-logo" id="brandLogo" title="STAUNT Home" style="cursor: pointer;">
+          <div class="logo-mark">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="brand-text-wrap">
+            <span class="brand-name">ST<span class="brand-accent">A</span>UNT</span>
+          </div>
+        </div>
+
+        <span class="brand-badge">India Technology</span>
+      </div>
+
+      <!-- Top Search Form (Visible on results view or scrolled) -->
+      <div class="header-search-wrapper" id="headerSearchWrap" style="display: none;">
+        <form class="search-form" id="headerSearchForm">
+          <input 
+            type="text" 
+            id="headerSearchInput" 
+            class="search-input" 
+            placeholder="Search the web with STAUNT..." 
+            autocomplete="off" 
+            required 
+          />
+          <button type="button" class="header-voice-btn" id="headerVoiceBtn" title="Search by voice" aria-label="Voice Search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </button>
+          <button type="button" class="clear-btn" id="headerClearBtn" title="Clear input" style="display: none;">✕</button>
+          <button type="submit" class="search-btn" aria-label="Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+        </form>
+        <div class="suggest-box" id="suggestBoxHeader"></div>
+      </div>
+
+      <!-- Center Top Categories Bar (Reference Match) -->
+      <nav class="top-nav-categories" id="topNavCategories">
+        <button class="top-cat-btn active" data-tab="all">Search</button>
+        <button class="top-cat-btn" data-tab="images">Images</button>
+        <button class="top-cat-btn" data-tab="news">News</button>
+        <button class="top-cat-btn" data-tab="videos">Videos</button>
+        <button class="top-cat-btn" data-tab="maps">Maps</button>
+        <button class="top-cat-btn" data-tab="shopping">Shopping</button>
+        <div class="top-cat-dropdown-wrap">
+          <button class="top-cat-btn" id="moreCatBtn">More <span class="arrow-down">▾</span></button>
+          <div class="top-cat-dropdown-menu" id="moreCatMenu">
+            <a href="#" data-tab="books" class="dropdown-item">📚 Books</a>
+            <a href="#" data-tab="finance" class="dropdown-item">📈 Finance</a>
+            <a href="#" data-tab="flights" class="dropdown-item">✈️ Flights</a>
+            <a href="#" data-tab="scholar" class="dropdown-item">🎓 Scholar</a>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="header-actions">
+        <!-- Clean Web Search Engine Header Links -->
+        <a href="/discover" class="header-nav-link header-nav-link-right">Discover</a>
+        <a href="/download" class="header-nav-link header-nav-link-right">Apps</a>
+        <a href="/privacy" class="header-nav-link header-nav-link-right">Privacy</a>
+
+        <!-- Weather & Location Pill -->
+        <div class="top-weather-pill" id="topWeatherPill" title="Current weather and location">
+          <span class="pill-loc">📍 <span id="topWeatherCity">Delhi, India</span></span>
+          <span class="pill-divider">•</span>
+          <span class="pill-cond"><span id="topWeatherIcon">⛅</span> <span id="topWeatherTemp">28°C Haze</span></span>
+        </div>
+
+        <!-- Clock & Date Widget -->
+        <div class="top-clock-display" id="topClockDisplay">
+          <span id="topClockTime">12:24 AM</span>
+          <span id="topClockDate" class="clock-date">Tue, 30 Sep 2026</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="themeToggle" title="Toggle Dark/Light Theme" aria-label="Toggle Theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <!-- Settings Button -->
+        <button class="icon-btn" id="settingsBtn" title="Browser Settings & Wallpaper Preferences" aria-label="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+
+        <!-- App Launcher / Profile Button -->
+        <button class="profile-avatar-btn" id="userProfileBtn" title="STAUNT Apps & Account">
+          <span class="avatar-initials">K</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN BODY CONTAINER: Holds Left Rail & Content Area -->
+    <div class="app-body">
+
+      <!-- LEFT NAVIGATION RAIL (Reference Match) -->
+      <aside class="nav-rail" id="navRail">
+        <div class="nav-rail-section top-section">
+          <button class="rail-item active" id="navHome" data-tab="all" title="Home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="rail-label">Home</span>
+          </button>
+          <button class="rail-item" id="navDiscover" data-action="discover" title="Discover">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+            <span class="rail-label">Discover</span>
+          </button>
+          <button class="rail-item" id="navNews" data-tab="news" title="News">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+            <span class="rail-label">News</span>
+          </button>
+          <button class="rail-item" id="navTech" data-query="latest technology AI gadgets news" title="Technology">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span class="rail-label">Technology</span>
+          </button>
+          <button class="rail-item" id="navScience" data-query="science discoveries space astronomy research" title="Science">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L4.65 19.5A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.75-2.5L14 9.31V2"/></svg>
+            <span class="rail-label">Science</span>
+          </button>
+          <button class="rail-item" id="navBusiness" data-query="business economy startups financial markets" title="Business">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span class="rail-label">Business</span>
+          </button>
+          <button class="rail-item" id="navSports" data-query="cricket sports football scores updates" title="Sports">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            <span class="rail-label">Sports</span>
+          </button>
+          <button class="rail-item" id="navEntertainment" data-query="entertainment cinema movies reviews music" title="Entertainment">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            <span class="rail-label">Entertainment</span>
+          </button>
+          <button class="rail-item" id="navIndia" data-query="India national news digital governance ISRO" title="India">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            <span class="rail-label">India</span>
+          </button>
+        </div>
+
+        <div class="nav-rail-divider"></div>
+
+        <div class="nav-rail-section bottom-section">
+          <button class="rail-item" id="navBookmarks" title="Bookmarks">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            <span class="rail-label">Bookmarks</span>
+          </button>
+          <button class="rail-item" id="navHistory" title="History">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="rail-label">History</span>
+          </button>
+          <a href="/download" class="rail-item" id="navDownloads" title="Downloads">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="rail-label">Downloads</span>
+          </a>
+          <button class="rail-item" id="navSettings" title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="rail-label">Settings</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- CONTENT CANVAS WRAPPER -->
+      <div class="content-canvas" id="contentCanvas">
+
+        <!-- ================= HOME VIEW (HERO & DASHBOARD) ================= -->
+        <main class="home-container" id="homeView">
+          
+          <!-- HERO SECTION -->
+          <section class="home-hero" id="homeHero">
+            <div class="home-logo-wrap">
+              <h1 class="home-title">ST<span class="brand-accent">A</span>UNT</h1>
+              <p class="home-subtitle">EXPLORE A MORE OPEN INTERNET</p>
+            </div>
+
+            <!-- Central Search Bar with Voice and Visual Search -->
+            <div class="home-search-wrap">
+              <form class="search-form home-large-form" id="homeSearchForm">
+                <div class="search-input-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <input 
+                  type="text" 
+                  id="homeSearchInput" 
+                  class="search-input" 
+                  placeholder="Search the web with STAUNT..." 
+                  autocomplete="off" 
+                  required 
+                  autofocus
+                />
+                <button type="button" class="clear-btn" id="homeClearBtn" title="Clear input" style="display: none;">✕</button>
+
+                <!-- Voice Search Button -->
+                <button type="button" class="tool-icon-btn" id="homeVoiceBtn" title="Search by voice" aria-label="Voice Search">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                </button>
+
+                <!-- Visual Lens Search Button -->
+                <button type="button" class="tool-icon-btn" id="homeVisualBtn" title="Search by image / visual lens" aria-label="Visual Search">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+
+                <!-- Round Blue Search Button -->
+                <button type="submit" class="search-submit-btn" id="homeSearchSubmitBtn" aria-label="Search">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </button>
+              </form>
+              <div class="suggest-box" id="suggestBoxHome"></div>
+            </div>
+
+            <!-- Conventional Search Action Buttons -->
+            <div class="hero-actions-row">
+              <button type="button" class="hero-action-btn" id="homeSearchBtn">STAUNT Search</button>
+              <button type="button" class="hero-action-btn lucky-btn" id="homeLuckyBtn">I'm Feeling Lucky</button>
+            </div>
+
+            <!-- Search Suggestion Chips Carousel with Left/Right Scroll Controls -->
+            <div class="chips-carousel-wrap">
+              <button type="button" class="chip-scroll-btn chip-scroll-prev" id="chipsNavPrev" aria-label="Scroll suggestions left" title="Scroll left">‹</button>
+              <div class="search-chips-row" id="searchChipsRow" role="region" aria-label="Suggested search queries">
+                <button type="button" class="query-chip" data-query="India election 2026">India election 2026</button>
+                <button type="button" class="query-chip" data-query="ISRO latest news">ISRO latest news</button>
+                <button type="button" class="query-chip" data-query="Python tutorial">Python tutorial</button>
+                <button type="button" class="query-chip" data-query="Gold price today">Gold price today</button>
+                <button type="button" class="query-chip" data-query="Why is the sky blue">Why is the sky blue</button>
+                <button type="button" class="query-chip" data-query="CA vs CMA">CA vs CMA</button>
+                <button type="button" class="query-chip" data-query="Chandrayaan 4 mission">Chandrayaan 4 mission</button>
+                <button type="button" class="query-chip" data-query="AI technology in India">AI in India</button>
+              </div>
+              <button type="button" class="chip-scroll-btn chip-scroll-next" id="chipsNavNext" aria-label="Scroll suggestions right" title="Scroll right">›</button>
+            </div>
+
+            <!-- Shortcuts Row (Reference Match) -->
+            <div class="shortcuts-container" id="shortcutsContainer">
+              <div class="shortcuts-grid" id="shortcutsGrid">
+                <!-- Dynamically rendered shortcuts + Add shortcut button -->
+              </div>
+            </div>
+
+            <!-- Hero Bottom-Right Landscape Wallpaper Info & Controls -->
+            <div class="wallpaper-credit-widget" id="wallpaperCreditWidget">
+              <span class="wp-loc-pin" aria-hidden="true">📍</span>
+              <span class="wp-loc-text" id="wallpaperLocation">Himachal Pradesh, India</span>
+              <div class="wp-nav-arrows">
+                <button type="button" class="wp-arrow-btn" id="prevWallpaperBtn" aria-label="Previous Wallpaper" title="Previous Wallpaper">‹</button>
+                <button type="button" class="wp-arrow-btn" id="nextWallpaperBtn" aria-label="Next Wallpaper" title="Next Wallpaper">›</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- DESKTOP DASHBOARD GRID (Reference Match 3-Column Layout) -->
+          <section class="desktop-dashboard" id="homeDashboard">
+            
+            <!-- LEFT COLUMN: Weather & Quick Tools -->
+            <div class="dash-col dash-col-left">
+              
+              <!-- Weather Card -->
+              <div class="dash-card weather-card" id="weatherCard">
+                <div class="card-header-row">
+                  <div class="card-title-wrap">
+                    <span class="loc-icon">📍</span>
+                    <span class="card-title" id="weatherCardCity">Delhi, India</span>
+                  </div>
+                  <div class="card-header-actions">
+                    <span class="timestamp-label" id="weatherUpdatedTime">Updated 12:24 AM</span>
+                    <button class="card-refresh-btn" id="weatherRefreshBtn" title="Refresh Weather">🔄</button>
+                  </div>
+                </div>
+
+                <div class="weather-main-row">
+                  <div class="weather-temp-badge">
+                    <span class="weather-icon-large" id="weatherMainIcon">⛅</span>
+                    <div class="weather-temp-wrap">
+                      <span class="weather-degrees" id="weatherMainTemp">28°C</span>
+                      <span class="weather-desc" id="weatherMainCond">Haze</span>
+                    </div>
+                  </div>
+                  <div class="weather-stats-col">
+                    <div class="weather-hi-lo">
+                      H: <span id="weatherHigh">32°</span> L: <span id="weatherLow">24°</span>
+                    </div>
+                    <div class="weather-feels">
+                      Feels like <span id="weatherFeelsLike">30°</span>
+                    </div>
+                    <div class="weather-aqi-pill">
+                      <span class="aqi-dot yellow"></span>
+                      <span>AQI <span id="weatherAqi">176</span> • <span id="weatherAqiStatus">Moderate</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hourly Forecast (6 Slots) -->
+                <div class="weather-hourly-strip" id="weatherHourlyStrip">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+
+              <!-- Quick Tools Card -->
+              <div class="dash-card quick-tools-card" id="quickToolsCard">
+                <div class="card-header-row">
+                  <span class="card-title">Quick tools</span>
+                </div>
+                <div class="tools-grid-8" id="toolsGrid">
+                  <button type="button" class="tool-tile" data-tool="translate" title="Language Translate">
+                    <span class="tool-tile-icon">🌐</span>
+                    <span class="tool-tile-name">Translate</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="calculator" title="Instant Calculator">
+                    <span class="tool-tile-icon">🧮</span>
+                    <span class="tool-tile-name">Calculator</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="unit_convert" title="Unit Converter">
+                    <span class="tool-tile-icon">📐</span>
+                    <span class="tool-tile-name">Unit convert</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="currency" title="Currency Exchange">
+                    <span class="tool-tile-icon">₹</span>
+                    <span class="tool-tile-name">Currency</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="qr_code" title="Generate QR Code">
+                    <span class="tool-tile-icon">🏁</span>
+                    <span class="tool-tile-name">QR code</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="screenshot" title="Capture Screen">
+                    <span class="tool-tile-icon">📸</span>
+                    <span class="tool-tile-name">Screenshot</span>
+                  </button>
+                  <button type="button" class="tool-tile" data-tool="image_search" title="Search Images">
+                    <span class="tool-tile-icon">🖼️</span>
+                    <span class="tool-tile-name">Image search</span>
+                  </button>
+                  <a href="/download" class="tool-tile" title="Download Desktop & Android Apps">
+                    <span class="tool-tile-icon">📥</span>
+                    <span class="tool-tile-name">Downloads</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- MIDDLE COLUMN: Today's Highlights & Explore Topics -->
+            <div class="dash-col dash-col-mid">
+              
+              <!-- Today's Highlights -->
+              <div class="dash-card highlights-card" id="highlightsCard">
+                <div class="card-header-row">
+                  <span class="card-title">Today's highlights</span>
+                  <div class="highlights-tabs" id="highlightsTabs">
+                    <button class="hl-tab-btn active" data-cat="trending">For you</button>
+                    <button class="hl-tab-btn" data-cat="india">India</button>
+                    <button class="hl-tab-btn" data-cat="tech">Technology</button>
+                    <button class="hl-tab-btn" data-cat="science">Science</button>
+                    <button class="hl-tab-btn" data-cat="business">Business</button>
+                    <button class="hl-tab-btn" data-cat="sports">Sports</button>
+                    <button class="hl-tab-btn" data-cat="entertainment">Entertainment</button>
+                    <a href="/discover" class="hl-view-all">View all →</a>
+                  </div>
+                </div>
+
+                <!-- Highlights Content Grid / Carousel -->
+                <div class="highlights-grid" id="highlightsGrid">
+                  <!-- Rendered dynamically from backend news -->
+                </div>
+              </div>
+
+              <!-- Explore Topics Landscape Strip -->
+              <div class="dash-card explore-topics-card" id="exploreTopicsCard">
+                <div class="card-header-row">
+                  <span class="card-title">Explore topics</span>
+                  <div class="explore-arrows">
+                    <button class="explore-arrow-btn" id="explorePrevBtn">‹</button>
+                    <button class="explore-arrow-btn" id="exploreNextBtn">›</button>
+                  </div>
+                </div>
+
+                <div class="explore-topics-scroll" id="exploreTopicsScroll">
+                  <div class="topic-landscape-card" data-wp="himachal">
+                    <img src="/static/wallpapers/himachal.svg" alt="Himachal Pradesh" class="topic-thumb" />
+                    <span class="topic-label">Himachal Pradesh</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="varanasi">
+                    <img src="/static/wallpapers/varanasi.svg" alt="Varanasi" class="topic-thumb" />
+                    <span class="topic-label">Varanasi</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="coastal">
+                    <img src="/static/wallpapers/coastal.svg" alt="Coastal India" class="topic-thumb" />
+                    <span class="topic-label">Coastal India</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="teagardens">
+                    <img src="/static/wallpapers/teagardens.svg" alt="Tea Gardens" class="topic-thumb" />
+                    <span class="topic-label">Tea Gardens</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="desert">
+                    <img src="/static/wallpapers/desert.svg" alt="Desert India" class="topic-thumb" />
+                    <span class="topic-label">Desert India</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="modern">
+                    <img src="/static/wallpapers/modern.svg" alt="Modern India" class="topic-thumb" />
+                    <span class="topic-label">Modern India</span>
+                  </div>
+                  <div class="topic-landscape-card" data-wp="dal_lake">
+                    <img src="/static/wallpapers/dal_lake.svg" alt="Kashmir Dal Lake" class="topic-thumb" />
+                    <span class="topic-label">Kashmir Lakes</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Trending Searches & Markets -->
+            <div class="dash-col dash-col-right">
+              
+              <!-- Trending Searches Card -->
+              <div class="dash-card trending-card" id="trendingCard">
+                <div class="card-header-row">
+                  <div class="card-title-wrap">
+                    <span class="trend-icon">📈</span>
+                    <span class="card-title">Trending searches</span>
+                  </div>
+                  <button class="card-refresh-btn" id="trendingRefreshBtn" title="Refresh Trending">🔄</button>
+                </div>
+
+                <div class="trending-list-grid" id="trendingList">
+                  <!-- Rendered dynamically: 10 numbered items with green arrows -->
+                </div>
+              </div>
+
+              <!-- Financial Markets Card -->
+              <div class="dash-card markets-card" id="marketsCard">
+                <div class="card-header-row">
+                  <div class="card-title-wrap">
+                    <span class="market-icon">📊</span>
+                    <span class="card-title">Markets</span>
+                  </div>
+                  <button class="card-refresh-btn" id="marketsRefreshBtn" title="Refresh Markets">🔄</button>
+                </div>
+
+                <div class="markets-indices-list" id="marketsList">
+                  <!-- Rendered dynamically: Sensex, Nifty 50, Gold 24K with live sparklines -->
+                </div>
+              </div>
+
+            </div>
+
+          </section>
+
+          <!-- Home Footer Navigation -->
+          <footer class="app-footer" id="appFooter">
+            <div class="footer-left">
+              <span class="footer-country">🇮🇳 India</span>
+              <span class="footer-sep">•</span>
+              <a href="/privacy" class="footer-link">Privacy</a>
+              <span class="footer-sep">•</span>
+              <a href="/terms" class="footer-link">Terms</a>
+              <span class="footer-sep">•</span>
+              <a href="/about" class="footer-link">About STAUNT</a>
+              <span class="footer-sep">•</span>
+              <a href="/download" class="footer-link">Downloads</a>
+              <span class="footer-sep">•</span>
+              <span class="footer-version">v5.4</span>
+            </div>
+            <div class="footer-right">
+              <span class="footer-motto">🕊️ Sovereign, Open Web Discovery</span>
+              <div class="footer-social-icons">
+                <a href="https://github.com/keshavs40344/STAUNT" target="_blank" rel="noopener noreferrer" title="STAUNT GitHub Repository">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+              </div>
+            </div>
+          </footer>
+        </main>
+
+
+        <!-- ================= SEARCH RESULTS VIEW ================= -->
+        <main class="results-container" id="resultsView" style="display: none;">
+          <!-- Category Tabs Navigation -->
+          <nav class="tabs-bar" id="categoriesBar">
+            <button class="tab-btn active" data-tab="all">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <span>All</span>
+            </button>
+            <button class="tab-btn" data-tab="images">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <span>Images</span>
+            </button>
+            <button class="tab-btn" data-tab="news">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
+              <span>News</span>
+            </button>
+            <button class="tab-btn" data-tab="videos">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect width="15" height="14" x="1" y="5" rx="2"/></svg>
+              <span>Videos</span>
+            </button>
+            <button class="tab-btn" data-tab="places">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Maps</span>
+            </button>
+            <button class="tab-btn" data-tab="shopping">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+              <span>Shopping</span>
+            </button>
+          </nav>
+
+          <!-- Search Filters Bar (Time Filters) -->
+          <div class="filters-bar" id="searchFiltersBar" style="display: none;">
+            <button class="filter-pill active" data-time="">All Time</button>
+            <button class="filter-pill" data-time="d">Past 24 Hours</button>
+            <button class="filter-pill" data-time="w">Past Week</button>
+            <button class="filter-pill" data-time="m">Past Month</button>
+            <button class="filter-pill" data-time="y">Past Year</button>
+          </div>
+
+          <!-- Results Layout -->
+          <div class="results-layout">
+            <!-- Main Results Column -->
+            <div class="results-main">
+              <div class="results-meta-bar" id="resultsMetaBar">
+                <span class="results-stats" id="resultsStats"></span>
+                <span class="results-notice" id="resultsCountNotice" style="margin-left: 12px; font-size: 0.82rem; color: var(--text-muted);"></span>
+              </div>
+
+              <!-- Instant Calculator & Currency Conversion Card -->
+              <div class="instant-calc-card" id="instantAnswerCard" style="display: none;">
+                <div class="calc-header-badge" id="calcHeaderBadge" style="display: none;"></div>
+                <div class="calc-expression" id="calcExpr"></div>
+                <div class="calc-result" id="calcResult"></div>
+                <div class="calc-subtext" id="calcSubtext" style="display: none;"></div>
+                <div class="calc-footer-meta" id="calcFooterMeta" style="display: none;">
+                  <span class="calc-source-badge" id="calcSourceBadge"></span>
+                  <span class="calc-disclaimer" id="calcDisclaimer"></span>
+                </div>
+              </div>
+
+              <!-- STAUNT Direct Answer Engine Card -->
+              <div class="direct-answer-card" id="directAnswerCard" style="display: none;">
+                <div class="answer-header">
+                  <div class="answer-header-left">
+                    <span class="answer-badge" id="answerBadge">Direct Answer</span>
+                    <span class="answer-confidence" id="answerConfidence"></span>
+                  </div>
+                  <div class="answer-header-right">
+                    <button class="answer-action-btn" id="copyAnswerBtn" title="Copy answer" aria-label="Copy answer">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="13" height="13" x="9" y="9" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="answer-content" id="answerContent"></div>
+                <div class="answer-bullets" id="answerBullets" style="display: none;"></div>
+                
+                <!-- Sources Citations Section -->
+                <div class="answer-sources" id="answerSourcesSection" style="display: none;">
+                  <div class="answer-sources-title">Sources</div>
+                  <div class="answer-sources-chips" id="answerSourcesChips"></div>
+                </div>
+
+                <!-- Related / Follow-up Questions -->
+                <div class="answer-followup" id="answerFollowupSection" style="display: none;">
+                  <div class="answer-followup-title">Related questions</div>
+                  <div class="answer-followup-chips" id="answerFollowupChips"></div>
+                </div>
+
+                <!-- Footer Provenance & Mode -->
+                <div class="answer-footer">
+                  <span class="answer-provider-tag" id="answerProviderTag">Grounded in web sources</span>
+                  <span class="answer-disclaimer" id="answerDisclaimer">Verify critical information independently.</span>
+                </div>
+              </div>
+
+              <!-- Web Search Results List (PRIMARY CONTENT) -->
+              <div class="web-results search-results-list" id="webResultsSection"></div>
+              <div class="search-results-list" id="searchResultsList" style="display: none;"></div>
+
+              <!-- Stubs for backward-compatible element IDs (hidden) -->
+              <div style="display: none !important;" id="legacyStubs" aria-hidden="true">
+                <div id="destinationCard"></div>
+                <div id="destHeroImgWrap"><img id="destHeroImg" src="" alt="" /></div>
+                <div id="destTitle"></div><div id="destCountry"></div><div id="destWeather"></div>
+                <div id="destTagline"></div><div id="destBestTime"></div><div id="destDuration"></div>
+                <div id="destAttractions"></div><div id="destThumbsRow"></div>
+                <div id="destMapsBtn"></div><div id="destHotelsBtn"></div><div id="destFlightsBtn"></div>
+                <div id="entityProfileCard">
+                  <div id="entityAvatarWrap"><img id="entityAvatar" src="" alt="" /></div>
+                  <div id="entityName"></div><div id="entityRole"></div><div id="entityConfidence"></div>
+                  <div id="entityBio"></div><div id="entityWebsiteBtn"></div><div id="entityWikiBtn"></div>
+                  <div id="entityProfilesSection"></div><div id="entityProfilesGrid"></div>
+                  <div id="entityMediaClusters"></div><div id="entityNewsCluster"></div>
+                  <div id="entityNewsList"></div><div id="entityVideosCluster"></div><div id="entityVideosList"></div>
+                </div>
+                <div id="aiOverviewCard"><div id="aiContent"></div><div id="aiSources"></div><div id="aiSourcesTray"></div><div id="aiSourcesList"></div><div id="aiOverviewBody"></div><div id="copyOverviewBtn"></div><div id="collapseOverviewBtn"></div></div>
+                <div id="researchCard"><div id="researchHeading"></div><div id="researchSummary"></div><div id="researchFindings"></div><div id="researchMethodology"></div><div id="researchLimitations"></div></div>
+              </div>
+              <div class="search-results-list" id="searchResultsList" style="display: none;"></div>
+
+              <!-- Vertical Tab Results Sections -->
+              <div class="images-grid" id="imagesSection" style="display: none;"></div>
+              <div class="videos-grid" id="videosSection" style="display: none;"></div>
+              <div class="docs-results" id="docsSection" style="display: none;"></div>
+              <div class="code-results" id="codeSection" style="display: none;"></div>
+              <div class="shopping-results" id="shoppingSection" style="display: none;"></div>
+              <div class="jobs-results" id="jobsSection" style="display: none;"></div>
+
+              <!-- Empty State (Refined with quick actions & category awareness) -->
+              <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon" id="emptyIcon">🔍</div>
+                <h3 class="empty-title" id="emptyTitle">No search results found</h3>
+                <p class="empty-desc" id="emptyDesc">Try checking your spelling or use more general keywords.</p>
+                <div class="empty-actions" id="emptyActions">
+                  <button class="empty-action-btn primary" id="emptySwitchAllBtn" type="button" style="display: none;">Search in All Results</button>
+                  <button class="empty-action-btn" id="emptyRetryBtn" type="button">Retry Search</button>
+                </div>
+                <div class="empty-tips-card" id="emptyTipsCard">
+                  <div class="empty-tips-title">Search suggestions</div>
+                  <ul class="empty-tips-list">
+                    <li>Ensure all words are spelled correctly.</li>
+                    <li>Try more general or alternate keywords.</li>
+                    <li>Switch to <strong>All</strong> to view broad web results and profiles.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Pagination Controls -->
+              <div class="pagination-bar" id="paginationBar" style="display: none;">
+                <button class="page-btn" id="prevPageBtn" disabled>← Previous</button>
+                <span class="page-indicator" id="pageIndicator">Page 1</span>
+                <button class="page-btn" id="nextPageBtn">Next →</button>
+              </div>
+            </div>
+
+            <!-- Sidebar Column (Related Searches & Contextual Knowledge) -->
+            <aside class="results-sidebar" id="resultsSidebar">
+              <!-- Related Searches -->
+              <div class="related-queries-card" id="relatedQueriesCard" style="display: none;">
+                <h4 class="related-heading">RELATED SEARCHES</h4>
+                <div class="related-chips-list" id="relatedQueriesList"></div>
+              </div>
+
+              <!-- Compact Knowledge Entity Card -->
+              <div class="knowledge-card" id="knowledgeCard" style="display: none; margin-top: 18px;">
+                <div class="kc-img-wrap" id="kcImgWrap" style="display: none;">
+                  <img id="kcImg" src="" alt="Knowledge Entity" referrerpolicy="no-referrer" />
+                </div>
+                <div class="kc-content">
+                  <h3 class="kc-title" id="kcTitle">Entity</h3>
+                  <p class="kc-snippet" id="kcSnippet"></p>
+                  <div class="kc-attrs" id="kcAttrs"></div>
+                  <a href="#" target="_blank" rel="noopener noreferrer" class="kc-link" id="kcLink">Read on Wikipedia ↗</a>
+                </div>
+              </div>
+
+              <!-- Did You Mean Suggestion -->
+              <div class="did-you-mean-card" id="didYouMeanCard" style="display: none; margin-top: 14px;">
+                <span class="dym-label">Did you mean:</span>
+                <a href="#" class="dym-link" id="dymLink">suggestion</a>
+              </div>
+            </aside>
+          </div>
+        </main>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODALS & POPUPS ================= -->
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="settings-modal-content">
+      <div class="modal-header">
+        <h3>Browser Settings & Privacy</h3>
+        <button class="modal-close-btn" id="closeSettingsModal">✕</button>
+      </div>
+      <div class="modal-body settings-body">
+        
+        <!-- Wallpaper Preferences -->
+        <div class="settings-section">
+          <h4>Dynamic Wallpapers</h4>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Auto-Rotate Indian Landscapes</div>
+              <div class="setting-desc">Smoothly rotates between Himalayan, coastal, desert, and heritage landscapes</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingAutoWallpaper" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Rotation Interval</div>
+              <div class="setting-desc">How often the desktop wallpaper crossfades</div>
+            </div>
+            <select class="settings-select" id="settingWallpaperInterval">
+              <option value="30">30 seconds</option>
+              <option value="60" selected>1 minute</option>
+              <option value="300">5 minutes</option>
+              <option value="0">Do not rotate</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Reduced Motion</div>
+              <div class="setting-desc">Disables crossfade transitions for performance and accessibility</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingReducedMotion" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Search Preferences -->
+        <div class="settings-section">
+          <h4>Search Preferences</h4>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">SafeSearch Filter</div>
+              <div class="setting-desc">Filter explicit content from web and image queries</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingSafeSearch" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Open Links in New Tab</div>
+              <div class="setting-desc">External search result links open in a new tab</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingNewTab" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Search History</div>
+              <div class="setting-desc">Save queries locally on this device only (never uploaded to cloud)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="settingHistory" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-section">
+          <h4>Data & Storage</h4>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Reset Shortcuts to Default</div>
+              <div class="setting-desc">Restore initial 8 Indian & global tech shortcuts</div>
+            </div>
+            <button type="button" class="empty-action-btn" id="resetShortcutsBtn">Reset</button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-title">Clear Local Search History</div>
+              <div class="setting-desc">Erase all query history stored in local storage</div>
+            </div>
+            <button type="button" class="empty-action-btn" id="clearHistoryBtn">Clear</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT SHORTCUT MODAL -->
+  <div class="modal-overlay" id="shortcutModal">
+    <div class="small-modal-content">
+      <div class="modal-header">
+        <h3 id="shortcutModalTitle">Add Shortcut</h3>
+        <button class="modal-close-btn" id="closeShortcutModal">✕</button>
+      </div>
+      <form id="shortcutForm">
+        <div class="small-modal-body">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Shortcut Name</label>
+            <input type="text" id="shortcutNameInput" class="search-input" placeholder="e.g. YouTube" required style="width: 100%; border-radius: 8px;" />
+          </div>
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Web URL</label>
+            <input type="url" id="shortcutUrlInput" class="search-input" placeholder="https://example.com" required style="width: 100%; border-radius: 8px;" />
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="empty-action-btn" id="cancelShortcutBtn">Cancel</button>
+            <button type="submit" class="auth-submit-btn" style="width: auto; padding: 8px 20px;">Save Shortcut</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- QR CODE TOOL MODAL -->
+  <div class="modal-overlay" id="qrModal">
+    <div class="small-modal-content">
+      <div class="modal-header">
+        <h3>Instant QR Code Generator</h3>
+        <button class="modal-close-btn" id="closeQrModal">✕</button>
+      </div>
+      <div class="small-modal-body" style="text-align: center;">
+        <input type="text" id="qrTextInput" class="search-input" placeholder="Enter text or URL..." value="https://staunt.vercel.app" style="width: 100%; border-radius: 8px; margin-bottom: 14px;" />
+        <div id="qrCodeContainer" style="padding: 16px; background: white; border-radius: 12px; display: inline-block; margin-bottom: 14px;">
+          <!-- QR SVG / Img generated dynamically -->
+          <img id="qrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://staunt.vercel.app" alt="QR Code" style="width: 160px; height: 160px; display: block;" />
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">Scan with any smartphone camera to visit link.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE LIGHTBOX MODAL -->
+  <div class="modal-overlay" id="lightboxModal">
+    <div class="lightbox-content">
+      <button class="modal-close-btn lightbox-close-btn" id="closeLightboxBtn">✕</button>
+      <div class="lightbox-image-wrap">
+        <img id="lightboxImg" src="" alt="Full view" />
+      </div>
+      <div class="lightbox-footer">
+        <div class="lightbox-meta">
+          <span class="lightbox-title" id="lightboxTitle">Image Preview</span>
+          <span class="lightbox-domain" id="lightboxDomain"></span>
+        </div>
+        <div class="lightbox-actions">
+          <a id="lightboxVisitBtn" href="" target="_blank" rel="noopener noreferrer" class="lightbox-action-btn primary">Visit Source Page ↗</a>
+          <a id="lightboxRawImgBtn" href="" target="_blank" rel="noopener noreferrer" class="lightbox-action-btn secondary">View Full Image</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- READER MODE MODAL -->
+  <div class="modal-overlay" id="readerModal">
+    <div class="reader-modal-content">
+      <div class="reader-header">
+        <div class="reader-header-left">
+          <span class="reader-badge" id="readerDomainBadge">web</span>
+          <span class="reader-badge" id="readerTimeBadge">Reading View</span>
+        </div>
+        <div class="reader-header-actions">
+          <button class="reader-font-btn" id="readerFontDec" title="Smaller font">A-</button>
+          <button class="reader-font-btn" id="readerFontInc" title="Larger font">A+</button>
+          <a id="readerExternalLink" href="" target="_blank" rel="noopener noreferrer" class="reader-font-btn" title="Open original">↗</a>
+          <button class="modal-close-btn" id="closeReaderBtn">✕</button>
+        </div>
+      </div>
+      <h1 class="reader-title" id="readerTitle"></h1>
+      <div class="reader-body" id="readerBody"></div>
+    </div>
+  </div>
+
+  <!-- SAVE BOOKMARK MODAL -->
+  <div class="modal-overlay" id="saveResultModal">
+    <div class="small-modal-content">
+      <div class="small-modal-header">
+        <h3>Save to Collection</h3>
+        <button class="modal-close-btn" id="closeSaveResultModal">✕</button>
+      </div>
+      <div class="small-modal-body">
+        <p class="save-item-title" id="saveItemTitle" style="font-weight: 600; margin-bottom: 12px;"></p>
+        <select class="save-collection-select" id="saveCollectionSelect" style="width: 100%; padding: 8px 12px; border-radius: 8px; margin-bottom: 14px;">
+          <option value="default">Default Collection</option>
+        </select>
+        <button class="auth-submit-btn" id="confirmSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=70"></script>
+  <!-- Early boot: trigger search skeleton immediately when ?q= param present, before cold-start DOMContentLoaded -->
+  <script>
+  (function() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var q = params.get('q');
+      if (q && q.trim()) {
+        // Apply in-search-mode class immediately so CSS can show results skeleton
+        document.documentElement.setAttribute('data-early-query', '1');
+        // When DOM is interactive (HTML received), immediately trigger search
+        function _earlyBoot() {
+          var body = document.body;
+          var homeView = document.getElementById('homeView');
+          var resultsView = document.getElementById('resultsView');
+          var headerSearchWrap = document.getElementById('headerSearchWrap');
+          var headerInput = document.getElementById('headerSearchInput');
+          var homeInput = document.getElementById('homeSearchInput');
+          if (!body || !homeView || !resultsView) return;
+          body.classList.add('in-search-mode');
+          homeView.style.display = 'none';
+          resultsView.style.display = 'block';
+          resultsView.classList.add('active');
+          if (headerSearchWrap) headerSearchWrap.style.display = 'flex';
+          if (headerInput) headerInput.value = q.trim();
+          if (homeInput) homeInput.value = q.trim();
+          // Show skeleton immediately
+          var webResultsSection = document.getElementById('webResultsSection');
+          if (webResultsSection && webResultsSection.children.length === 0) {
+            webResultsSection.style.display = 'flex';
+            webResultsSection.innerHTML = [0,1,2].map(function() {
+              return '<div class="result-skeleton-card"><div class="skeleton-source-row"><div class="skeleton-shimmer skeleton-favicon"></div><div class="skeleton-shimmer skeleton-domain"></div></div><div class="skeleton-shimmer skeleton-title"></div><div class="skeleton-shimmer skeleton-snippet-1"></div><div class="skeleton-shimmer skeleton-snippet-2"></div></div>';
+            }).join('');
+          }
+          var notice = document.getElementById('resultsCountNotice');
+          if (notice) notice.textContent = 'Searching\u2026';
+        }
+        // Fire as soon as DOM is interactive
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', _earlyBoot, {once: true});
+        } else {
+          _earlyBoot();
+        }
+      }
+    } catch(e) {}
+  })();
+  </script>
+</body>
+</html>

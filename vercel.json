@@ -99,6 +99,34 @@
       "destination": "/api/overview"
     },
     {
+      "source": "/api/auth/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/discover",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/research",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/download",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/download-guide",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/about",
+      "destination": "/api/index"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/index"
     }

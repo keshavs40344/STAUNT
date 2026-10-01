@@ -1995,7 +1995,7 @@ header.app-header {
   color: var(--text-primary);
 }
 .research-findings-list li::before {
-  content: "✓";
+  content: "âœ“";
   position: absolute;
   left: 0;
   color: var(--accent);
@@ -4363,7 +4363,7 @@ body.minimalist-mode .wallpaper-container {
 }
 
 /* ==========================================================================
-   STAUNT DESKTOP WEB SEARCH ENGINE — PREMIUM VISUAL DESIGN & WALLPAPERS
+   STAUNT DESKTOP WEB SEARCH ENGINE â€” PREMIUM VISUAL DESIGN & WALLPAPERS
    ========================================================================== */
 
 /* --- 1. DYNAMIC WALLPAPER STAGE & CROSSFADE LAYERS --- */
@@ -6409,4 +6409,368 @@ body:not(.in-search-mode) .home-container {
 
 body.in-search-mode .wallpaper-credit-widget {
   display: none !important;
+}
+
+/* ====================================================
+   STAUNT WEB REDESIGN — Clean Search Engine Homepage
+   Applied only to web browser (staunt.vercel.app)
+   Hides dashboard/wallpaper elements from web homepage
+   ==================================================== */
+
+/* Hide browser-app elements not appropriate for web homepage */
+.wallpaper-stage,
+#wallpaperStage {
+  display: none !important;
+}
+
+.wallpaper-credit-widget {
+  display: none !important;
+}
+
+.rail-toggle-btn {
+  display: none;
+}
+
+.top-clock-display,
+.top-weather-pill {
+  display: none;
+}
+
+.nav-rail,
+#navRail {
+  display: none !important;
+}
+
+/* App body: full width, no left rail */
+.app-body {
+  flex-direction: column;
+}
+
+.content-canvas {
+  width: 100%;
+  max-width: 100%;
+  flex: 1;
+}
+
+/* Hide dashboard elements on web homepage */
+.desktop-dashboard,
+#homeDashboard {
+  display: none !important;
+}
+
+.shortcuts-container,
+#shortcutsContainer {
+  display: none !important;
+}
+
+/* ---- CLEAN SEARCH HERO ---- */
+#homeView {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: calc(100vh - 56px - 60px);
+  padding: 0;
+  background: transparent;
+}
+
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+  padding-top: 14vh;
+  padding-bottom: 24px;
+}
+
+.home-logo-wrap {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.home-title {
+  font-size: 3.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.home-subtitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.home-search-wrap {
+  width: 100%;
+  max-width: 580px;
+  margin: 24px auto 0;
+  position: relative;
+}
+
+.search-form.home-large-form {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  border-radius: 24px;
+}
+
+.search-form.home-large-form .search-input {
+  height: 50px;
+  border-radius: 24px;
+  font-size: 1rem;
+  padding: 0 130px 0 20px;
+  border: 1.5px solid var(--border-subtle);
+}
+
+.search-form.home-large-form .search-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+}
+
+[data-theme="light"] .search-form.home-large-form {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+.hero-actions-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-action-btn {
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.hero-action-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.chips-carousel-wrap {
+  max-width: 580px;
+  width: 100%;
+  margin: 14px auto 0;
+}
+
+/* ---- HEADER MODIFICATIONS ---- */
+/* Hide top categories bar on homepage (show only in search mode) */
+body:not(.in-search-mode) .top-nav-categories {
+  display: none;
+}
+
+body.in-search-mode .top-nav-categories {
+  display: flex;
+}
+
+/* ---- APP FOOTER (web clean) ---- */
+.app-footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-subtle);
+  position: static;
+  background: var(--bg-primary);
+  flex-wrap: wrap;
+}
+
+.app-footer .footer-left,
+.app-footer .footer-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-link,
+.footer-version,
+.footer-country,
+.footer-motto {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.footer-link:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+.footer-sep {
+  color: var(--border-subtle);
+  font-size: 0.78rem;
+}
+
+/* ---- RESULT CARD IMPROVEMENTS ---- */
+.result-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  max-width: 720px;
+}
+
+.result-card:last-child {
+  border-bottom: none;
+}
+
+.result-source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.result-source-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-favicon-wrap {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.result-favicon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+
+.result-favicon-fallback {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.result-source-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.result-domain {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.result-breadcrumb {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 480px;
+}
+
+.result-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--link-color);
+  line-height: 1.3;
+  margin: 4px 0;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+}
+
+.result-title:hover {
+  text-decoration: underline;
+}
+
+.result-snippet {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.result-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.result-card:hover .result-actions {
+  opacity: 1;
+}
+
+.copy-link-btn,
+.save-result-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.copy-link-btn:hover,
+.save-result-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+/* web results section layout */
+#webResultsSection.web-results {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .home-title {
+    font-size: 2.4rem;
+  }
+  .home-hero {
+    padding-top: 8vh;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .home-search-wrap {
+    padding: 0 16px;
+  }
+  .search-form.home-large-form .search-input {
+    font-size: 0.95rem;
+  }
+  .chips-carousel-wrap {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-title {
+    font-size: 1.9rem;
+  }
+  .home-subtitle {
+    font-size: 0.7rem;
+  }
 }

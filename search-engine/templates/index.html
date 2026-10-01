@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <meta name="referrer" content="no-referrer" />
-  <link rel="stylesheet" href="/static/css/style.css?v=60" />
+  <link rel="stylesheet" href="/static/css/style.css?v=70" />
 </head>
 
 <body>
@@ -901,6 +901,52 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=60"></script>
+  <script src="/static/js/app.js?v=70"></script>
+  <!-- Early boot: trigger search skeleton immediately when ?q= param present, before cold-start DOMContentLoaded -->
+  <script>
+  (function() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var q = params.get('q');
+      if (q && q.trim()) {
+        // Apply in-search-mode class immediately so CSS can show results skeleton
+        document.documentElement.setAttribute('data-early-query', '1');
+        // When DOM is interactive (HTML received), immediately trigger search
+        function _earlyBoot() {
+          var body = document.body;
+          var homeView = document.getElementById('homeView');
+          var resultsView = document.getElementById('resultsView');
+          var headerSearchWrap = document.getElementById('headerSearchWrap');
+          var headerInput = document.getElementById('headerSearchInput');
+          var homeInput = document.getElementById('homeSearchInput');
+          if (!body || !homeView || !resultsView) return;
+          body.classList.add('in-search-mode');
+          homeView.style.display = 'none';
+          resultsView.style.display = 'block';
+          resultsView.classList.add('active');
+          if (headerSearchWrap) headerSearchWrap.style.display = 'flex';
+          if (headerInput) headerInput.value = q.trim();
+          if (homeInput) homeInput.value = q.trim();
+          // Show skeleton immediately
+          var webResultsSection = document.getElementById('webResultsSection');
+          if (webResultsSection && webResultsSection.children.length === 0) {
+            webResultsSection.style.display = 'flex';
+            webResultsSection.innerHTML = [0,1,2].map(function() {
+              return '<div class="result-skeleton-card"><div class="skeleton-source-row"><div class="skeleton-shimmer skeleton-favicon"></div><div class="skeleton-shimmer skeleton-domain"></div></div><div class="skeleton-shimmer skeleton-title"></div><div class="skeleton-shimmer skeleton-snippet-1"></div><div class="skeleton-shimmer skeleton-snippet-2"></div></div>';
+            }).join('');
+          }
+          var notice = document.getElementById('resultsCountNotice');
+          if (notice) notice.textContent = 'Searching\u2026';
+        }
+        // Fire as soon as DOM is interactive
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', _earlyBoot, {once: true});
+        } else {
+          _earlyBoot();
+        }
+      }
+    } catch(e) {}
+  })();
+  </script>
 </body>
 </html>
