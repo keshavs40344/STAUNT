@@ -6254,64 +6254,157 @@ body:not(.in-search-mode) .home-container {
   background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.72) 0%, rgba(248, 250, 252, 0.94) 80%, #ffffff 100%) !important;
 }
 
-/* 10. Wallpaper Controls in Bottom Right */
+/* 10. Wallpaper Credit & Navigation Widget (Bottom-Right with Watermark & Edge Clearance) */
 .wallpaper-credit-widget {
   position: fixed !important;
-  right: 24px !important;
-  bottom: 56px !important;
-  z-index: 10 !important;
-  opacity: 0.8 !important;
-  transition: opacity 0.2s ease !important;
-  background: rgba(7, 10, 18, 0.75) !important;
+  right: clamp(20px, 3vw, 36px) !important;
+  bottom: clamp(76px, 10vh, 92px) !important;
+  z-index: 40 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: rgba(15, 23, 42, 0.78) !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  padding: 6px 14px !important;
-  border-radius: 20px !important;
-}
-
-[data-theme="light"] .wallpaper-credit-widget {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
-  color: #1e293b !important;
-}
-
-[data-theme="light"] .wallpaper-credit-widget .wp-loc-text {
-  color: #1e293b !important;
-}
-
-[data-theme="light"] .wallpaper-credit-widget .wp-arrow-btn {
-  color: rgba(0, 0, 0, 0.7) !important;
-}
-
-[data-theme="light"] .wallpaper-credit-widget .wp-arrow-btn:hover {
-  color: #2563eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  padding: 5px 12px 5px 14px !important;
+  border-radius: 24px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  color: #ffffff !important;
+  font-size: 0.82rem !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+  max-width: calc(100vw - 48px) !important;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease !important;
+  opacity: 0.85 !important;
 }
 
 .wallpaper-credit-widget:hover {
   opacity: 1 !important;
+  background: rgba(15, 23, 42, 0.92) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="light"] .wallpaper-credit-widget {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #1e293b !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .wallpaper-credit-widget:hover {
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.wp-loc-pin {
+  font-size: 0.9rem !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+}
+
+.wp-loc-text {
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 220px !important;
+  color: inherit !important;
+}
+
+.wp-nav-arrows {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-left: 6px !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.18) !important;
+  padding-left: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+[data-theme="light"] .wp-nav-arrows {
+  border-left-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 .wp-arrow-btn {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  width: 28px !important;
+  height: 28px !important;
   min-width: 28px !important;
   min-height: 28px !important;
+  border-radius: 50% !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 2px 6px !important;
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
   cursor: pointer !important;
-  border-radius: 4px !important;
-  transition: background 0.15s ease, color 0.15s ease !important;
+  transition: all 0.15s ease !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
 }
 
 .wp-arrow-btn:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
   color: #38bdf8 !important;
+  transform: scale(1.08) !important;
+}
+
+.wp-arrow-btn:active {
+  transform: scale(0.94) !important;
+}
+
+.wp-arrow-btn:focus-visible {
+  outline: 2px solid #38bdf8 !important;
+  outline-offset: 2px !important;
+  background: rgba(56, 189, 248, 0.2) !important;
+}
+
+[data-theme="light"] .wp-arrow-btn {
+  color: #475569 !important;
 }
 
 [data-theme="light"] .wp-arrow-btn:hover {
   background: rgba(0, 0, 0, 0.08) !important;
   color: #2563eb !important;
+}
+
+[data-theme="light"] .wp-arrow-btn:focus-visible {
+  outline-color: #2563eb !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wallpaper-credit-widget {
+    right: 14px !important;
+    bottom: 64px !important;
+    padding: 4px 10px !important;
+    font-size: 0.75rem !important;
+    max-width: calc(100vw - 28px) !important;
+  }
+  .wp-loc-text {
+    max-width: 140px !important;
+    font-size: 0.75rem !important;
+  }
+  .wp-arrow-btn {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    font-size: 1.05rem !important;
+  }
+}
+
+@media (max-height: 650px) {
+  .wallpaper-credit-widget {
+    bottom: 60px !important;
+    padding: 3px 8px !important;
+  }
 }
 
 body.in-search-mode .wallpaper-credit-widget {

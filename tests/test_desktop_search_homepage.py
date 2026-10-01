@@ -208,6 +208,42 @@ class TestDesktopSearchEngineHomepage(unittest.TestCase):
         self.assertIn("ArrowRight", js)
         self.assertIn("returnToHome", js)
 
+    def test_10_wallpaper_arrows_and_responsive_positioning(self):
+        """Verify wallpaper navigation controls, accessible hit areas, safe watermark clearance, and responsive rules."""
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+
+        # 1. HTML structure and accessibility
+        self.assertIn('id="wallpaperCreditWidget"', html)
+        self.assertIn('id="prevWallpaperBtn"', html)
+        self.assertIn('id="nextWallpaperBtn"', html)
+        self.assertIn('id="chipsNavPrev"', html)
+        self.assertIn('id="chipsNavNext"', html)
+        self.assertIn('aria-label="Previous Wallpaper"', html)
+        self.assertIn('aria-label="Next Wallpaper"', html)
+
+        # 2. CSS watermark clearance and hit target rules
+        css_path = os.path.join(SEARCH_STATIC, "css", "style.css")
+        with open(css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+        self.assertIn(".wallpaper-credit-widget", css)
+        self.assertIn("clamp(76px, 10vh, 92px)", css)
+        self.assertIn("clamp(20px, 3vw, 36px)", css)
+        self.assertIn("wp-arrow-btn:focus-visible", css)
+        self.assertIn("@media (max-width: 768px)", css)
+        self.assertIn("@media (max-height: 650px)", css)
+
+        # 3. JS synchronous initialization and accessibility synchronization
+        js_path = os.path.join(SEARCH_STATIC, "js", "app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        self.assertIn("initWallpaperManager", js)
+        self.assertIn("initChipsCarousel", js)
+        self.assertIn("stopWallpaperRotation", js)
+        self.assertIn("wpTransitionTimer", js)
+        self.assertIn("currentWpRequestId", js)
+
 
 if __name__ == "__main__":
     unittest.main()

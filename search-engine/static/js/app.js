@@ -2422,41 +2422,11 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (parsedInt === 0) isWpRotating = false;
     }
 
-    // Fetch dynamic wallpaper manifest from server
-    try {
-      const ctrl = new AbortController();
-      const timeoutId = setTimeout(() => ctrl.abort(), 2000);
-      const res = await apiFetch("/api/wallpapers", { signal: ctrl.signal });
-      clearTimeout(timeoutId);
-      if (res && res.ok) {
-        const data = await res.json();
-        if (data.wallpapers && Array.isArray(data.wallpapers) && data.wallpapers.length > 0) {
-          wallpapers = data.wallpapers;
-        }
-      }
-    } catch (e) {
-      // Retain verified local fallback manifest
-    }
-
-    // Set initial wallpaper based on current date
-    currentWpIndex = (new Date().getDate()) % wallpapers.length;
-    applyWallpaper(currentWpIndex, false);
-
-    // Schedule rotation
-    startWallpaperRotation();
-
-    // Pause rotation when page is hidden
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        stopWallpaperRotation();
-      } else {
-        startWallpaperRotation();
-      }
-    });
-
-    // Manual navigation controls
+    // 1. Synchronous Immediate Event Listener Registration (Millisecond-zero interactivity)
     if (prevBtn) {
-      prevBtn.addEventListener("click", () => {
+      prevBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         stopWallpaperRotation();
         currentWpIndex = (currentWpIndex - 1 + wallpapers.length) % wallpapers.length;
         applyWallpaper(currentWpIndex, true);
@@ -2465,7 +2435,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (nextBtn) {
-      nextBtn.addEventListener("click", () => {
+      nextBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         stopWallpaperRotation();
         currentWpIndex = (currentWpIndex + 1) % wallpapers.length;
         applyWallpaper(currentWpIndex, true);
@@ -2486,6 +2458,43 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+
+    // 2. Set initial wallpaper immediately from verified local bundle
+    currentWpIndex = (new Date().getDate()) % wallpapers.length;
+    applyWallpaper(currentWpIndex, false);
+
+    // 3. Schedule rotation and visibility management
+    startWallpaperRotation();
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stopWallpaperRotation();
+      } else {
+        startWallpaperRotation();
+      }
+    });
+
+    // 4. Background Non-Blocking Server Manifest Refresh
+    (async () => {
+      try {
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), 2500);
+        const res = await apiFetch("/api/wallpapers", { signal: ctrl.signal });
+        clearTimeout(timeoutId);
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data.wallpapers && Array.isArray(data.wallpapers) && data.wallpapers.length > 0) {
+            wallpapers = data.wallpapers;
+            const currentWp = wallpapers[currentWpIndex];
+            if (currentWp && wpLocText) {
+              wpLocText.textContent = currentWp.location || currentWp.title || "India";
+            }
+          }
+        }
+      } catch (e) {
+        // Retain verified local fallback manifest
+      }
+    })();
   }
 
   let wpTransitionTimer = null;
@@ -2501,9 +2510,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const layerA = document.getElementById("wallpaperLayerA");
     const layerB = document.getElementById("wallpaperLayerB");
     const wpLocText = document.getElementById("wallpaperLocation");
+    const prevBtn = document.getElementById("prevWallpaperBtn");
+    const nextBtn = document.getElementById("nextWallpaperBtn");
 
     if (!layerA || !layerB) return;
     if (wpLocText) wpLocText.textContent = locName;
+
+    // Synchronize accessible labels and titles on arrow controls
+    if (prevBtn) {
+      const prevIdx = (index - 1 + wallpapers.length) % wallpapers.length;
+      const prevLoc = wallpapers[prevIdx]?.location || "Previous Wallpaper";
+      prevBtn.setAttribute("aria-label", `Previous Wallpaper: ${prevLoc}`);
+      prevBtn.setAttribute("title", `Previous: ${prevLoc}`);
+    }
+    if (nextBtn) {
+      const nextIdx = (index + 1) % wallpapers.length;
+      const nextLoc = wallpapers[nextIdx]?.location || "Next Wallpaper";
+      nextBtn.setAttribute("aria-label", `Next Wallpaper: ${nextLoc}`);
+      nextBtn.setAttribute("title", `Next: ${nextLoc}`);
+    }
 
     const reducedMotion = document.body.classList.contains("reduced-motion") ||
       (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -3011,7 +3036,7 @@ document.addEventListener("DOMContentLoaded", () => {
       explorePrevBtn.disabled = atStart;
       exploreNextBtn.disabled = atEnd;
       explorePrevBtn.style.opacity = atStart ? "0.35" : "1";
-      nextBtnStyle = atEnd ? "0.35" : "1";
+      const nextBtnStyle = atEnd ? "0.35" : "1";
       exploreNextBtn.style.opacity = nextBtnStyle;
       explorePrevBtn.style.pointerEvents = atStart ? "none" : "auto";
       exploreNextBtn.style.pointerEvents = atEnd ? "none" : "auto";
