@@ -5969,8 +5969,16 @@ body.in-search-mode .app-header .brand-logo {
   display: flex !important;
 }
 
+body.in-search-mode .home-container {
+  display: none !important;
+}
+
+body.in-search-mode .results-container {
+  display: block !important;
+}
+
 /* 4. Centerpiece Homepage Hero */
-.home-container {
+body:not(.in-search-mode) .home-container {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
