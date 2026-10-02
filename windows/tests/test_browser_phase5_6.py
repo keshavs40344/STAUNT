@@ -305,8 +305,9 @@ class TestBrowserPhase5_6(unittest.TestCase):
         self.assertNotIn("Search on DuckDuckGo", self.main_js)
 
     def test_25_platform_bridge_uses_staunt_search(self):
-        """Verify platform-bridge.js routes fallback queries to STAUNT search engine."""
-        self.assertIn("http://127.0.0.1:5000/?q=", self.platform_bridge)
+        """Verify platform-bridge.js routes fallback queries to STAUNT production search engine (not localhost)."""
+        self.assertIn("staunt.vercel.app", self.platform_bridge)
+        self.assertNotIn("127.0.0.1:5000", self.platform_bridge)
         self.assertNotIn("duckduckgo", self.platform_bridge.lower())
 
     # =========================================================================
