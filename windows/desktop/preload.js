@@ -246,7 +246,8 @@ const secureAPI = Object.freeze({
   },
   signOutAccount: () => ipcRenderer.invoke('sign-out-account'),
   openAuthPage: () => ipcRenderer.send('open-auth-page'),
-  onOpenAccountModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-account-modal', () => cb()); }
+  onOpenAccountModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-account-modal', () => cb()); },
+  onAccountStateChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('account-state-changed', (_e, state) => cb(state)); }
 });
 
 // Expose both namespaces (stauntAPI & stauntSecureBridge)

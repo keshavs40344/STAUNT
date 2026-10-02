@@ -521,6 +521,14 @@
 
       showLoggedIn(user);
       showAlert("Successfully signed in with Google!", "success");
+
+      // Signal completion for Desktop STAUNT browser
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("client") === "desktop" || window.location.hash.includes("client=desktop")) {
+          window.location.href = "staunt://auth-callback?status=success";
+        }
+      } catch(e) {}
     } catch(err) {
       console.warn("Google Auth error:", err);
       if (err.code === "auth/popup-closed-by-user") {
@@ -542,6 +550,10 @@
         await window.firebase.auth().signOut();
       }
       await fetch("/api/auth/logout", { method: "POST" });
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("client") === "desktop" || window.location.hash.includes("client=desktop")) {
+        window.location.href = "staunt://auth-logout";
+      }
     } catch(e) {}
     showLoggedOut();
     showAlert("Signed out of STAUNT Account.", "info");

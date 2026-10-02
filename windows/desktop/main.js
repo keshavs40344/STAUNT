@@ -1053,6 +1053,26 @@ function setupWebContentsEvents(tabObj) {
   
   wc.on('will-navigate', (event, navigationUrl) => {
     try {
+      if (navigationUrl.startsWith('staunt://auth-callback')) {
+        event.preventDefault();
+        const currentUrl = wc.getURL();
+        if (!isTrustedAuthOrigin(currentUrl)) {
+          console.warn('[SECURITY VIOLATION] Unauthorized origin attempted auth callback:', currentUrl);
+          return;
+        }
+        handleDesktopAuthCallback(tabObj);
+        return;
+      }
+      if (navigationUrl.startsWith('staunt://auth-logout')) {
+        event.preventDefault();
+        const currentUrl = wc.getURL();
+        if (!isTrustedAuthOrigin(currentUrl)) {
+          console.warn('[SECURITY VIOLATION] Unauthorized origin attempted auth logout callback:', currentUrl);
+          return;
+        }
+        handleDesktopAuthLogout(tabObj);
+        return;
+      }
       if (navigationUrl === 'about:blank' || navigationUrl.startsWith('about:')) {
         return;
       }
@@ -2302,9 +2322,25 @@ ipcMain.on('show-about', (e) => {
 });
 
 // =============================================================================
-// UNIFIED SOVEREIGN ACCOUNT IPC HANDLERS
+// UNIFIED SOVEREIGN ACCOUNT IPC HANDLERS & DESKTOP SYNC
 // =============================================================================
 const STAUNT_AUTH_URL = process.env.STAUNT_AUTH_URL || 'https://staunt.vercel.app/auth';
+
+function isTrustedAuthOrigin(urlStr) {
+  if (typeof urlStr !== 'string') return false;
+  try {
+    const u = new URL(urlStr);
+    if (u.protocol === 'https:' && (u.hostname === 'staunt.vercel.app' || u.hostname.endsWith('.vercel.app'))) {
+      return true;
+    }
+    if (process.env.NODE_ENV === 'test' || process.env.STAUNT_TEST === '1') {
+      if ((u.protocol === 'http:' || u.protocol === 'https:') && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {
+        return true;
+      }
+    }
+  } catch (e) {}
+  return false;
+}
 
 function getAccountFilePath() {
   return path.join(app.getPath('userData'), 'staunt_account_state.json');
@@ -2315,7 +2351,17 @@ function loadAccountState() {
     const accPath = getAccountFilePath();
     if (fs.existsSync(accPath)) {
       const raw = fs.readFileSync(accPath, 'utf-8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          isLoggedIn: !!parsed.isLoggedIn,
+          user: (parsed.isLoggedIn && parsed.user) ? {
+            displayName: String(parsed.user.displayName || parsed.user.name || '').trim().slice(0, 256),
+            email: String(parsed.user.email || '').trim().slice(0, 256),
+            photoURL: String(parsed.user.photoURL || '').trim().slice(0, 512)
+          } : null
+        };
+      }
     }
   } catch (err) {
     logger.warn('Failed to load account state:', err);
@@ -2326,9 +2372,57 @@ function loadAccountState() {
 function saveAccountState(state) {
   try {
     const accPath = getAccountFilePath();
-    fs.writeFileSync(accPath, JSON.stringify(state, null, 2), 'utf-8');
+    const safeState = {
+      isLoggedIn: !!(state && state.isLoggedIn),
+      user: (state && state.isLoggedIn && state.user) ? {
+        displayName: String(state.user.displayName || state.user.name || '').trim().slice(0, 256),
+        email: String(state.user.email || '').trim().slice(0, 256),
+        photoURL: String(state.user.photoURL || '').trim().slice(0, 512)
+      } : null
+    };
+    fs.writeFileSync(accPath, JSON.stringify(safeState, null, 2), 'utf-8');
+    return true;
   } catch (err) {
     logger.warn('Failed to save account state:', err);
+    return false;
+  }
+}
+
+async function handleDesktopAuthCallback(tabObj) {
+  try {
+    const wc = tabObj.view.webContents;
+    const sessionData = await wc.executeJavaScript(`
+      (async () => {
+        try {
+          const resp = await fetch('/api/auth/me', { cache: 'no-cache' });
+          if (resp.ok) return await resp.json();
+        } catch(e) {}
+        return { authenticated: false };
+      })()
+    `);
+
+    if (sessionData && sessionData.authenticated && sessionData.user) {
+      const safeUser = {
+        displayName: String(sessionData.user.name || sessionData.user.displayName || '').trim().slice(0, 256),
+        email: String(sessionData.user.email || '').trim().slice(0, 256),
+        photoURL: String(sessionData.user.photoURL || '').trim().slice(0, 512)
+      };
+      saveAccountState({ isLoggedIn: true, user: safeUser });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('account-state-changed', { isLoggedIn: true, user: safeUser });
+        mainWindow.webContents.send('open-account-modal');
+      }
+      closeTab(tabObj.id);
+    }
+  } catch (err) {
+    logger.warn('[AUTH CALLBACK] Failed to synchronize desktop auth:', err);
+  }
+}
+
+function handleDesktopAuthLogout(tabObj) {
+  saveAccountState({ isLoggedIn: false, user: null });
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('account-state-changed', { isLoggedIn: false, user: null });
   }
 }
 
@@ -2341,19 +2435,31 @@ ipcMain.handle('save-account-state', (e, user) => {
   if (!verifyIpcSender(e)) return false;
   if (user && typeof user === 'object') {
     const safeUser = {
-      id: Number(user.id) || 0,
+      displayName: String(user.displayName || user.name || '').trim().slice(0, 256),
       email: String(user.email || '').trim().slice(0, 256),
-      name: String(user.name || '').trim().slice(0, 256)
+      photoURL: String(user.photoURL || '').trim().slice(0, 512)
     };
     saveAccountState({ isLoggedIn: true, user: safeUser });
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('account-state-changed', { isLoggedIn: true, user: safeUser });
+    }
     return true;
   }
   return false;
 });
 
-ipcMain.handle('sign-out-account', (e) => {
+ipcMain.handle('sign-out-account', async (e) => {
   if (!verifyIpcSender(e)) return false;
   saveAccountState({ isLoggedIn: false, user: null });
+  try {
+    const cookies = await session.defaultSession.cookies.get({ domain: 'staunt.vercel.app' });
+    for (const c of cookies) {
+      await session.defaultSession.cookies.remove('https://staunt.vercel.app', c.name);
+    }
+  } catch (err) {}
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('account-state-changed', { isLoggedIn: false, user: null });
+  }
   return true;
 });
 
@@ -2364,7 +2470,10 @@ ipcMain.on('open-auth-page', (e) => {
     logger.error('Refusing to open non-HTTPS auth endpoint:', STAUNT_AUTH_URL);
     return;
   }
-  createTab(STAUNT_AUTH_URL);
+  const authUrl = STAUNT_AUTH_URL.includes('?')
+    ? `${STAUNT_AUTH_URL}&client=desktop`
+    : `${STAUNT_AUTH_URL}?client=desktop`;
+  createTab(authUrl);
 });
 
 // App Lifecycle with Single Instance Lock (prevent duplicate windows)

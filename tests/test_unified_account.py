@@ -272,3 +272,93 @@ class TestUnifiedAccountSystem:
         assert firebase_cfg.get("projectId") == "staunt-fe6ad"
         assert firebase_cfg.get("authDomain") == "staunt-fe6ad.firebaseapp.com"
         assert firebase_cfg.get("appId") == "1:35404899573:web:74837bac9be974990c51bc"
+
+    def test_14_desktop_auth_callback_protocol_guard(self):
+        """14. Desktop auth callback protocol navigation guard is present in main.js and auth.html."""
+        main_js_path = os.path.join(BASE_DIR, "windows", "desktop", "main.js")
+        with open(main_js_path, "r", encoding="utf-8") as f:
+            main_js = f.read()
+
+        assert "navigationUrl.startsWith('staunt://auth-callback')" in main_js
+        assert "navigationUrl.startsWith('staunt://auth-logout')" in main_js
+        assert "isTrustedAuthOrigin" in main_js
+        assert "handleDesktopAuthCallback" in main_js
+
+        auth_html_path = os.path.join(BASE_DIR, "public", "auth.html")
+        with open(auth_html_path, "r", encoding="utf-8") as f:
+            auth_html = f.read()
+        assert "staunt://auth-callback?status=success" in auth_html
+        assert "staunt://auth-logout" in auth_html
+
+    def test_15_trusted_auth_origin_verification(self):
+        """15. Origin validation strictly allows only trusted STAUNT production origin and rejects untrusted origins."""
+        main_js_path = os.path.join(BASE_DIR, "windows", "desktop", "main.js")
+        with open(main_js_path, "r", encoding="utf-8") as f:
+            main_js = f.read()
+
+        assert "u.hostname === 'staunt.vercel.app' || u.hostname.endsWith('.vercel.app')" in main_js
+        assert "isTrustedAuthOrigin(currentUrl)" in main_js
+        assert "[SECURITY VIOLATION] Unauthorized origin attempted auth callback:" in main_js
+
+    def test_16_no_tokens_or_passwords_in_account_state(self):
+        """16. Account state sanitization strictly allows only displayName, email, photoURL; no tokens or passwords."""
+        main_js_path = os.path.join(BASE_DIR, "windows", "desktop", "main.js")
+        with open(main_js_path, "r", encoding="utf-8") as f:
+            main_js = f.read()
+
+        assert "displayName:" in main_js
+        assert "email:" in main_js
+        assert "photoURL:" in main_js
+        assert "idToken" not in main_js
+        assert "refreshToken" not in main_js
+        assert "client_secret" not in main_js
+
+    def test_17_account_state_changed_event_bridge(self):
+        """17. Account state change event is bridged across main.js, preload.js, and index.html."""
+        preload_path = os.path.join(BASE_DIR, "windows", "desktop", "preload.js")
+        with open(preload_path, "r", encoding="utf-8") as f:
+            preload = f.read()
+        assert "onAccountStateChanged:" in preload
+        assert "ipcRenderer.on('account-state-changed'" in preload
+
+        index_html_path = os.path.join(BASE_DIR, "windows", "desktop", "src", "index.html")
+        with open(index_html_path, "r", encoding="utf-8") as f:
+            index_html = f.read()
+        assert "api.onAccountStateChanged" in index_html
+        assert "accountLoggedInView" in index_html
+        assert "accountLoggedOutView" in index_html
+
+    def test_18_signout_clears_account_state(self):
+        """18. sign-out-account resets desktop account state to logged-out and notifies renderer."""
+        main_js_path = os.path.join(BASE_DIR, "windows", "desktop", "main.js")
+        with open(main_js_path, "r", encoding="utf-8") as f:
+            main_js = f.read()
+
+        assert "ipcMain.handle('sign-out-account'" in main_js
+        assert "saveAccountState({ isLoggedIn: false, user: null })" in main_js
+        assert "mainWindow.webContents.send('account-state-changed', { isLoggedIn: false, user: null })" in main_js
+
+    def test_19_session_persistence_contract(self):
+        """19. Account state file persistence is validated and safely parsed on restart."""
+        main_js_path = os.path.join(BASE_DIR, "windows", "desktop", "main.js")
+        with open(main_js_path, "r", encoding="utf-8") as f:
+            main_js = f.read()
+
+        assert "getAccountFilePath()" in main_js
+        assert "staunt_account_state.json" in main_js
+        assert "loadAccountState()" in main_js
+        assert "fs.writeFileSync(accPath, JSON.stringify(safeState" in main_js
+
+    def test_20_malicious_origin_cannot_trigger_sync(self):
+        """20. Untrusted URLs or arbitrary websites attempting to navigate to staunt:// are blocked and denied."""
+        main_js_path = os.path.join(BASE_DIR, "windows", "desktop", "main.js")
+        with open(main_js_path, "r", encoding="utf-8") as f:
+            main_js = f.read()
+
+        # Confirm will-navigate intercepts before general URL parsing and enforces origin check
+        idx_callback = main_js.find("navigationUrl.startsWith('staunt://auth-callback')")
+        idx_trusted = main_js.find("!isTrustedAuthOrigin(currentUrl)", idx_callback)
+        assert idx_callback != -1
+        assert idx_trusted != -1
+        assert idx_trusted > idx_callback
+

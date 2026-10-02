@@ -1970,7 +1970,7 @@
             if (state && state.isLoggedIn && state.user) {
               if (accountLoggedOutView) accountLoggedOutView.style.display = 'none';
               if (accountLoggedInView) accountLoggedInView.style.display = 'flex';
-              const name = state.user.name || state.user.email?.split('@')[0] || 'User';
+              const name = state.user.displayName || state.user.name || state.user.email?.split('@')[0] || 'User';
               if (accUserName) accUserName.textContent = name;
               if (accUserEmail) accUserEmail.textContent = state.user.email || '';
               if (accAvatarCircle) accAvatarCircle.textContent = name.charAt(0).toUpperCase();
@@ -2016,6 +2016,23 @@
         if (accountLoggedOutView) accountLoggedOutView.style.display = 'block';
         showDownloadToast('Signed out of STAUNT Account', 2500);
       });
+
+      if (typeof api.onAccountStateChanged === 'function') {
+        api.onAccountStateChanged((state) => {
+          if (state && state.isLoggedIn && state.user) {
+            if (accountLoggedOutView) accountLoggedOutView.style.display = 'none';
+            if (accountLoggedInView) accountLoggedInView.style.display = 'flex';
+            const name = state.user.displayName || state.user.name || state.user.email?.split('@')[0] || 'User';
+            if (accUserName) accUserName.textContent = name;
+            if (accUserEmail) accUserEmail.textContent = state.user.email || '';
+            if (accAvatarCircle) accAvatarCircle.textContent = name.charAt(0).toUpperCase();
+            showDownloadToast(`Signed in as ${name}`, 3000);
+          } else {
+            if (accountLoggedInView) accountLoggedInView.style.display = 'none';
+            if (accountLoggedOutView) accountLoggedOutView.style.display = 'block';
+          }
+        });
+      }
 
       if (typeof api.onOpenAccountModal === 'function') api.onOpenAccountModal(openAccountModal);
 
