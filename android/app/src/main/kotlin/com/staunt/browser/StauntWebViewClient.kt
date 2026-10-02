@@ -19,17 +19,48 @@ class StauntWebViewClient(
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val url = request.url.toString()
         val scheme = request.url.scheme?.lowercase() ?: ""
-        if (scheme == "http" || scheme == "https" || scheme == "file" || scheme == "about") {
-            return false
+
+        // Allow standard web, asset-only file:// and about: schemes to load normally
+        if (scheme == "http" || scheme == "https" || scheme == "about") return false
+
+        // Only allow access to bundled assets; block all other file:// paths
+        if (scheme == "file") {
+            return !url.startsWith("file:///android_asset/")
         }
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, request.url)
-            intent.addCategory(Intent.CATEGORY_BROWSABLE)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+
+        // Handle Android intent:// deep links properly
+        if (scheme == "intent") {
+            return try {
+                val intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME)
+                // Strip component/selector to prevent open redirect
+                intent.component = null
+                intent.selector = null
+                intent.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                context.startActivity(intent)
+                true
+            } catch (e: android.content.ActivityNotFoundException) {
+                // Load fallback URL if the target app is not installed
+                val fallback = try {
+                    android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME)
+                        .getStringExtra("browser_fallback_url")
+                } catch (_: Exception) { null }
+                if (!fallback.isNullOrEmpty()) view.loadUrl(fallback)
+                true
+            } catch (_: Exception) {
+                true
+            }
+        }
+
+        // All other custom schemes — launch via system dispatcher
+        return try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, request.url)
+            intent.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
+            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(intent)
-            return true
-        } catch (e: Exception) {
-            return true
+            true
+        } catch (_: Exception) {
+            true
         }
     }
 
@@ -73,7 +104,11 @@ class StauntWebViewClient(
 
     override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
         super.doUpdateVisitedHistory(view, url, isReload)
-        if (!isReload) {
+        // Issue 5 fix: skip internal asset/blank pages from persisted history
+        if (!isReload && url.isNotBlank()
+            && !url.startsWith("file://")
+            && !url.startsWith("about:")
+            && !url.startsWith("data:")) {
             historyDb.addEntry(url, view.title ?: "")
         }
     }
@@ -96,6 +131,7 @@ class StauntWebViewClient(
                 """<div style="margin-bottom:12px;font-size:14px;color:#d4a359;background:rgba(212,163,89,0.12);border:1px solid rgba(212,163,89,0.25);padding:6px 12px;border-radius:6px;display:inline-block;">Query: &ldquo;${searchQuery}&rdquo;</div>""" 
                 else ""
 
+            val escapedFailedUrl = failedUrl.replace("\\", "\\\\").replace("'", "\\'")
             val errorHtml = """
                 <!DOCTYPE html>
                 <html>
@@ -115,12 +151,13 @@ class StauntWebViewClient(
                         <h2>$titleText</h2>
                         $queryBadge
                         <p>$descText</p>
-                        <button onclick="location.reload()">Retry</button>
+                        <button onclick="window.location.href='$escapedFailedUrl'">Retry</button>
                     </div>
                 </body>
                 </html>
             """.trimIndent()
-            view.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
+            // Issue 2 fix: pass failedUrl as baseUrl so document origin is correct and Retry works
+            view.loadDataWithBaseURL(failedUrl, errorHtml, "text/html", "UTF-8", null)
         }
     }
 
