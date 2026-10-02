@@ -104,7 +104,7 @@
     },
     {
       "source": "/api/auth/:path*",
-      "destination": "/api/index"
+      "destination": "/api/auth"
     },
     {
       "source": "/api/:path*",
