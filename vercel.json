@@ -103,8 +103,16 @@
       "destination": "/api/overview"
     },
     {
+      "source": "/api/auth/config",
+      "destination": "/api/auth?path=config"
+    },
+    {
+      "source": "/api/auth",
+      "destination": "/api/auth?path=config"
+    },
+    {
       "source": "/api/auth/:path*",
-      "destination": "/api/auth"
+      "destination": "/api/auth?path=:path*"
     },
     {
       "source": "/api/:path*",

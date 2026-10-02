@@ -908,6 +908,7 @@ def auth_page():
     return render_template("auth.html", turnstile_site_key=TURNSTILE_SITE_KEY)
 
 
+@app.route("/api/auth", methods=["GET"])
 @app.route("/api/auth/config", methods=["GET"])
 def api_auth_config():
     firebase_api_key = os.environ.get("FIREBASE_API_KEY", "").strip()

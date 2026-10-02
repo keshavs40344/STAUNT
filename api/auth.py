@@ -4,6 +4,7 @@ Handles /api/auth/config, /api/auth/session, /api/auth/me, /api/auth/logout, etc
 """
 import os
 import sys
+import urllib.parse
 
 API_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(API_DIR)
@@ -37,15 +38,22 @@ class AuthWSGIAdapter:
         for c in candidates:
             if c:
                 clean_c = c.split("?", 1)[0]
-                if "/api/auth" in clean_c:
+                if clean_c and clean_c not in ("/api/auth", "/api/auth.py") and "/api/auth" in clean_c:
                     target = clean_c
                     break
 
-        if target:
-            environ["PATH_INFO"] = target
-        elif not environ.get("PATH_INFO") or not environ["PATH_INFO"].startswith("/api/auth"):
-            environ["PATH_INFO"] = "/api/auth/config"
+        if not target:
+            qs = environ.get("QUERY_STRING", "")
+            if qs:
+                params = urllib.parse.parse_qs(qs)
+                sub = params.get("path", [""])[0]
+                if sub:
+                    target = f"/api/auth/{sub.lstrip('/')}"
 
+        if not target or target in ("/api/auth", "/api/auth.py"):
+            target = "/api/auth/config"
+
+        environ["PATH_INFO"] = target
         return self.wsgi_app(environ, start_response)
 
     def __getattr__(self, name):
