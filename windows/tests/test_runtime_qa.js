@@ -211,6 +211,16 @@ runTest('K_WINDOW_UI', 'index.html contains complete topbar, omnibox, and captio
   assert(indexHtml.includes('id="winBtnClose"'), 'Must contain close button');
 });
 
+// ==========================================
+// Category L: VERSION 2.0.1 CONSISTENCY
+// ==========================================
+runTest('L_VERSION', 'Package, index.html, and main.js reflect v2.0.1', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(DESKTOP_DIR, 'package.json'), 'utf-8'));
+  assert.strictEqual(pkg.version, '2.0.1', 'package.json version must be 2.0.1');
+  assert(indexHtml.includes('Version 2.0.1'), 'index.html must display Version 2.0.1');
+  assert(mainJsCode.includes("app.getVersion() : null) || '2.0.1'"), 'main.js showAboutDialog must default to 2.0.1');
+});
+
 console.log('\n=== RUNTIME CONTRACT QA SUMMARY ===');
 let total = 0, passed = 0, failed = 0;
 for (const cat in results) {

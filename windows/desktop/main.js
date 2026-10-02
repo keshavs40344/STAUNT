@@ -529,11 +529,12 @@ function saveCurrentPage() {
 }
 
 function showAboutDialog() {
+  const currentVer = (app && typeof app.getVersion === 'function' ? app.getVersion() : null) || '2.0.1';
   dialog.showMessageBox(mainWindow, {
     type: 'info',
     title: 'About Staunt Browser',
     message: 'Staunt Browser Ultra',
-    detail: `Version: 2.0.0\nVendor: VASTUDA Sovereign Systems\nChromium: ${process.versions.chrome || 'Engine version unavailable'}\nElectron: ${process.versions.electron || 'Unavailable'}\nNode.js: ${process.versions.node || 'Unavailable'}\nV8: ${process.versions.v8 || 'Unavailable'}\nOS: ${process.platform} ${process.arch}`
+    detail: `Version: ${currentVer}\nVendor: VASTUDA Sovereign Systems\nChromium: ${process.versions.chrome || 'Engine version unavailable'}\nElectron: ${process.versions.electron || 'Unavailable'}\nNode.js: ${process.versions.node || 'Unavailable'}\nV8: ${process.versions.v8 || 'Unavailable'}\nOS: ${process.platform} ${process.arch}`
   });
 }
 
@@ -1000,7 +1001,7 @@ function createTab(initialUrl = 'staunt://newtab', options = {}) {
   setupWebContentsEvents(tabObj);
 
   const formattedUrl = formatUrlOrSearch(initialUrl);
-  view.webContents.loadURL(formattedUrl);
+  view.webContents.loadURL(formattedUrl).catch(() => {});
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('tab-created', serializeTab(tabObj));
@@ -1488,7 +1489,7 @@ function wakeHibernatedTab(tab) {
 
   tab.isHibernated = false;
   setupWebContentsEvents(tab);
-  tab.view.webContents.loadURL(formatUrlOrSearch(tab.url));
+  tab.view.webContents.loadURL(formatUrlOrSearch(tab.url)).catch(() => {});
   notifyTabUpdated(tab);
 }
 
@@ -1576,9 +1577,13 @@ function verifyIpcSender(event) {
 function handleNavigate(url) {
   if (typeof url !== 'string' || url.length > 2048) return;
   const tab = tabs.get(activeTabId);
-  if (tab && tab.view && tab.view.webContents) {
+  if (!tab) return;
+  if (tab.isHibernated) {
+    wakeHibernatedTab(tab);
+  }
+  if (tab.view && tab.view.webContents) {
     const formatted = formatUrlOrSearch(url);
-    tab.view.webContents.loadURL(formatted);
+    tab.view.webContents.loadURL(formatted).catch(() => {});
   }
 }
 
