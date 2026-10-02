@@ -893,6 +893,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
       </button>
 
+      <!-- STAUNT '+' Account Entry Point -->
+      <button class="action-icon-btn" id="btnDeskAccount" title="STAUNT Account (+)" aria-label="STAUNT Account (+)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="account-plus-icon">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+
       <button class="action-icon-btn" id="btnDeskSettings" title="Settings / Clear Browsing Data (Ctrl+Shift+Del)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -961,6 +969,12 @@
         <span>Bookmarks</span>
       </div>
       <span class="menu-shortcut">Ctrl+Shift+O</span>
+    </div>
+    <div class="menu-item" id="menuItemAccount">
+      <div class="menu-item-left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Account &amp; Sync</span>
+      </div>
     </div>
     <div class="menu-divider"></div>
     <div class="menu-zoom-row">
@@ -1086,6 +1100,63 @@
       <div class="modal-footer">
         <button class="btn-cancel" id="btnClearDownloadsListBtn">Clear List</button>
         <button class="btn-primary-action" id="btnCloseDownloadsModal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAUNT Account Modal -->
+  <div class="modal-overlay" id="accountModal">
+    <div class="modal-box" style="width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(212,163,89,0.15); color:var(--accent-gold); font-size:14px; font-weight:bold;">+</span>
+          <span>STAUNT Account</span>
+        </div>
+        <button class="modal-close" id="btnAccountClose">&times;</button>
+      </div>
+      <div class="modal-body" id="accountModalBody" style="gap: 16px;">
+        <!-- Logged Out View -->
+        <div id="accountLoggedOutView">
+          <div style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">Sign in to sync your data</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+            Sync your bookmarks and browsing preferences across Windows and Android devices.
+          </div>
+
+          <button class="btn-primary-action" id="btnOpenAuthWeb" style="width: 100%; padding: 10px 14px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; background: #ffffff; color: #1f1f1f; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer;">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+
+          <div style="font-size: 11.5px; color: var(--text-dim); text-align: center; margin-top: 14px; line-height: 1.4;">
+            Your browsing works without an account.
+          </div>
+        </div>
+
+        <!-- Logged In View -->
+        <div id="accountLoggedInView" style="display: none; flex-direction: column; align-items: center; text-align: center; gap: 14px;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-gold), var(--accent-emerald)); color: #000; font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(212, 163, 89, 0.3);" id="accAvatarCircle">G</div>
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Google account</div>
+            <div style="font-size: 15px; font-weight: 700; color: #fff;" id="accUserName">Google User</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;" id="accUserEmail">user@gmail.com</div>
+          </div>
+          <div style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; text-align: left; font-size: 11.5px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Status:</span><span style="color: var(--accent-emerald); font-weight: 600;">✓ Signed in</span></div>
+            <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Sync:</span><span style="color: var(--text-dim); font-style: italic;">Unavailable (Planned)</span></div>
+          </div>
+          <div style="display: flex; gap: 8px; width: 100%;">
+            <button class="btn-cancel" id="btnAccountGoSettings" style="flex: 1; padding: 8px; font-size: 12px;">Settings</button>
+            <button class="btn-cancel" id="btnSignOutDesk" style="flex: 1; padding: 8px; font-size: 12px; color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">Sign out</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnCloseAccountModal">Close</button>
       </div>
     </div>
   </div>
@@ -1266,6 +1337,18 @@
       const aboutModal = document.getElementById('aboutModal');
       const btnAboutClose = document.getElementById('btnAboutClose');
       const btnCloseAboutModal = document.getElementById('btnCloseAboutModal');
+
+      const btnAccount = document.getElementById('btnDeskAccount');
+      const accountModal = document.getElementById('accountModal');
+      const btnAccountClose = document.getElementById('btnAccountClose');
+      const btnCloseAccountModal = document.getElementById('btnCloseAccountModal');
+      const btnOpenAuthWeb = document.getElementById('btnOpenAuthWeb');
+      const accountLoggedOutView = document.getElementById('accountLoggedOutView');
+      const accountLoggedInView = document.getElementById('accountLoggedInView');
+      const accAvatarCircle = document.getElementById('accAvatarCircle');
+      const accUserName = document.getElementById('accUserName');
+      const accUserEmail = document.getElementById('accUserEmail');
+      const btnSignOutDesk = document.getElementById('btnSignOutDesk');
 
       const zoomLevelDisplay = document.getElementById('zoomLevelDisplay');
       let currentZoomLevel = 0;
@@ -1520,7 +1603,8 @@
           (historyModal && historyModal.classList.contains('active')) ||
           (bookmarksModal && bookmarksModal.classList.contains('active')) ||
           (downloadsModal && downloadsModal.classList.contains('active')) ||
-          (aboutModal && aboutModal.classList.contains('active'))
+          (aboutModal && aboutModal.classList.contains('active')) ||
+          (accountModal && accountModal.classList.contains('active'))
         );
         if (typeof api.setModalOpen === 'function') {
           api.setModalOpen(anyModalActive);
@@ -1556,6 +1640,7 @@
         document.getElementById('menuItemHistory')?.addEventListener('click', () => { closeMenu(); openHistoryModal(); });
         document.getElementById('menuItemDownloads')?.addEventListener('click', () => { closeMenu(); openDownloadsModal(); });
         document.getElementById('menuItemBookmarks')?.addEventListener('click', () => { closeMenu(); openBookmarksModal(); });
+        document.getElementById('menuItemAccount')?.addEventListener('click', () => { closeMenu(); openAccountModal(); });
         document.getElementById('menuItemSavePage')?.addEventListener('click', () => { closeMenu(); if (typeof api.savePage === 'function') api.savePage(); });
         document.getElementById('menuItemPrint')?.addEventListener('click', () => { closeMenu(); if (typeof api.printToPDF === 'function') api.printToPDF(); });
         document.getElementById('menuItemFind')?.addEventListener('click', () => { closeMenu(); openFindBar(); });
@@ -1873,6 +1958,66 @@
       btnAboutClose?.addEventListener('click', closeAboutModal);
       btnCloseAboutModal?.addEventListener('click', closeAboutModal);
       aboutModal?.addEventListener('click', (e) => { if (e.target === aboutModal) closeAboutModal(); });
+
+      // Account & Sync Modal
+      async function openAccountModal() {
+        if (!accountModal) return;
+        accountModal.classList.add('active');
+        syncModalState();
+        if (typeof api.getAccountState === 'function') {
+          try {
+            const state = await api.getAccountState();
+            if (state && state.isLoggedIn && state.user) {
+              if (accountLoggedOutView) accountLoggedOutView.style.display = 'none';
+              if (accountLoggedInView) accountLoggedInView.style.display = 'flex';
+              const name = state.user.name || state.user.email?.split('@')[0] || 'User';
+              if (accUserName) accUserName.textContent = name;
+              if (accUserEmail) accUserEmail.textContent = state.user.email || '';
+              if (accAvatarCircle) accAvatarCircle.textContent = name.charAt(0).toUpperCase();
+            } else {
+              if (accountLoggedInView) accountLoggedInView.style.display = 'none';
+              if (accountLoggedOutView) accountLoggedOutView.style.display = 'block';
+            }
+          } catch(err) {
+            if (accountLoggedInView) accountLoggedInView.style.display = 'none';
+            if (accountLoggedOutView) accountLoggedOutView.style.display = 'block';
+          }
+        }
+      }
+      function closeAccountModal() {
+        if (accountModal) accountModal.classList.remove('active');
+        syncModalState();
+      }
+
+      btnAccount?.addEventListener('click', openAccountModal);
+      btnAccountClose?.addEventListener('click', closeAccountModal);
+      btnCloseAccountModal?.addEventListener('click', closeAccountModal);
+      accountModal?.addEventListener('click', (e) => { if (e.target === accountModal) closeAccountModal(); });
+
+      btnOpenAuthWeb?.addEventListener('click', () => {
+        closeAccountModal();
+        if (typeof api.openAuthPage === 'function') {
+          api.openAuthPage();
+        } else if (typeof api.navigateTo === 'function') {
+          api.navigateTo('https://staunt.vercel.app/auth');
+        }
+      });
+
+      btnAccountGoSettings?.addEventListener('click', () => {
+        closeAccountModal();
+        openSettingsModal();
+      });
+
+      btnSignOutDesk?.addEventListener('click', async () => {
+        if (typeof api.signOutAccount === 'function') {
+          await api.signOutAccount();
+        }
+        if (accountLoggedInView) accountLoggedInView.style.display = 'none';
+        if (accountLoggedOutView) accountLoggedOutView.style.display = 'block';
+        showDownloadToast('Signed out of STAUNT Account', 2500);
+      });
+
+      if (typeof api.onOpenAccountModal === 'function') api.onOpenAccountModal(openAccountModal);
 
       if (typeof api.onShowBookmarks === 'function') {
         api.onShowBookmarks(() => openBookmarksModal());

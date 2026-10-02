@@ -230,7 +230,23 @@ const secureAPI = Object.freeze({
   onOpenBookmarksModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-bookmarks-modal', () => cb()); },
   onOpenDownloadsModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-downloads-modal', () => cb()); },
   onOpenClearDataModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-clear-data-modal', () => cb()); },
-  onOpenAboutModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-about-modal', () => cb()); }
+  onOpenAboutModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-about-modal', () => cb()); },
+
+  // Unified Sovereign Account & Sync API
+  getAccountState: () => ipcRenderer.invoke('get-account-state'),
+  saveAccountState: (user) => {
+    if (user && typeof user === 'object') {
+      return ipcRenderer.invoke('save-account-state', {
+        id: sanitizeNumber(user.id, 0),
+        email: sanitizeString(user.email, 256),
+        name: sanitizeString(user.name, 256)
+      });
+    }
+    return Promise.resolve(false);
+  },
+  signOutAccount: () => ipcRenderer.invoke('sign-out-account'),
+  openAuthPage: () => ipcRenderer.send('open-auth-page'),
+  onOpenAccountModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-account-modal', () => cb()); }
 });
 
 // Expose both namespaces (stauntAPI & stauntSecureBridge)

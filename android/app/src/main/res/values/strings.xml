@@ -18,4 +18,5 @@
     <string name="version">Version 2.0.0</string>
     <string name="tabs_count">%d tabs</string>
     <string name="blocked_count">%d blocked</string>
+    <string name="account_sync">+ STAUNT Account</string>
 </resources>

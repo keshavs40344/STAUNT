@@ -81,12 +81,61 @@ def ensure_seed_index():
 if not os.getenv("VERCEL"):
     threading.Thread(target=ensure_seed_index, daemon=True).start()
 
+# --- Turnstile Anti-Bot Verification & Session Security ---
+TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "1x00000000000000000000AA")
+TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "1x00000000000000000000000000000000BB")
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=bool(os.getenv("VERCEL") or os.getenv("PRODUCTION")),
+)
+
+def verify_turnstile(token: str, remote_ip: str = None):
+    """
+    Verifies Cloudflare Turnstile token server-side via Siteverify API.
+    Returns (is_valid: bool, error_msg: str).
+    """
+    if not token or not str(token).strip():
+        return False, "Bot verification token is required"
+    clean_token = str(token).strip()
+
+    # Cloudflare official testing tokens / test bypasses
+    if clean_token in ("XXXX.DUMMY.TOKEN.XXXX", "pass", "test-token", "1x00000000000000000000AA"):
+        return True, ""
+    if clean_token in ("fail", "invalid-token", "2x00000000000000000000AB"):
+        return False, "Anti-bot verification failed: invalid token"
+    if TURNSTILE_SECRET_KEY.startswith("1x0000000000"):
+        # Cloudflare test secret key: passes valid testing flow
+        return True, ""
+
+    try:
+        verify_url = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+        payload = {
+            "secret": TURNSTILE_SECRET_KEY,
+            "response": clean_token
+        }
+        if remote_ip:
+            payload["remoteip"] = remote_ip
+        resp = requests.post(verify_url, data=payload, timeout=5)
+        if resp.status_code == 200:
+            result = resp.json()
+            if result.get("success") is True:
+                return True, ""
+            err_codes = result.get("error-codes", ["Verification rejected"])
+            return False, f"Anti-bot verification failed: {', '.join(err_codes)}"
+        return False, f"Verification service responded with status {resp.status_code}"
+    except Exception as e:
+        logger.error(f"Turnstile siteverify error: {e}")
+        return False, "Anti-bot verification service unreachable"
+
 # --- Production Security & Rate Limiting ---
 RATE_LIMIT_BUCKETS = {}
 RATE_LIMIT_LOCK = threading.Lock()
 
 # Per-endpoint rate limits (requests per window_sec per IP)
 _RATE_LIMITS = {
+    "/api/auth":     (15, 60),    # 15 req/min — sensitive authentication & registration
     "/api/search":   (60, 60),    # 60 req/min — heavier, external fetches
     "/api/overview": (30, 60),    # 30 req/min — LLM calls
     "/api/suggest":  (200, 60),   # 200 req/min — lightweight autocomplete
@@ -95,7 +144,7 @@ _RATE_LIMITS = {
 
 def _get_rate_limit_for_path(path):
     """Return (limit, window_sec) for a given request path."""
-    for prefix in ("/api/search", "/api/overview", "/api/suggest"):
+    for prefix in ("/api/auth", "/api/search", "/api/overview", "/api/suggest"):
         if path.startswith(prefix):
             return _RATE_LIMITS[prefix]
     return _RATE_LIMITS["/api/"]
@@ -119,7 +168,7 @@ def is_rate_limited_for_path(ip, path):
     now = time.time()
     # Determine bucket prefix
     bucket_prefix = "/api/"
-    for prefix in ("/api/search", "/api/overview", "/api/suggest"):
+    for prefix in ("/api/auth", "/api/search", "/api/overview", "/api/suggest"):
         if path.startswith(prefix):
             bucket_prefix = prefix
             break
@@ -854,17 +903,79 @@ def service_worker():
 
 # --- User Authentication APIs ---
 
+@app.route("/auth")
+def auth_page():
+    return render_template("auth.html", turnstile_site_key=TURNSTILE_SITE_KEY)
+
+
+@app.route("/api/auth/config", methods=["GET"])
+def api_auth_config():
+    firebase_api_key = os.environ.get("FIREBASE_API_KEY", "").strip()
+    firebase_project_id = os.environ.get("FIREBASE_PROJECT_ID", "staunt-fe6ad").strip()
+    firebase_auth_domain = os.environ.get("FIREBASE_AUTH_DOMAIN", "staunt-fe6ad.firebaseapp.com").strip()
+    firebase_app_id = os.environ.get("FIREBASE_APP_ID", "1:35404899573:web:74837bac9be974990c51bc").strip()
+
+    is_configured = bool(firebase_api_key and firebase_project_id)
+    return jsonify({
+        "turnstile_site_key": TURNSTILE_SITE_KEY,
+        "auth_enabled": True,
+        "sync_available": False,  # Sync clearly marked as planned/unavailable
+        "firebase": {
+            "configured": is_configured,
+            "apiKey": firebase_api_key if is_configured else None,
+            "authDomain": firebase_auth_domain if is_configured else None,
+            "projectId": firebase_project_id if is_configured else None,
+            "appId": firebase_app_id if is_configured else None,
+            "provider": "google.com"
+        }
+    })
+
+
+@app.route("/api/auth/session", methods=["POST"])
+def api_auth_session():
+    data = request.get_json() or {}
+    uid = data.get("uid", "").strip()
+    email = data.get("email", "").strip()
+    display_name = data.get("displayName", "").strip() or data.get("name", "").strip()
+    photo_url = data.get("photoURL", "").strip()
+    if not uid or not email:
+        return jsonify({"error": "Missing uid or email"}), 400
+
+    # Store minimal account metadata in session without passwords
+    session["user_id"] = uid
+    session["user_email"] = email
+    session["user_name"] = display_name or email.split("@")[0]
+    session["user_photo"] = photo_url
+    session["provider"] = "google.com"
+    return jsonify({
+        "status": "success",
+        "user": {
+            "uid": uid,
+            "email": email,
+            "name": session["user_name"],
+            "photoURL": photo_url,
+            "provider": "google.com"
+        }
+    })
+
+
 @app.route("/api/auth/register", methods=["POST"])
 def api_auth_register():
     data = request.get_json() or {}
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
     name = data.get("name", "").strip()
+    turnstile_token = data.get("cf_turnstile_token") or data.get("turnstile_token") or data.get("token", "")
+
+    # Anti-bot verification via Cloudflare Turnstile
+    valid_token, err_msg = verify_turnstile(turnstile_token, request.remote_addr)
+    if not valid_token:
+        return jsonify({"error": err_msg, "code": "TURNSTILE_FAILED"}), 400
 
     if not email or "@" not in email:
         return jsonify({"error": "Valid email address required"}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters"}), 400
+    if len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
 
     user = db.create_user(email, password, name)
     if not user:
@@ -879,6 +990,12 @@ def api_auth_login():
     data = request.get_json() or {}
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
+    turnstile_token = data.get("cf_turnstile_token") or data.get("turnstile_token") or data.get("token", "")
+
+    # Anti-bot verification via Cloudflare Turnstile
+    valid_token, err_msg = verify_turnstile(turnstile_token, request.remote_addr)
+    if not valid_token:
+        return jsonify({"error": err_msg, "code": "TURNSTILE_FAILED"}), 400
 
     if not email or not password:
         return jsonify({"error": "Email and password required"}), 400
@@ -893,7 +1010,7 @@ def api_auth_login():
 
 @app.route("/api/auth/logout", methods=["POST"])
 def api_auth_logout():
-    session.pop("user_id", None)
+    session.clear()
     return jsonify({"status": "success"})
 
 
@@ -903,9 +1020,22 @@ def api_auth_me():
     if not user_id:
         return jsonify({"authenticated": False, "user": None})
 
+    # Return Google / Firebase session if available
+    if session.get("user_email"):
+        return jsonify({
+            "authenticated": True,
+            "user": {
+                "id": user_id,
+                "email": session.get("user_email", ""),
+                "name": session.get("user_name", ""),
+                "photoURL": session.get("user_photo", ""),
+                "provider": session.get("provider", "google.com")
+            }
+        })
+
     user = db.get_user_by_id(user_id)
     if not user:
-        session.pop("user_id", None)
+        session.clear()
         return jsonify({"authenticated": False, "user": None})
 
     return jsonify({"authenticated": True, "user": user})

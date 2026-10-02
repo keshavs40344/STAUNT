@@ -1944,6 +1944,14 @@ ipcMain.on('show-more-menu', (e, pos) => {
         }
       }
     },
+    {
+      label: 'Account & Sync',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('open-account-modal');
+        }
+      }
+    },
     { type: 'separator' },
     {
       label: `Zoom (${zoomPct}%)`,
@@ -2291,6 +2299,72 @@ ipcMain.on('toggle-devtools', (e) => {
 
 ipcMain.on('show-about', (e) => {
   if (verifyIpcSender(e)) showAboutDialog();
+});
+
+// =============================================================================
+// UNIFIED SOVEREIGN ACCOUNT IPC HANDLERS
+// =============================================================================
+const STAUNT_AUTH_URL = process.env.STAUNT_AUTH_URL || 'https://staunt.vercel.app/auth';
+
+function getAccountFilePath() {
+  return path.join(app.getPath('userData'), 'staunt_account_state.json');
+}
+
+function loadAccountState() {
+  try {
+    const accPath = getAccountFilePath();
+    if (fs.existsSync(accPath)) {
+      const raw = fs.readFileSync(accPath, 'utf-8');
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    logger.warn('Failed to load account state:', err);
+  }
+  return { isLoggedIn: false, user: null };
+}
+
+function saveAccountState(state) {
+  try {
+    const accPath = getAccountFilePath();
+    fs.writeFileSync(accPath, JSON.stringify(state, null, 2), 'utf-8');
+  } catch (err) {
+    logger.warn('Failed to save account state:', err);
+  }
+}
+
+ipcMain.handle('get-account-state', (e) => {
+  if (!verifyIpcSender(e)) return { isLoggedIn: false, user: null };
+  return loadAccountState();
+});
+
+ipcMain.handle('save-account-state', (e, user) => {
+  if (!verifyIpcSender(e)) return false;
+  if (user && typeof user === 'object') {
+    const safeUser = {
+      id: Number(user.id) || 0,
+      email: String(user.email || '').trim().slice(0, 256),
+      name: String(user.name || '').trim().slice(0, 256)
+    };
+    saveAccountState({ isLoggedIn: true, user: safeUser });
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('sign-out-account', (e) => {
+  if (!verifyIpcSender(e)) return false;
+  saveAccountState({ isLoggedIn: false, user: null });
+  return true;
+});
+
+ipcMain.on('open-auth-page', (e) => {
+  if (!verifyIpcSender(e)) return;
+  // Strictly enforce HTTPS
+  if (!STAUNT_AUTH_URL.startsWith('https://')) {
+    logger.error('Refusing to open non-HTTPS auth endpoint:', STAUNT_AUTH_URL);
+    return;
+  }
+  createTab(STAUNT_AUTH_URL);
 });
 
 // App Lifecycle with Single Instance Lock (prevent duplicate windows)

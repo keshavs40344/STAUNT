@@ -293,6 +293,7 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add(0, 3, 0, getString(R.string.bookmarks))
         popup.menu.add(0, 4, 0, getString(R.string.share))
         popup.menu.add(0, 5, 0, getString(R.string.settings))
+        popup.menu.add(0, 6, 0, getString(R.string.account_sync))
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -327,6 +328,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 5 -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
+                    true
+                }
+                6 -> {
+                    tabManager.getActiveTab()?.webView?.loadUrl("https://staunt.vercel.app/auth")
                     true
                 }
                 else -> false
