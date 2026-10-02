@@ -44,6 +44,13 @@
   }
 
   // 2. STAUNT Sovereign Search Sanitizer (Privacy-First Zero-Telemetry)
+  // Production search URL — always routed to the live endpoint, never localhost
+  const STAUNT_PRODUCTION_URL = (
+    (typeof process !== 'undefined' && process.env && process.env.STAUNT_SEARCH_URL) ||
+    (typeof process !== 'undefined' && process.env && process.env.STAUNT_PRODUCTION_URL) ||
+    'https://staunt.vercel.app'
+  );
+
   function formatCleanSearch(input) {
     const trimmed = (input || '').trim();
     if (!trimmed || trimmed === 'staunt://newtab' || trimmed === 'about:blank') {
@@ -59,8 +66,8 @@
       return 'https://' + trimmed;
     }
 
-    // STAUNT Sovereign Search Forwarder
-    return `http://127.0.0.1:5000/?q=${encodeURIComponent(trimmed)}`;
+    // STAUNT Sovereign Search Forwarder (Production endpoint — not localhost)
+    return `${STAUNT_PRODUCTION_URL}/?q=${encodeURIComponent(trimmed)}`;
   }
 
   // 3. Platform Unified Methods

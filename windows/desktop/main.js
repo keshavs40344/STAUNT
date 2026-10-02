@@ -1148,6 +1148,9 @@ function setupWebContentsEvents(tabObj) {
       ? `<div style="margin-bottom:12px;font-size:14px;color:#60a5fa;background:rgba(96,165,250,0.1);padding:6px 12px;border-radius:6px;display:inline-block;">Query: &ldquo;${escapeHtml(searchQuery)}&rdquo;</div>` 
       : '';
 
+    const safeFailedUrl = escapeHtml(validatedURL);
+    const safeSearchUrl = escapeHtml(STAUNT_SEARCH_URL);
+    const safeSearchQuery = encodeURIComponent(validatedURL);
     const errorHtml = `
       <!DOCTYPE html>
       <html>
@@ -1176,14 +1179,15 @@ function setupWebContentsEvents(tabObj) {
           <p>${escapeHtml(descText)}</p>
           <div class="code">${escapeHtml(errorDescription)} (${errorCode})</div>
           <div class="btn-group">
-            <button onclick="location.reload()">🔄 Retry</button>
-            <button class="sec" onclick="history.back()">⬅ Go Back</button>
-            ${!isSearchFailure ? `<button class="sec" onclick="location.href='${STAUNT_SEARCH_URL}/?q=${encodeURIComponent(validatedURL)}'">🔍 Search on STAUNT</button>` : ''}
+            <button onclick="window.location.href='${safeFailedUrl}'">🔄 Retry</button>
+            <button class="sec" onclick="window.history.back()">⬅ Go Back</button>
+            ${!isSearchFailure ? `<button class="sec" onclick="window.location.href='${safeSearchUrl}/?q=${safeSearchQuery}'">🔍 Search on STAUNT</button>` : ''}
           </div>
         </div>
       </body>
       </html>
     `;
+    // Load error page with validatedURL as the base URL so Retry navigates correctly
     wc.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
   });
 

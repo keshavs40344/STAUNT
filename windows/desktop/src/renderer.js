@@ -324,7 +324,10 @@
       }
     });
 
-    // Initialize first tab
-    bridge.createTab('staunt://newtab');
+    // Initialize first tab only in non-Electron mode
+    // In Electron, main.js creates the initial tab via ready-to-show and IPC
+    if (typeof window.stauntAPI === 'undefined' && typeof window.stauntSecureBridge === 'undefined') {
+      bridge.createTab('staunt://newtab');
+    }
   });
 })();
