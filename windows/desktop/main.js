@@ -285,7 +285,15 @@ if (settingsDB.searchUrl && (
 function recordHistory(url, title) {
   if (!url || typeof url !== 'string') return;
   const cleanUrl = url.trim().slice(0, 2048);
-  if (cleanUrl.includes('newtab.html') || cleanUrl === 'about:blank' || cleanUrl.startsWith('staunt://')) return;
+  if (
+    cleanUrl.includes('newtab.html') ||
+    cleanUrl === 'about:blank' ||
+    cleanUrl.startsWith('about:') ||
+    cleanUrl.startsWith('staunt://') ||
+    cleanUrl.startsWith('data:') ||
+    cleanUrl.startsWith('javascript:') ||
+    cleanUrl.startsWith('file:')
+  ) return;
   
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).substr(2, 6),
@@ -395,7 +403,16 @@ function reorderTabs(orderedIds) {
 function isUrlBookmarked(url) {
   if (!url || typeof url !== 'string') return false;
   const clean = url.trim();
-  if (!clean || clean.startsWith('staunt://') || clean.includes('newtab.html') || clean === 'about:blank') return false;
+  if (
+    !clean ||
+    clean.startsWith('staunt://') ||
+    clean.includes('newtab.html') ||
+    clean === 'about:blank' ||
+    clean.startsWith('about:') ||
+    clean.startsWith('data:') ||
+    clean.startsWith('file:') ||
+    clean.startsWith('javascript:')
+  ) return false;
   return bookmarksDB.some(b => b.url === clean);
 }
 
@@ -1315,7 +1332,15 @@ function closeTab(tabId) {
   if (!tabs.has(tabId)) return;
   const tab = tabs.get(tabId);
 
-  if (tab.url && !tab.url.includes('newtab.html') && tab.url !== 'staunt://newtab') {
+  if (
+    tab.url &&
+    !tab.url.includes('newtab.html') &&
+    tab.url !== 'staunt://newtab' &&
+    !tab.url.startsWith('about:') &&
+    !tab.url.startsWith('data:') &&
+    !tab.url.startsWith('file:') &&
+    !tab.url.startsWith('javascript:')
+  ) {
     closedTabsStack.push({
       url: tab.url,
       workspaceId: tab.workspaceId,
