@@ -567,14 +567,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Category Tabs Switching (Results Page) ---
+  function switchTab(tab) {
+    if (!tab) return;
+    activeTab = tab;
+    tabBtns.forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+    });
+    topCatBtns.forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+    });
+    const q = (currentQuery || (homeInput ? homeInput.value : "")).trim();
+    if (q) {
+      executeSearch(q, tab, currentTimeFilter);
+    }
+  }
+
   tabBtns.forEach(btn => {
     btn.addEventListener("click", () => {
-      tabBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      activeTab = btn.getAttribute("data-tab");
-      if (currentQuery) {
-        executeSearch(currentQuery, activeTab, currentTimeFilter);
-      }
+      const tab = btn.getAttribute("data-tab");
+      switchTab(tab);
     });
   });
 
@@ -834,7 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderShoppingCategory(data);
       } else if (category === "jobs") {
         renderJobsCategory(data);
-      } else if (category === "places") {
+      } else if (category === "places" || category === "maps") {
         renderPlacesCategory(data);
       }
 
@@ -1396,16 +1407,18 @@ document.addEventListener("DOMContentLoaded", () => {
       products.forEach(p => {
         const card = document.createElement("div");
         card.className = "shop-card";
+        const provLabel = p.source_provenance ? "Catalog Reference" : "Merchant Link";
+        const provTitle = p.source_provenance || "Direct Merchant Link";
         card.innerHTML = `
           <div class="shop-merchant-row">
-            <span class="shop-merchant-name">${escapeHtml(p.merchant)}</span>
-            <span class="shop-rating-pill">${escapeHtml(p.rating)}</span>
+            <span class="shop-merchant-name">${escapeHtml(p.merchant || "Store")}</span>
+            <span class="shop-rating-pill" style="font-size:0.7rem; color:var(--text-muted); border:1px solid var(--border-subtle); background:transparent;" title="${escapeHtml(provTitle)}">${escapeHtml(provLabel)}</span>
           </div>
-          <div class="shop-title" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</div>
-          <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">${escapeHtml(p.snippet.slice(0, 90))}...</p>
+          <div class="shop-title" title="${escapeHtml(p.title || "")}">${escapeHtml(p.title || "")}</div>
+          <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">${escapeHtml((p.snippet || "").slice(0, 95))}...</p>
           <div class="shop-price-row">
-            <span class="shop-price-tag">${escapeHtml(p.price)}</span>
-            <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" class="shop-buy-btn">View Deal ↗</a>
+            <span class="shop-price-tag" title="Reference Price">${escapeHtml(p.price || "Check Price")}</span>
+            <a href="${escapeHtml(p.url || "#")}" target="_blank" rel="noopener noreferrer" class="shop-buy-btn">View Product ↗</a>
           </div>
         `;
         shoppingSection.appendChild(card);
@@ -1442,20 +1455,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 11. Places Category
+  // 11. Places / Maps Category
   function renderPlacesCategory(data) {
     if (data.destination) {
       populateDestinationCard(data.destination);
       destinationCard.style.display = "block";
+    } else if (data.place || data.osm_url) {
+      const place = data.place || {
+        name: data.query || "Location",
+        osm_url: data.osm_url,
+        google_maps_url: data.google_maps_url,
+        type: "Geographic / Location Discovery"
+      };
+      renderMapsOverviewCard(place);
     }
     if (data.results && data.results.length > 0) {
       webResultsSection.style.display = "flex";
       data.results.forEach(item => {
         webResultsSection.appendChild(createWebResultCard(item));
       });
-    } else if (!data.destination) {
+    } else if (!data.destination && !data.place && !data.osm_url) {
       emptyState.style.display = "block";
     }
+  }
+
+  function renderMapsOverviewCard(place) {
+    const card = document.createElement("div");
+    card.className = "destination-card";
+    card.style.display = "block";
+    card.style.marginBottom = "20px";
+    card.innerHTML = `
+      <div class="dest-header">
+        <div>
+          <h2 class="dest-title" style="margin:0 0 4px 0; font-size:1.35rem;">📍 ${escapeHtml(place.name || "Location")}</h2>
+          <div class="dest-country" style="color:var(--text-muted); font-size:0.85rem;">${escapeHtml(place.type || "Geographic / Map Discovery")}</div>
+        </div>
+      </div>
+      <div style="margin: 12px 0; font-size: 0.88rem; line-height: 1.5; color: var(--text-secondary);">
+        Explore interactive maps, verified location details, geographic coordinates, and official guides.
+      </div>
+      <div class="dest-actions-row" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
+        ${place.osm_url ? `<a href="${escapeHtml(place.osm_url)}" target="_blank" rel="noopener noreferrer" class="hero-action-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">🗺️ OpenStreetMap</a>` : ''}
+        ${place.google_maps_url ? `<a href="${escapeHtml(place.google_maps_url)}" target="_blank" rel="noopener noreferrer" class="hero-action-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">📍 Google Maps</a>` : ''}
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 10px;">
+        STAUNT Maps integrates verified OpenStreetMap geographic data and web directory sources.
+      </div>
+    `;
+    webResultsSection.style.display = "flex";
+    webResultsSection.appendChild(card);
   }
 
   // Helper: Web Result Card Creator
@@ -3132,12 +3180,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!tab) return;
         document.querySelectorAll(".top-cat-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
-
-        if (tab === "maps") {
-          const q = (currentQuery || homeInput.value || "India").trim();
-          window.open(`https://maps.google.com/?q=${encodeURIComponent(q)}`, "_blank");
-          return;
-        }
 
         activeTab = tab;
         const q = (currentQuery || homeInput.value).trim();

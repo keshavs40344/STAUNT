@@ -1,8 +1,8 @@
 """
-STAUNT — Unified Account & Google Sign-In Test Suite
+STAUNT — Unified Account & Email/Password Auth Test Suite
 Tests:
-1. Login page loads and contains '+' STAUNT Account branding and Google Sign-In
-2. Config endpoint returns Firebase status without leaking secrets
+1. Login page loads and contains '+' STAUNT Account branding and Email/Password forms
+2. Config endpoint returns Firebase status (provider: password) without leaking secrets
 3. Login without verification token is rejected
 4. Invalid Turnstile token is rejected server-side
 5. Valid verification can register, authenticate, and maintain session
@@ -10,10 +10,10 @@ Tests:
 7. Normal browsing works 100% without login (search, browse, tabs)
 8. Authentication rate limiting configured
 9. No secrets (Firebase Admin, service account keys, private tokens) in client source
-10. Windows client bridge contracts for '+' account button and Google Sign-in modal
+10. Windows client bridge contracts for '+' account button and Email/Password Sign-in modal
 11. Android client menu integration with '+ STAUNT Account' and HTTPS endpoint
 12. Security checks (Electron isolation, https enforcement, tokens not in URL)
-13. Live Google sign-in status reported as TEST BLOCKED when Firebase config unconfigured
+13. Live Firebase Email/Password auth status check
 """
 import os
 import sys
@@ -45,16 +45,26 @@ class TestUnifiedAccountSystem:
     """Comprehensive QA suite for STAUNT unified account system."""
 
     def test_01_auth_page_loads(self, client):
-        """1. Login page loads with '+' badge, Continue with Google, and optional notice."""
+        """1. Login page loads with '+' badge, email/password forms, and optional notice."""
         resp = client.get("/auth")
         assert resp.status_code == 200
         html = resp.data.decode("utf-8")
         assert "STAUNT Account" in html
-        assert "Sign in to sync your data" in html
-        assert "Continue with Google" in html
-        assert "Your browsing works without an account." in html
-        assert "btnGoogleSignIn" in html
+        assert "Sign in to your STAUNT Account" in html
+        assert "Browsing works without an account." in html
+        assert "loginEmail" in html
+        assert "loginPassword" in html
+        assert "btnSignIn" in html
+        assert "btnCreateAccount" in html
+        assert "btnSendReset" in html
         assert "btnSignOut" in html
+        assert "signInWithEmailAndPassword" in html
+        assert "createUserWithEmailAndPassword" in html
+        assert "sendPasswordResetEmail" in html
+        # Ensure Google OAuth is completely removed
+        assert "Continue with Google" not in html
+        assert "GoogleAuthProvider" not in html
+        assert "signInWithPopup" not in html
 
     def test_02_auth_config_endpoint(self, client):
         """2. Config endpoint returns public keys and Firebase state without leaking secrets."""
@@ -70,7 +80,7 @@ class TestUnifiedAccountSystem:
         assert fb["projectId"] == "staunt-fe6ad"
         assert fb["authDomain"] == "staunt-fe6ad.firebaseapp.com"
         assert fb["appId"] == "1:35404899573:web:74837bac9be974990c51bc"
-        assert fb["provider"] == "google.com"
+        assert fb["provider"] == "password"
         assert "turnstile_secret_key" not in data
         assert "private_key" not in data
         assert "client_secret" not in data
@@ -214,7 +224,7 @@ class TestUnifiedAccountSystem:
                     assert pat not in content, f"Potential secret pattern '{pat}' found in {file_path}"
 
     def test_10_windows_account_bridge_elements_present(self):
-        """10. Windows desktop UI contains '+' account button and Google Sign-in modal."""
+        """10. Windows desktop UI contains '+' account button and Email/Password sign-in modal."""
         index_html_path = os.path.join(BASE_DIR, "windows", "desktop", "src", "index.html")
         assert os.path.exists(index_html_path)
         with open(index_html_path, "r", encoding="utf-8") as f:
@@ -223,10 +233,15 @@ class TestUnifiedAccountSystem:
         assert 'id="btnDeskAccount"' in html, "Account button missing in desktop header"
         assert 'class="account-plus-icon"' in html, "Plus icon missing in account button"
         assert 'id="accountModal"' in html, "Account modal missing in desktop index.html"
-        assert 'Continue with Google' in html, "Continue with Google missing in modal"
+        assert 'btnOpenAuthWeb' in html, "Auth web button missing in modal"
+        assert 'Sign in with Email' in html, "Sign in with Email missing in modal"
         assert 'btnAccountGoSettings' in html, "Settings button missing in logged-in modal"
         assert 'btnSignOutDesk' in html, "Sign out button missing in modal"
         assert 'Your browsing works without an account.' in html
+        # Google OAuth elements must be completely removed
+        assert 'Continue with Google' not in html, "Google auth should be removed from modal"
+        assert 'Google User' not in html, "Google User placeholder should be removed"
+        assert 'Google account' not in html, "Google account label should be removed"
 
         preload_path = os.path.join(BASE_DIR, "windows", "desktop", "preload.js")
         with open(preload_path, "r", encoding="utf-8") as f:
@@ -263,8 +278,8 @@ class TestUnifiedAccountSystem:
         assert "contextIsolation: true" in main_js
         assert "sandbox: true" in main_js
 
-    def test_13_live_google_login_status_check(self, client):
-        """13. Verified Firebase configuration loaded and live status verified."""
+    def test_13_live_firebase_email_auth_status_check(self, client):
+        """13. Verified Firebase Email/Password configuration loaded and status verified."""
         resp = client.get("/api/auth/config")
         data = resp.get_json()
         firebase_cfg = data.get("firebase", {})
@@ -272,6 +287,7 @@ class TestUnifiedAccountSystem:
         assert firebase_cfg.get("projectId") == "staunt-fe6ad"
         assert firebase_cfg.get("authDomain") == "staunt-fe6ad.firebaseapp.com"
         assert firebase_cfg.get("appId") == "1:35404899573:web:74837bac9be974990c51bc"
+        assert firebase_cfg.get("provider") == "password"
 
     def test_14_desktop_auth_callback_protocol_guard(self):
         """14. Desktop auth callback protocol navigation guard is present in main.js and auth.html."""
@@ -362,3 +378,35 @@ class TestUnifiedAccountSystem:
         assert idx_trusted != -1
         assert idx_trusted > idx_callback
 
+    def test_21_email_auth_forms_and_security_features(self):
+        """21. Verify client auth.html contains all email/password views, non-enumeration protection, and error mapping."""
+        auth_html_path = os.path.join(BASE_DIR, "public", "auth.html")
+        assert os.path.exists(auth_html_path)
+        with open(auth_html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        # Check forms and elements
+        assert 'id="signInView"' in html
+        assert 'id="signUpView"' in html
+        assert 'id="forgotPasswordView"' in html
+        assert 'id="loggedInView"' in html
+        assert 'id="loginEmail"' in html
+        assert 'id="loginPassword"' in html
+        assert 'id="signupName"' in html
+        assert 'id="signupEmail"' in html
+        assert 'id="signupPassword"' in html
+        assert 'id="signupConfirmPassword"' in html
+        assert 'id="resetEmail"' in html
+
+        # Check account enumeration protection on password reset
+        assert "If an account exists for this email, you'll receive instructions to reset your password." in html
+
+        # Check password mismatch validation
+        assert "Passwords do not match." in html
+
+        # Check Firebase error mapping
+        assert "auth/email-already-in-use" in html
+        assert "auth/weak-password" in html
+        assert "auth/invalid-email" in html
+        assert "auth/wrong-password" in html
+        assert "auth/invalid-credential" in html

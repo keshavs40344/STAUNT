@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>STAUNT Account — Google Sign-In</title>
-  <meta name="description" content="STAUNT Browser Account • Multi-Platform Sync for Windows, Android, and Web." />
+  <title>STAUNT Account</title>
+  <meta name="description" content="STAUNT Browser Account • Sovereign Privacy-First Browser." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -14,14 +14,16 @@
       --bg-card: #0a0f1d;
       --bg-elevated: #10172a;
       --bg-input: #070a14;
-      --border: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.09);
       --border-focus: #d4a359;
       --border-err: rgba(239, 68, 68, 0.6);
       --border-ok: rgba(16, 185, 129, 0.5);
       --text: #f1f5f9;
-      --text-muted: #64748b;
-      --text-dim: #334155;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --text-dim: rgba(255, 255, 255, 0.45);
       --gold: #d4a359;
+      --gold-hover: #b8860b;
       --emerald: #10b981;
       --radius: 14px;
       --radius-sm: 8px;
@@ -88,7 +90,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
 
     .plus-badge {
@@ -123,9 +125,9 @@
     /* Alerts */
     .alert-box {
       display: none;
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-radius: var(--radius-sm);
-      font-size: 12px;
+      font-size: 12.5px;
       margin-bottom: 16px;
       line-height: 1.4;
     }
@@ -151,59 +153,145 @@
       color: #6ee7b7;
     }
 
-    /* Google Button */
-    .btn-google {
-      width: 100%;
-      padding: 12px 16px;
-      background: #ffffff;
-      color: #1f1f1f;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
-      font-size: 13.5px;
-      font-weight: 600;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-    }
-
-    .btn-google:hover {
-      background: #f8fafc;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-google:active {
-      transform: scale(0.98);
-    }
-
-    .btn-google svg {
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
-    }
-
-    /* Logged Out View */
-    .logged-out-view {
+    /* Forms */
+    .auth-view {
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
 
-    .logged-out-sub {
-      font-size: 12.5px;
-      color: var(--text-muted);
-      line-height: 1.5;
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .optional-notice {
+    .form-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .form-input {
+      width: 100%;
+      height: 42px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(212, 163, 89, 0.18);
+    }
+
+    .form-input.has-error {
+      border-color: var(--border-err);
+    }
+
+    .field-error {
       font-size: 11.5px;
+      color: #fca5a5;
+      min-height: 16px;
+      display: none;
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
+    .field-error.visible {
+      display: block;
+    }
+
+    /* Primary CTA Button */
+    .btn-submit {
+      width: 100%;
+      height: 42px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-hover));
+      color: #040711;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.95;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Links Row */
+    .links-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+
+    .links-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      margin-top: 2px;
+      text-align: center;
+    }
+
+    .auth-link {
+      color: var(--gold);
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .auth-link:hover {
+      text-decoration: underline;
+    }
+
+    .auth-link-muted {
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .auth-link-muted:hover {
+      color: #fff;
+    }
+
+    /* Footnote */
+    .optional-notice {
+      font-size: 12px;
       color: var(--text-dim);
       text-align: center;
-      margin-top: 6px;
+      margin-top: 18px;
       line-height: 1.4;
     }
 
@@ -279,12 +367,6 @@
       font-weight: 600;
     }
 
-    .status-value.planned {
-      color: var(--text-muted);
-      font-style: italic;
-      font-weight: normal;
-    }
-
     .action-row {
       display: flex;
       gap: 10px;
@@ -293,7 +375,7 @@
 
     .btn-action {
       flex: 1;
-      padding: 9px;
+      padding: 10px;
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -310,7 +392,7 @@
 
     .btn-signout {
       flex: 1;
-      padding: 9px;
+      padding: 10px;
       background: transparent;
       border: 1px solid rgba(239, 68, 68, 0.3);
       border-radius: var(--radius-sm);
@@ -338,48 +420,113 @@
     <div class="brand-header">
       <div class="plus-badge">+</div>
       <div class="brand-text">
-        <h1>STAUNT Account</h1>
-        <p>Unified Sync for Windows &amp; Android</p>
+        <h1 id="brandTitle">STAUNT Account</h1>
+        <p id="brandSubtitle">Sign in to your STAUNT Account</p>
       </div>
     </div>
 
     <!-- Alert Box -->
     <div id="alertBox" class="alert-box"></div>
 
-    <!-- LOGGED OUT VIEW -->
-    <div id="loggedOutView" class="logged-out-view">
-      <div class="logged-out-sub">Sign in to sync your data across your devices.</div>
+    <!-- 1. SIGN IN VIEW (Default) -->
+    <form id="signInView" class="auth-view" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" class="form-input" placeholder="name@example.com" autocomplete="email" required />
+        <div id="loginEmailError" class="field-error"></div>
+      </div>
 
-      <button type="button" id="btnGoogleSignIn" class="btn-google">
-        <svg viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
-        <span>Continue with Google</span>
+      <div class="form-group">
+        <label class="form-label" for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" autocomplete="current-password" required />
+        <div id="loginPasswordError" class="field-error"></div>
+      </div>
+
+      <button type="submit" id="btnSignIn" class="btn-submit">
+        <span>Sign in</span>
       </button>
 
-      <div class="optional-notice">Your browsing works without an account.</div>
-    </div>
+      <div class="links-row">
+        <a href="#" id="linkToForgot" class="auth-link">Forgot password?</a>
+        <span style="color: var(--text-muted);">
+          Don't have an account? <a href="#" id="linkToSignUp" class="auth-link">Create account</a>
+        </span>
+      </div>
 
-    <!-- LOGGED IN VIEW -->
+      <div class="optional-notice">Browsing works without an account.</div>
+    </form>
+
+    <!-- 2. SIGN UP VIEW -->
+    <form id="signUpView" class="auth-view" style="display: none;" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="signupName">Name</label>
+        <input type="text" id="signupName" class="form-input" placeholder="Your name" autocomplete="name" required />
+        <div id="signupNameError" class="field-error"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" class="form-input" placeholder="name@example.com" autocomplete="email" required />
+        <div id="signupEmailError" class="field-error"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" class="form-input" placeholder="At least 6 characters" autocomplete="new-password" required />
+        <div id="signupPasswordError" class="field-error"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="signupConfirmPassword">Confirm password</label>
+        <input type="password" id="signupConfirmPassword" class="form-input" placeholder="Re-enter password" autocomplete="new-password" required />
+        <div id="signupConfirmPasswordError" class="field-error"></div>
+      </div>
+
+      <button type="submit" id="btnCreateAccount" class="btn-submit">
+        <span>Create account</span>
+      </button>
+
+      <div class="links-center">
+        <span style="color: var(--text-muted);">
+          Already have an account? <a href="#" id="linkToSignInFromUp" class="auth-link">Sign in</a>
+        </span>
+      </div>
+
+      <div class="optional-notice">Browsing works without an account.</div>
+    </form>
+
+    <!-- 3. FORGOT PASSWORD VIEW -->
+    <form id="forgotPasswordView" class="auth-view" style="display: none;" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="resetEmail">Enter your email</label>
+        <input type="email" id="resetEmail" class="form-input" placeholder="name@example.com" autocomplete="email" required />
+        <div id="resetEmailError" class="field-error"></div>
+      </div>
+
+      <button type="submit" id="btnSendReset" class="btn-submit">
+        <span>Send reset link</span>
+      </button>
+
+      <div class="links-center">
+        <a href="#" id="linkToSignInFromForgot" class="auth-link-muted">Back to Sign in</a>
+      </div>
+
+      <div class="optional-notice">Browsing works without an account.</div>
+    </form>
+
+    <!-- 4. LOGGED IN VIEW -->
     <div id="loggedInView" class="logged-in-view">
-      <div class="avatar-circle" id="userAvatar">G</div>
+      <div class="avatar-circle" id="userAvatar">U</div>
       <div>
-        <div class="account-type">Google account</div>
-        <div class="user-name" id="userName">Google User</div>
-        <div class="user-email" id="userEmail">user@gmail.com</div>
+        <div class="account-type">STAUNT Account</div>
+        <div class="user-name" id="userName">User</div>
+        <div class="user-email" id="userEmail">user@example.com</div>
       </div>
 
       <div class="status-card">
         <div class="status-row">
           <span class="status-label">Status:</span>
           <span class="status-value">✓ Signed in</span>
-        </div>
-        <div class="status-row">
-          <span class="status-label">Sync:</span>
-          <span class="status-value planned">Unavailable (Planned)</span>
         </div>
       </div>
 
@@ -395,15 +542,49 @@
 (function() {
   'use strict';
 
+  const brandSubtitle = document.getElementById("brandSubtitle");
   const alertBox = document.getElementById("alertBox");
-  const loggedOutView = document.getElementById("loggedOutView");
+
+  const signInView = document.getElementById("signInView");
+  const signUpView = document.getElementById("signUpView");
+  const forgotPasswordView = document.getElementById("forgotPasswordView");
   const loggedInView = document.getElementById("loggedInView");
-  const btnGoogleSignIn = document.getElementById("btnGoogleSignIn");
-  const btnSignOut = document.getElementById("btnSignOut");
-  const btnGoBack = document.getElementById("btnGoBack");
+
+  // Inputs & Errors - Sign In
+  const loginEmail = document.getElementById("loginEmail");
+  const loginPassword = document.getElementById("loginPassword");
+  const loginEmailError = document.getElementById("loginEmailError");
+  const loginPasswordError = document.getElementById("loginPasswordError");
+  const btnSignIn = document.getElementById("btnSignIn");
+
+  // Inputs & Errors - Sign Up
+  const signupName = document.getElementById("signupName");
+  const signupEmail = document.getElementById("signupEmail");
+  const signupPassword = document.getElementById("signupPassword");
+  const signupConfirmPassword = document.getElementById("signupConfirmPassword");
+  const signupNameError = document.getElementById("signupNameError");
+  const signupEmailError = document.getElementById("signupEmailError");
+  const signupPasswordError = document.getElementById("signupPasswordError");
+  const signupConfirmPasswordError = document.getElementById("signupConfirmPasswordError");
+  const btnCreateAccount = document.getElementById("btnCreateAccount");
+
+  // Inputs & Errors - Reset
+  const resetEmail = document.getElementById("resetEmail");
+  const resetEmailError = document.getElementById("resetEmailError");
+  const btnSendReset = document.getElementById("btnSendReset");
+
+  // Logged In Elements
   const userName = document.getElementById("userName");
   const userEmail = document.getElementById("userEmail");
   const userAvatar = document.getElementById("userAvatar");
+  const btnSignOut = document.getElementById("btnSignOut");
+  const btnGoBack = document.getElementById("btnGoBack");
+
+  // Navigation Links
+  const linkToForgot = document.getElementById("linkToForgot");
+  const linkToSignUp = document.getElementById("linkToSignUp");
+  const linkToSignInFromUp = document.getElementById("linkToSignInFromUp");
+  const linkToSignInFromForgot = document.getElementById("linkToSignInFromForgot");
 
   let firebaseConfig = null;
   let isFirebaseReady = false;
@@ -418,29 +599,102 @@
     alertBox.className = "alert-box";
   }
 
+  function setFieldError(field, errorEl, message) {
+    if (message) {
+      field.classList.add("has-error");
+      errorEl.textContent = message;
+      errorEl.classList.add("visible");
+    } else {
+      field.classList.remove("has-error");
+      errorEl.textContent = "";
+      errorEl.classList.remove("visible");
+    }
+  }
+
+  function clearFieldErrors() {
+    [loginEmail, loginPassword, signupName, signupEmail, signupPassword, signupConfirmPassword, resetEmail].forEach(input => {
+      if (input) input.classList.remove("has-error");
+    });
+    [loginEmailError, loginPasswordError, signupNameError, signupEmailError, signupPasswordError, signupConfirmPasswordError, resetEmailError].forEach(el => {
+      if (el) { el.textContent = ""; el.classList.remove("visible"); }
+    });
+  }
+
+  function switchView(target) {
+    clearAlert();
+    clearFieldErrors();
+    signInView.style.display = "none";
+    signUpView.style.display = "none";
+    forgotPasswordView.style.display = "none";
+    loggedInView.style.display = "none";
+
+    if (target === "signin") {
+      signInView.style.display = "flex";
+      brandSubtitle.textContent = "Sign in to your STAUNT Account";
+    } else if (target === "signup") {
+      signUpView.style.display = "flex";
+      brandSubtitle.textContent = "Create your STAUNT Account";
+    } else if (target === "forgot") {
+      forgotPasswordView.style.display = "flex";
+      brandSubtitle.textContent = "Reset your password";
+    } else if (target === "loggedin") {
+      loggedInView.style.display = "flex";
+      brandSubtitle.textContent = "Manage your STAUNT Account";
+    }
+  }
+
+  // Link Event Listeners
+  linkToForgot.addEventListener("click", (e) => { e.preventDefault(); switchView("forgot"); });
+  linkToSignUp.addEventListener("click", (e) => { e.preventDefault(); switchView("signup"); });
+  linkToSignInFromUp.addEventListener("click", (e) => { e.preventDefault(); switchView("signin"); });
+  linkToSignInFromForgot.addEventListener("click", (e) => { e.preventDefault(); switchView("signin"); });
+
+  function isValidEmail(val) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
+  }
+
+  function mapFirebaseError(err) {
+    const code = err.code || "";
+    switch (code) {
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+      case "auth/invalid-credential":
+        return "Email or password is incorrect.";
+      case "auth/email-already-in-use":
+        return "An account with this email already exists. Sign in instead.";
+      case "auth/weak-password":
+        return "Please use a stronger password (at least 6 characters).";
+      case "auth/too-many-requests":
+        return "Too many failed attempts. Please try again in a few minutes.";
+      case "auth/network-request-failed":
+        return "Network error. Please check your internet connection.";
+      case "auth/operation-not-allowed":
+        return "Email/Password sign-in is not enabled in Firebase Console.";
+      default:
+        return err.message || "An unexpected authentication error occurred.";
+    }
+  }
+
   function showLoggedIn(user) {
-    loggedOutView.style.display = "none";
-    loggedInView.style.display = "flex";
-    const name = user.displayName || user.name || (user.email ? user.email.split('@')[0] : "Google User");
+    switchView("loggedin");
+    const name = user.displayName || user.name || (user.email ? user.email.split('@')[0] : "User");
     userName.textContent = name;
     userEmail.textContent = user.email || "";
     userAvatar.textContent = name.charAt(0).toUpperCase();
 
-    // Sync with desktop bridge if embedded in Electron
-    if (window.stauntBridge && typeof window.stauntBridge.saveAccountState === 'function') {
-      window.stauntBridge.saveAccountState({
-        isLoggedIn: true,
-        user: { name, email: user.email, uid: user.uid || user.id }
-      });
-    }
+    // Signal completion for Desktop STAUNT browser
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("client") === "desktop" || window.location.hash.includes("client=desktop")) {
+        window.location.href = "staunt://auth-callback?status=success";
+      }
+    } catch(e) {}
   }
 
   function showLoggedOut() {
-    loggedInView.style.display = "none";
-    loggedOutView.style.display = "flex";
-    if (window.stauntBridge && typeof window.stauntBridge.signOutAccount === 'function') {
-      window.stauntBridge.signOutAccount();
-    }
+    switchView("signin");
   }
 
   // Check existing session
@@ -487,25 +741,42 @@
     }
   }
 
-  // Handle Google Sign-In Click
-  btnGoogleSignIn.addEventListener("click", async () => {
+  // 1. Handle Sign In Submission
+  signInView.addEventListener("submit", async (e) => {
+    e.preventDefault();
     clearAlert();
+    clearFieldErrors();
 
-    // If Firebase credentials are not yet configured in environment
-    if (!isFirebaseReady || !firebaseConfig || !firebaseConfig.configured) {
-      showAlert(
-        "Firebase Google Sign-In requires project configuration. Set FIREBASE_API_KEY and FIREBASE_PROJECT_ID in server environment variables or deployment settings.",
-        "info"
-      );
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+
+    let hasErr = false;
+    if (!email) {
+      setFieldError(loginEmail, loginEmailError, "Enter your email address.");
+      hasErr = true;
+    } else if (!isValidEmail(email)) {
+      setFieldError(loginEmail, loginEmailError, "Please enter a valid email address.");
+      hasErr = true;
+    }
+
+    if (!password) {
+      setFieldError(loginPassword, loginPasswordError, "Enter your password.");
+      hasErr = true;
+    }
+
+    if (hasErr) return;
+
+    if (!isFirebaseReady || !window.firebase || !window.firebase.auth) {
+      showAlert("Authentication service is initializing. Please try again in a moment.", "info");
       return;
     }
 
     try {
-      btnGoogleSignIn.disabled = true;
-      btnGoogleSignIn.style.opacity = "0.7";
-      const provider = new window.firebase.auth.GoogleAuthProvider();
-      const result = await window.firebase.auth().signInWithPopup(provider);
-      const user = result.user;
+      btnSignIn.disabled = true;
+      btnSignIn.textContent = "Signing in...";
+
+      const cred = await window.firebase.auth().signInWithEmailAndPassword(email, password);
+      const user = cred.user;
 
       // Establish server session
       await fetch("/api/auth/session", {
@@ -514,35 +785,170 @@
         body: JSON.stringify({
           uid: user.uid,
           email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL
+          displayName: user.displayName || user.email.split('@')[0],
+          photoURL: user.photoURL || ""
         })
       });
 
       showLoggedIn(user);
-      showAlert("Successfully signed in with Google!", "success");
-
-      // Signal completion for Desktop STAUNT browser
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get("client") === "desktop" || window.location.hash.includes("client=desktop")) {
-          window.location.href = "staunt://auth-callback?status=success";
-        }
-      } catch(e) {}
     } catch(err) {
-      console.warn("Google Auth error:", err);
-      if (err.code === "auth/popup-closed-by-user") {
-        showAlert("Sign-in cancelled: Popup was closed before completion.", "error");
+      console.warn("Sign-in error:", err);
+      const userMsg = mapFirebaseError(err);
+      if (err.code === "auth/invalid-email") {
+        setFieldError(loginEmail, loginEmailError, userMsg);
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        showAlert("Email or password is incorrect.", "error");
       } else {
-        showAlert(err.message || "Failed to sign in with Google.", "error");
+        showAlert(userMsg, "error");
       }
     } finally {
-      btnGoogleSignIn.disabled = false;
-      btnGoogleSignIn.style.opacity = "1";
+      btnSignIn.disabled = false;
+      btnSignIn.textContent = "Sign in";
     }
   });
 
-  // Handle Sign Out Click
+  // 2. Handle Create Account Submission
+  signUpView.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearAlert();
+    clearFieldErrors();
+
+    const name = signupName.value.trim();
+    const email = signupEmail.value.trim();
+    const password = signupPassword.value;
+    const confirm = signupConfirmPassword.value;
+
+    let hasErr = false;
+    if (!name) {
+      setFieldError(signupName, signupNameError, "Please enter your name.");
+      hasErr = true;
+    }
+
+    if (!email) {
+      setFieldError(signupEmail, signupEmailError, "Enter your email address.");
+      hasErr = true;
+    } else if (!isValidEmail(email)) {
+      setFieldError(signupEmail, signupEmailError, "Please enter a valid email address.");
+      hasErr = true;
+    }
+
+    if (!password) {
+      setFieldError(signupPassword, signupPasswordError, "Enter your password.");
+      hasErr = true;
+    } else if (password.length < 6) {
+      setFieldError(signupPassword, signupPasswordError, "Please use a stronger password (at least 6 characters).");
+      hasErr = true;
+    }
+
+    if (!confirm) {
+      setFieldError(signupConfirmPassword, signupConfirmPasswordError, "Please confirm your password.");
+      hasErr = true;
+    } else if (password !== confirm) {
+      setFieldError(signupConfirmPassword, signupConfirmPasswordError, "Passwords do not match.");
+      hasErr = true;
+    }
+
+    if (hasErr) return;
+
+    if (!isFirebaseReady || !window.firebase || !window.firebase.auth) {
+      showAlert("Authentication service is initializing. Please try again in a moment.", "info");
+      return;
+    }
+
+    try {
+      btnCreateAccount.disabled = true;
+      btnCreateAccount.textContent = "Creating account...";
+
+      const cred = await window.firebase.auth().createUserWithEmailAndPassword(email, password);
+      const user = cred.user;
+
+      // Update Firebase Profile with Name
+      if (name && user.updateProfile) {
+        try {
+          await user.updateProfile({ displayName: name });
+        } catch(e) {}
+      }
+
+      // Establish server session
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: name,
+          photoURL: user.photoURL || ""
+        })
+      });
+
+      showAlert("Account created successfully.", "success");
+      setTimeout(() => {
+        showLoggedIn({ uid: user.uid, email: user.email, displayName: name, photoURL: user.photoURL });
+      }, 600);
+    } catch(err) {
+      console.warn("Sign-up error:", err);
+      const userMsg = mapFirebaseError(err);
+      if (err.code === "auth/email-already-in-use") {
+        setFieldError(signupEmail, signupEmailError, "An account with this email already exists. Sign in instead.");
+      } else if (err.code === "auth/weak-password") {
+        setFieldError(signupPassword, signupPasswordError, "Please use a stronger password (at least 6 characters).");
+      } else if (err.code === "auth/invalid-email") {
+        setFieldError(signupEmail, signupEmailError, userMsg);
+      } else {
+        showAlert(userMsg, "error");
+      }
+    } finally {
+      btnCreateAccount.disabled = false;
+      btnCreateAccount.textContent = "Create account";
+    }
+  });
+
+  // 3. Handle Forgot Password Submission
+  forgotPasswordView.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearAlert();
+    clearFieldErrors();
+
+    const email = resetEmail.value.trim();
+    if (!email) {
+      setFieldError(resetEmail, resetEmailError, "Enter your email address.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setFieldError(resetEmail, resetEmailError, "Please enter a valid email address.");
+      return;
+    }
+
+    if (!isFirebaseReady || !window.firebase || !window.firebase.auth) {
+      showAlert("Authentication service is initializing. Please try again in a moment.", "info");
+      return;
+    }
+
+    try {
+      btnSendReset.disabled = true;
+      btnSendReset.textContent = "Sending link...";
+
+      await window.firebase.auth().sendPasswordResetEmail(email);
+      showAlert("If an account exists for this email, you'll receive instructions to reset your password.", "success");
+      resetEmail.value = "";
+    } catch(err) {
+      console.warn("Password reset error:", err);
+      // Prevent account enumeration: do not disclose if email is unregistered
+      if (err.code === "auth/user-not-found") {
+        showAlert("If an account exists for this email, you'll receive instructions to reset your password.", "success");
+        resetEmail.value = "";
+      } else if (err.code === "auth/invalid-email") {
+        setFieldError(resetEmail, resetEmailError, "Please enter a valid email address.");
+      } else {
+        showAlert(mapFirebaseError(err), "error");
+      }
+    } finally {
+      btnSendReset.disabled = false;
+      btnSendReset.textContent = "Send reset link";
+    }
+  });
+
+  // 4. Handle Sign Out Click
   btnSignOut.addEventListener("click", async () => {
     clearAlert();
     try {
@@ -567,6 +973,7 @@
     }
   });
 
+  // Initialize
   initAuthConfig();
   checkSession();
 })();

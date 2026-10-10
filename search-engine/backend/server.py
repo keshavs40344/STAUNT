@@ -927,7 +927,7 @@ def api_auth_config():
             "authDomain": firebase_auth_domain if is_configured else None,
             "projectId": firebase_project_id if is_configured else None,
             "appId": firebase_app_id if is_configured else None,
-            "provider": "google.com"
+            "provider": "password"
         }
     })
 
@@ -947,7 +947,7 @@ def api_auth_session():
     session["user_email"] = email
     session["user_name"] = display_name or email.split("@")[0]
     session["user_photo"] = photo_url
-    session["provider"] = "google.com"
+    session["provider"] = "password"
     return jsonify({
         "status": "success",
         "user": {
@@ -955,7 +955,7 @@ def api_auth_session():
             "email": email,
             "name": session["user_name"],
             "photoURL": photo_url,
-            "provider": "google.com"
+            "provider": "password"
         }
     })
 
@@ -1021,7 +1021,7 @@ def api_auth_me():
     if not user_id:
         return jsonify({"authenticated": False, "user": None})
 
-    # Return Google / Firebase session if available
+    # Return Firebase email/password session if available
     if session.get("user_email"):
         return jsonify({
             "authenticated": True,
@@ -1030,7 +1030,7 @@ def api_auth_me():
                 "email": session.get("user_email", ""),
                 "name": session.get("user_name", ""),
                 "photoURL": session.get("user_photo", ""),
-                "provider": session.get("provider", "google.com")
+                "provider": session.get("provider", "password")
             }
         })
 
