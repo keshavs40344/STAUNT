@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Daylight Atmospheric Sky Gradient -->
+    <linearGradient id="skyLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="40%" stop-color="#f0f7ff" />
+      <stop offset="75%" stop-color="#e0f2fe" />
+      <stop offset="100%" stop-color="#bae6fd" />
+    </linearGradient>
+
+    <!-- Subtle Radiant Morning Sun Glow -->
+    <radialGradient id="sunAura" cx="50%" cy="85%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85" />
+      <stop offset="35%" stop-color="#e0f2fe" stop-opacity="0.5" />
+      <stop offset="70%" stop-color="#bae6fd" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#bae6fd" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Soft Distant Peaks -->
+    <linearGradient id="peakFar" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#e2e8f0" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Mid Mountain Ridges -->
+    <linearGradient id="peakMid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#cbd5e1" stop-opacity="0.05" />
+    </linearGradient>
+
+    <!-- Horizon Arc Gradient -->
+    <linearGradient id="horizonArcLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#0284c7" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.4" />
+    </linearGradient>
+
+    <radialGradient id="arcGlowLight" cx="50%" cy="100%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#0284c7" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Sky Canvas -->
+  <rect width="1920" height="1080" fill="url(#skyLight)" />
+  <rect width="1920" height="1080" fill="url(#sunAura)" />
+
+  <!-- Distant Alpine Mountain Silhouette (Below y=680 to keep hero crystal clear) -->
+  <polygon points="0,780 140,730 280,765 420,705 580,750 760,685 920,740 1080,670 1260,735 1440,690 1620,755 1780,715 1920,745 1920,1080 0,1080" fill="url(#peakFar)" />
+  
+  <!-- Mid Layer Peaks -->
+  <polygon points="0,830 180,780 340,815 520,760 700,810 880,755 1040,805 1200,745 1380,800 1560,765 1740,815 1920,775 1920,1080 0,1080" fill="url(#peakMid)" />
+
+  <!-- Soft Horizon Base Glow -->
+  <ellipse cx="960" cy="1070" rx="900" ry="220" fill="url(#arcGlowLight)" />
+
+  <!-- Elegant Horizon Luminous Curve (Curved Earth Horizon Accent) -->
+  <path d="M-100,1060 Q960,940 2020,1060 L2020,1080 L-100,1080 Z" fill="#ffffff" opacity="0.9" />
+  <path d="M-100,1060 Q960,940 2020,1060" fill="none" stroke="url(#horizonArcLight)" stroke-width="3.5" />
+  <path d="M-100,1061 Q960,941 2020,1061" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+</svg>

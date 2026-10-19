@@ -32,22 +32,10 @@
     <!-- TOP BAR -->
     <header class="app-header" id="appHeader">
       <div class="header-left">
-        <!-- Hamburger Menu Button to Toggle Left Navigation Rail -->
-        <button class="icon-btn rail-toggle-btn" id="navRailToggleBtn" title="Toggle Navigation Menu" aria-label="Toggle Navigation">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-
-        <!-- Brand Logo with Gradient A -->
+        <!-- Brand Wordmark (Reference Mockup Match: clean STAUNT, electric blue A, no star mark) -->
         <div class="brand-logo" id="brandLogo" title="STAUNT Home" style="cursor: pointer;">
-          <div class="logo-mark">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <div class="brand-text-wrap">
-            <span class="brand-name">ST<span class="brand-accent">A</span>UNT</span>
-          </div>
+          <span class="brand-name">ST<span class="brand-accent">A</span>UNT</span>
         </div>
-
-        <span class="brand-badge">India Technology</span>
       </div>
 
       <!-- Top Search Form (Visible on results view or scrolled) -->
@@ -74,14 +62,14 @@
 
       <!-- Center Top Categories Bar (Reference Match) -->
       <nav class="top-nav-categories" id="topNavCategories">
-        <button class="top-cat-btn active" data-tab="all">Search</button>
+        <button class="top-cat-btn active" data-tab="all">Web</button>
         <button class="top-cat-btn" data-tab="images">Images</button>
-        <button class="top-cat-btn" data-tab="news">News</button>
         <button class="top-cat-btn" data-tab="videos">Videos</button>
+        <button class="top-cat-btn" data-tab="news">News</button>
         <button class="top-cat-btn" data-tab="maps">Maps</button>
         <button class="top-cat-btn" data-tab="shopping">Shopping</button>
         <div class="top-cat-dropdown-wrap">
-          <button class="top-cat-btn" id="moreCatBtn">More <span class="arrow-down">▾</span></button>
+          <button class="top-cat-btn" id="moreCatBtn" type="button">More <span class="arrow-down">▾</span></button>
           <div class="top-cat-dropdown-menu" id="moreCatMenu">
             <a href="#" data-tab="books" class="dropdown-item">📚 Books</a>
             <a href="#" data-tab="finance" class="dropdown-item">📈 Finance</a>
@@ -93,37 +81,25 @@
 
       <!-- Right Header Actions -->
       <div class="header-actions">
-        <!-- Clean Web Search Engine Header Links -->
-        <a href="/discover" class="header-nav-link header-nav-link-right">Discover</a>
-        <a href="/download" class="header-nav-link header-nav-link-right">Apps</a>
-        <a href="/privacy" class="header-nav-link header-nav-link-right">Privacy</a>
-
-        <!-- Weather & Location Pill -->
-        <div class="top-weather-pill" id="topWeatherPill" title="Current weather and location">
-          <span class="pill-loc">📍 <span id="topWeatherCity">Delhi, India</span></span>
-          <span class="pill-divider">•</span>
-          <span class="pill-cond"><span id="topWeatherIcon">⛅</span> <span id="topWeatherTemp">28°C Haze</span></span>
-        </div>
-
-        <!-- Clock & Date Widget -->
-        <div class="top-clock-display" id="topClockDisplay">
-          <span id="topClockTime">12:24 AM</span>
-          <span id="topClockDate" class="clock-date">Tue, 30 Sep 2026</span>
-        </div>
-
         <!-- Theme Toggle -->
         <button class="icon-btn" id="themeToggle" title="Toggle Dark/Light Theme" aria-label="Toggle Theme">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
 
         <!-- Settings Button -->
-        <button class="icon-btn" id="settingsBtn" title="Browser Settings & Wallpaper Preferences" aria-label="Settings">
+        <button class="icon-btn" id="settingsBtn" title="Wallpaper & Search Settings" aria-label="Settings">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
 
-        <!-- App Launcher / Profile Button -->
-        <button class="profile-avatar-btn" id="userProfileBtn" title="STAUNT Apps & Account">
-          <span class="avatar-initials">K</span>
+        <!-- Sign In Button (Reference Match) -->
+        <button class="header-signin-btn" id="userProfileBtn" title="Sign In" aria-label="Sign In">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Sign In</span>
+        </button>
+
+        <!-- Mobile Navigation Menu Toggle (Visible on Mobile Only) -->
+        <button class="icon-btn mobile-menu-btn" id="mobileMenuBtn" title="Toggle Navigation Menu" aria-label="Toggle Navigation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
       </div>
     </header>
@@ -204,14 +180,17 @@
           <section class="home-hero" id="homeHero">
             <div class="home-logo-wrap">
               <h1 class="home-title">ST<span class="brand-accent">A</span>UNT</h1>
-              <p class="home-subtitle">EXPLORE A MORE OPEN INTERNET</p>
+              <p class="home-subtitle">Search Beyond Boundaries</p>
             </div>
 
-            <!-- Central Search Bar with Voice and Visual Search -->
+            <!-- Central Search Bar with Voice, Visual Search and Distinctive Sparkle -->
             <div class="home-search-wrap">
               <form class="search-form home-large-form" id="homeSearchForm">
-                <div class="search-input-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <div class="search-input-icon" aria-hidden="true" title="STAUNT Sovereign Search">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="staunt-search-icon">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
                 </div>
                 <input 
                   type="text" 
@@ -229,40 +208,38 @@
                   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
                 </button>
 
-                <!-- Visual Lens Search Button -->
-                <button type="button" class="tool-icon-btn" id="homeVisualBtn" title="Search by image / visual lens" aria-label="Visual Search">
+                <!-- Combined Visual Search Button (Camera / Image Upload) -->
+                <button type="button" class="tool-icon-btn" id="homeVisualBtn" title="Search by image, photo, or camera" aria-label="Visual Search">
                   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 </button>
+                <input type="file" id="homeVisualFileInput" accept="image/*" style="display: none;" />
 
-                <!-- Round Blue Search Button -->
-                <button type="submit" class="search-submit-btn" id="homeSearchSubmitBtn" aria-label="Search">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <!-- Round Blue Search Button with Forward Arrow -->
+                <button type="submit" class="search-submit-btn" id="homeSearchSubmitBtn" aria-label="Search" title="Search">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
                 </button>
               </form>
               <div class="suggest-box" id="suggestBoxHome"></div>
             </div>
 
-            <!-- Conventional Search Action Buttons -->
-            <div class="hero-actions-row">
+            <!-- Home Location Pill (hidden from hero to keep search clean, moved to footer per user request) -->
+            <div class="home-location-wrap" style="display: none !important;">
+              <button type="button" class="home-location-pill" id="homeLocationPill" title="Location: India">
+                <span class="loc-pin">📍</span>
+                <span class="loc-name" id="homeLocationName">India</span>
+                <span class="loc-chevron">▾</span>
+              </button>
+            </div>
+
+            <!-- Conventional Search Action Buttons (kept for test compatibility, hidden by default) -->
+            <div class="hero-actions-row" style="display: none;">
               <button type="button" class="hero-action-btn" id="homeSearchBtn">STAUNT Search</button>
               <button type="button" class="hero-action-btn lucky-btn" id="homeLuckyBtn">I'm Feeling Lucky</button>
             </div>
 
-            <!-- Search Suggestion Chips Carousel with Left/Right Scroll Controls -->
-            <div class="chips-carousel-wrap">
-              <button type="button" class="chip-scroll-btn chip-scroll-prev" id="chipsNavPrev" aria-label="Scroll suggestions left" title="Scroll left">‹</button>
-              <div class="search-chips-row" id="searchChipsRow" role="region" aria-label="Suggested search queries">
-                <button type="button" class="query-chip" data-query="India election 2026">India election 2026</button>
-                <button type="button" class="query-chip" data-query="ISRO latest news">ISRO latest news</button>
-                <button type="button" class="query-chip" data-query="Python tutorial">Python tutorial</button>
-                <button type="button" class="query-chip" data-query="Gold price today">Gold price today</button>
-                <button type="button" class="query-chip" data-query="Why is the sky blue">Why is the sky blue</button>
-                <button type="button" class="query-chip" data-query="CA vs CMA">CA vs CMA</button>
-                <button type="button" class="query-chip" data-query="Chandrayaan 4 mission">Chandrayaan 4 mission</button>
-                <button type="button" class="query-chip" data-query="AI technology in India">AI in India</button>
-              </div>
-              <button type="button" class="chip-scroll-btn chip-scroll-next" id="chipsNavNext" aria-label="Scroll suggestions right" title="Scroll right">›</button>
-            </div>
 
             <!-- Shortcuts Row (Reference Match) -->
             <div class="shortcuts-container" id="shortcutsContainer">
@@ -481,7 +458,25 @@
           <!-- Home Footer Navigation -->
           <footer class="app-footer" id="appFooter">
             <div class="footer-left">
-              <span class="footer-country">🇮🇳 India</span>
+              <button type="button" class="footer-country-pill" id="footerLocation" title="Location: India (Click to update location using device GPS)" aria-label="Current Location: India. Click to update.">
+                <span class="footer-flag-icon" id="footerFlagIcon" aria-hidden="true">
+                  <svg class="flag-svg" width="18" height="12" viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#FF9933" d="M0 0h640v160H0z"/>
+                    <path fill="#FFFFFF" d="M0 160h640v160H0z"/>
+                    <path fill="#128807" d="M0 320h640v160H0z"/>
+                    <circle cx="320" cy="240" r="38" fill="none" stroke="#000080" stroke-width="7"/>
+                    <circle cx="320" cy="240" r="8" fill="#000080"/>
+                    <g stroke="#000080" stroke-width="2.5">
+                      <line x1="320" y1="202" x2="320" y2="278"/><line x1="282" y1="240" x2="358" y2="240"/>
+                      <line x1="293" y1="213" x2="347" y2="267"/><line x1="293" y1="267" x2="347" y2="213"/>
+                      <line x1="305" y1="204" x2="335" y2="276"/><line x1="335" y1="204" x2="305" y2="276"/>
+                      <line x1="284" y1="225" x2="356" y2="255"/><line x1="284" y1="255" x2="356" y2="225"/>
+                    </g>
+                  </svg>
+                </span>
+                <span class="footer-location-text" id="footerLocationText">India</span>
+                <span class="footer-location-chevron" aria-hidden="true">▾</span>
+              </button>
               <span class="footer-sep">•</span>
               <a href="/privacy" class="footer-link">Privacy</a>
               <span class="footer-sep">•</span>
@@ -696,49 +691,124 @@
 
   <!-- ================= MODALS & POPUPS ================= -->
 
+  <!-- VISUAL SEARCH MODAL (Combined Camera / File Upload / Image Search) -->
+  <div class="modal-overlay" id="visualSearchModal" style="display: none;">
+    <div class="visual-modal-content">
+      <div class="modal-header">
+        <div class="visual-modal-title-row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Visual Search</h3>
+        </div>
+        <button type="button" class="modal-close-btn" id="closeVisualModalBtn" aria-label="Close Visual Search">✕</button>
+      </div>
+      <div class="visual-modal-body">
+        <!-- Drag & Drop / File Selection Zone -->
+        <div class="visual-dropzone" id="visualDropzone" tabindex="0" role="button" aria-label="Upload or drop image">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="dropzone-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p class="dropzone-prompt">Drag an image here, or <span class="dropzone-browse-text" id="visualBrowseText">browse files</span></p>
+          <span class="dropzone-hint">Supports JPEG, PNG, WebP, SVG</span>
+        </div>
+
+        <!-- Camera Section (Exposed where supported) -->
+        <div class="visual-camera-panel" id="visualCameraPanel">
+          <div class="camera-stream-wrap">
+            <video id="visualCameraVideo" autoplay playsinline muted style="width: 100%; border-radius: 8px; background: #000; display: none;"></video>
+            <canvas id="visualCameraCanvas" style="display: none;"></canvas>
+          </div>
+          <div class="camera-actions-row">
+            <button type="button" class="visual-cam-btn" id="visualCamStartBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>Use Camera</span>
+            </button>
+            <button type="button" class="visual-cam-btn primary" id="visualCamSnapBtn" style="display: none;">Capture & Search</button>
+          </div>
+        </div>
+
+        <!-- Search by Image Link Form -->
+        <div class="visual-url-separator"><span>OR SEARCH WITH IMAGE URL</span></div>
+        <form class="visual-url-form" id="visualUrlForm">
+          <input type="url" id="visualUrlInput" class="visual-url-input" placeholder="Paste image link (https://...)" autocomplete="off" />
+          <button type="submit" class="visual-url-submit-btn">Search</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- SETTINGS MODAL -->
   <div class="modal-overlay" id="settingsModal">
     <div class="settings-modal-content">
       <div class="modal-header">
-        <h3>Browser Settings & Privacy</h3>
-        <button class="modal-close-btn" id="closeSettingsModal">✕</button>
+        <div class="modal-title-wrap">
+          <h3 class="modal-title">Wallpaper Settings</h3>
+          <p class="modal-subtitle">Choose your preferred background</p>
+        </div>
+        <button class="modal-close-btn" id="closeSettingsModal" aria-label="Close Settings">✕</button>
       </div>
       <div class="modal-body settings-body">
         
         <!-- Wallpaper Preferences -->
         <div class="settings-section">
-          <h4>Dynamic Wallpapers</h4>
-          <div class="setting-row">
-            <div>
-              <div class="setting-title">Auto-Rotate Indian Landscapes</div>
-              <div class="setting-desc">Smoothly rotates between Himalayan, coastal, desert, and heritage landscapes</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="settingAutoWallpaper" checked />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div>
-              <div class="setting-title">Rotation Interval</div>
-              <div class="setting-desc">How often the desktop wallpaper crossfades</div>
-            </div>
-            <select class="settings-select" id="settingWallpaperInterval">
-              <option value="30">30 seconds</option>
-              <option value="60" selected>1 minute</option>
-              <option value="300">5 minutes</option>
-              <option value="0">Do not rotate</option>
-            </select>
-          </div>
-          <div class="setting-row">
-            <div>
-              <div class="setting-title">Reduced Motion</div>
-              <div class="setting-desc">Disables crossfade transitions for performance and accessibility</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="settingReducedMotion" />
-              <span class="toggle-slider"></span>
-            </label>
+          <div class="wallpaper-selector-grid" id="wallpaperSelectorGrid">
+            <button type="button" class="wp-select-card active" data-wp="wp_alpine_sunrise" title="Alpine Sunrise">
+              <div class="wp-thumb-wrap">
+                <img src="/static/wallpapers/wp_alpine_sunrise_thumb.webp" alt="Alpine Sunrise" class="wp-select-thumb" />
+                <span class="wp-active-badge">✓</span>
+              </div>
+              <div class="wp-card-meta">
+                <span class="wp-radio"></span>
+                <span class="wp-select-title">Alpine Sunrise</span>
+              </div>
+            </button>
+            <button type="button" class="wp-select-card" data-wp="wp_cosmic_horizon" title="Cosmic Horizon">
+              <div class="wp-thumb-wrap">
+                <img src="/static/wallpapers/wp_cosmic_horizon_thumb.webp" alt="Cosmic Horizon" class="wp-select-thumb" />
+                <span class="wp-active-badge">✓</span>
+              </div>
+              <div class="wp-card-meta">
+                <span class="wp-radio"></span>
+                <span class="wp-select-title">Cosmic Horizon</span>
+              </div>
+            </button>
+            <button type="button" class="wp-select-card" data-wp="wp_neo_city" title="Neo City">
+              <div class="wp-thumb-wrap">
+                <img src="/static/wallpapers/wp_neo_city_thumb.webp" alt="Neo City" class="wp-select-thumb" />
+                <span class="wp-active-badge">✓</span>
+              </div>
+              <div class="wp-card-meta">
+                <span class="wp-radio"></span>
+                <span class="wp-select-title">Neo City</span>
+              </div>
+            </button>
+            <button type="button" class="wp-select-card" data-wp="wp_hidden_forest" title="Hidden Forest">
+              <div class="wp-thumb-wrap">
+                <img src="/static/wallpapers/wp_hidden_forest_thumb.webp" alt="Hidden Forest" class="wp-select-thumb" />
+                <span class="wp-active-badge">✓</span>
+              </div>
+              <div class="wp-card-meta">
+                <span class="wp-radio"></span>
+                <span class="wp-select-title">Hidden Forest</span>
+              </div>
+            </button>
+            <button type="button" class="wp-select-card" data-wp="wp_deep_ocean" title="Deep Ocean">
+              <div class="wp-thumb-wrap">
+                <img src="/static/wallpapers/wp_deep_ocean_thumb.webp" alt="Deep Ocean" class="wp-select-thumb" />
+                <span class="wp-active-badge">✓</span>
+              </div>
+              <div class="wp-card-meta">
+                <span class="wp-radio"></span>
+                <span class="wp-select-title">Deep Ocean</span>
+              </div>
+            </button>
+            <button type="button" class="wp-select-card" data-wp="wp_moonlit_dunes" title="Moonlit Dunes">
+              <div class="wp-thumb-wrap">
+                <img src="/static/wallpapers/wp_moonlit_dunes_thumb.webp" alt="Moonlit Dunes" class="wp-select-thumb" />
+                <span class="wp-active-badge">✓</span>
+              </div>
+              <div class="wp-card-meta">
+                <span class="wp-radio"></span>
+                <span class="wp-select-title">Moonlit Dunes</span>
+              </div>
+            </button>
           </div>
         </div>
 

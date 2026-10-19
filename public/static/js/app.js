@@ -566,7 +566,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // --- Category Tabs Switching (Results Page) ---
+  // --- Category Tabs Switching (Results Page & Header Navigation) ---
+  const topCatBtns = document.querySelectorAll(".top-cat-btn");
+
   function switchTab(tab) {
     if (!tab) return;
     activeTab = tab;
@@ -580,6 +582,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (q) {
       executeSearch(q, tab, currentTimeFilter);
     }
+  }
+
+  topCatBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.getAttribute("data-tab");
+      if (tab) {
+        switchTab(tab);
+      }
+    });
+  });
+
+  const moreCatBtn = document.getElementById("moreCatBtn");
+  const moreCatMenu = document.getElementById("moreCatMenu");
+  if (moreCatBtn && moreCatMenu) {
+    moreCatBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      moreCatMenu.classList.toggle("open");
+    });
+    document.addEventListener("click", () => {
+      moreCatMenu.classList.remove("open");
+    });
   }
 
   tabBtns.forEach(btn => {
@@ -2445,214 +2468,160 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   ];
 
-  let wallpapers = [...DEFAULT_WALLPAPERS];
-  let currentWpIndex = 0;
-  let activeWpLayer = "A";
-  let wpRotationTimer = null;
-  let isWpRotating = true;
-  let wpIntervalMs = 60000;
+  // --- 1. STAUNT 6 PHOTOREALISTIC LANDSCAPE WALLPAPERS ---
+  const STAUNT_WALLPAPERS = [
+    { key: "wp_alpine_sunrise", title: "Alpine Sunrise", url: "/static/wallpapers/wp_alpine_sunrise.webp", thumb: "/static/wallpapers/wp_alpine_sunrise_thumb.webp" },
+    { key: "wp_cosmic_horizon", title: "Cosmic Horizon", url: "/static/wallpapers/wp_cosmic_horizon.webp", thumb: "/static/wallpapers/wp_cosmic_horizon_thumb.webp" },
+    { key: "wp_neo_city", title: "Neo City", url: "/static/wallpapers/wp_neo_city.webp", thumb: "/static/wallpapers/wp_neo_city_thumb.webp" },
+    { key: "wp_hidden_forest", title: "Hidden Forest", url: "/static/wallpapers/wp_hidden_forest.webp", thumb: "/static/wallpapers/wp_hidden_forest_thumb.webp" },
+    { key: "wp_deep_ocean", title: "Deep Ocean", url: "/static/wallpapers/wp_deep_ocean.webp", thumb: "/static/wallpapers/wp_deep_ocean_thumb.webp" },
+    { key: "wp_moonlit_dunes", title: "Moonlit Dunes", url: "/static/wallpapers/wp_moonlit_dunes.webp", thumb: "/static/wallpapers/wp_moonlit_dunes_thumb.webp" }
+  ];
 
-  async function initWallpaperManager() {
-    const layerA = document.getElementById("wallpaperLayerA");
-    const layerB = document.getElementById("wallpaperLayerB");
-    const wpLocText = document.getElementById("wallpaperLocation");
-    const prevBtn = document.getElementById("prevWallpaperBtn");
-    const nextBtn = document.getElementById("nextWallpaperBtn");
+  function setStauntWallpaper(wpKey) {
+    const found = STAUNT_WALLPAPERS.find(w => w.key === wpKey) || STAUNT_WALLPAPERS[0];
+    document.documentElement.style.setProperty("--staunt-wallpaper-url", `url('${found.url}')`);
+    document.documentElement.setAttribute("data-wallpaper", found.key);
+    try {
+      localStorage.setItem("staunt_wallpaper", found.key);
+    } catch (e) {}
 
-    // Load user rotation preferences
-    const savedAuto = localStorage.getItem("staunt_auto_wallpaper");
-    if (savedAuto === "false") isWpRotating = false;
+    // Synchronize active state in Settings grid
+    document.querySelectorAll(".wp-select-card").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-wp") === found.key);
+    });
+  }
 
-    const savedInt = localStorage.getItem("staunt_wallpaper_interval");
-    if (savedInt) {
-      const parsedInt = parseInt(savedInt, 10);
-      if (parsedInt > 0) wpIntervalMs = parsedInt * 1000;
-      else if (parsedInt === 0) isWpRotating = false;
-    }
+  function initWallpaperManager() {
+    // Initial wallpaper load from persistent localStorage or default
+    const saved = localStorage.getItem("staunt_wallpaper") || "wp_alpine_sunrise";
+    setStauntWallpaper(saved);
 
-    // 1. Synchronous Immediate Event Listener Registration (Millisecond-zero interactivity)
-    if (prevBtn) {
-      prevBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        stopWallpaperRotation();
-        currentWpIndex = (currentWpIndex - 1 + wallpapers.length) % wallpapers.length;
-        applyWallpaper(currentWpIndex, true);
-        startWallpaperRotation();
-      });
-    }
-
-    if (nextBtn) {
-      nextBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        stopWallpaperRotation();
-        currentWpIndex = (currentWpIndex + 1) % wallpapers.length;
-        applyWallpaper(currentWpIndex, true);
-        startWallpaperRotation();
-      });
-    }
-
-    // Connect explore topics cards to switch wallpaper
-    document.querySelectorAll(".topic-landscape-card").forEach(card => {
-      card.addEventListener("click", () => {
-        const wpId = card.getAttribute("data-wp");
-        const idx = wallpapers.findIndex(w => w.id === wpId);
-        if (idx !== -1) {
-          stopWallpaperRotation();
-          currentWpIndex = idx;
-          applyWallpaper(currentWpIndex, true);
-          startWallpaperRotation();
+    // Settings wallpaper grid interaction
+    const grid = document.getElementById("wallpaperSelectorGrid");
+    if (grid) {
+      grid.addEventListener("click", (e) => {
+        const card = e.target.closest(".wp-select-card");
+        if (!card) return;
+        const key = card.getAttribute("data-wp");
+        if (key) {
+          setStauntWallpaper(key);
         }
       });
-    });
+    }
+  }
 
-    // 2. Set initial wallpaper immediately from verified local bundle
-    currentWpIndex = (new Date().getDate()) % wallpapers.length;
-    applyWallpaper(currentWpIndex, false);
+  // --- LOCATION PERMISSION & SYSTEM ---
+  function initLocationSystem() {
+    const footerLoc = document.getElementById("footerLocation");
+    const footerLocText = document.getElementById("footerLocationText");
+    const footerFlagIcon = document.getElementById("footerFlagIcon");
+    const homeLocPill = document.getElementById("homeLocationPill");
+    const homeLocName = document.getElementById("homeLocationName");
 
-    // 3. Schedule rotation and visibility management
-    startWallpaperRotation();
+    const INDIA_FLAG_SVG = `<svg class="flag-svg" width="18" height="12" viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#FF9933" d="M0 0h640v160H0z"/>
+      <path fill="#FFFFFF" d="M0 160h640v160H0z"/>
+      <path fill="#128807" d="M0 320h640v160H0z"/>
+      <circle cx="320" cy="240" r="38" fill="none" stroke="#000080" stroke-width="7"/>
+      <circle cx="320" cy="240" r="8" fill="#000080"/>
+      <g stroke="#000080" stroke-width="2.5">
+        <line x1="320" y1="202" x2="320" y2="278"/><line x1="282" y1="240" x2="358" y2="240"/>
+        <line x1="293" y1="213" x2="347" y2="267"/><line x1="293" y1="267" x2="347" y2="213"/>
+        <line x1="305" y1="204" x2="335" y2="276"/><line x1="335" y1="204" x2="305" y2="276"/>
+        <line x1="284" y1="225" x2="356" y2="255"/><line x1="284" y1="255" x2="356" y2="225"/>
+      </g>
+    </svg>`;
 
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        stopWallpaperRotation();
-      } else {
-        startWallpaperRotation();
+    function getCountryFlag(countryCode, countryName) {
+      const code = (countryCode || "").toLowerCase();
+      const name = (countryName || "").toLowerCase();
+      if (!code || code === "in" || name.includes("india")) {
+        return INDIA_FLAG_SVG;
       }
-    });
+      if (code.length === 2) {
+        const offset = 127397;
+        const chars = [...code.toUpperCase()].map(c => String.fromCodePoint(c.charCodeAt(0) + offset));
+        return `<span class="flag-emoji" style="font-size: 15px; line-height: 1;">${chars.join('')}</span>`;
+      }
+      return INDIA_FLAG_SVG;
+    }
 
-    // 4. Background Non-Blocking Server Manifest Refresh
-    (async () => {
-      try {
-        const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 2500);
-        const res = await apiFetch("/api/wallpapers", { signal: ctrl.signal });
-        clearTimeout(timeoutId);
-        if (res && res.ok) {
-          const data = await res.json();
-          if (data.wallpapers && Array.isArray(data.wallpapers) && data.wallpapers.length > 0) {
-            wallpapers = data.wallpapers;
-            const currentWp = wallpapers[currentWpIndex];
-            if (currentWp && wpLocText) {
-              wpLocText.textContent = currentWp.location || currentWp.title || "India";
+    function updateLocUI(label, countryCode, countryName) {
+      if (homeLocName) {
+        homeLocName.textContent = label;
+      }
+      if (footerLocText) {
+        footerLocText.textContent = label;
+      } else if (footerLoc) {
+        footerLoc.textContent = label;
+      }
+      if (footerFlagIcon) {
+        footerFlagIcon.innerHTML = getCountryFlag(countryCode, countryName || label);
+      }
+    }
+
+    const savedLoc = localStorage.getItem("staunt_user_location");
+    const savedCode = localStorage.getItem("staunt_user_country_code");
+    if (savedLoc) {
+      updateLocUI(savedLoc, savedCode);
+    } else {
+      updateLocUI("India", "in", "India");
+    }
+
+    function requestLocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser. Defaulting to India.");
+        return;
+      }
+      if (homeLocName) homeLocName.textContent = "Locating…";
+      if (footerLocText) {
+        footerLocText.textContent = "Locating…";
+      } else if (footerLoc) {
+        footerLoc.textContent = "Locating…";
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+            if (resp.ok) {
+              const data = await resp.json();
+              const city = data.address?.city || data.address?.town || data.address?.county || data.address?.state || "India";
+              const country = data.address?.country || "India";
+              const countryCode = data.address?.country_code || "in";
+              const label = `${city}, ${country}`;
+              localStorage.setItem("staunt_user_location", label);
+              localStorage.setItem("staunt_user_country_code", countryCode);
+              updateLocUI(label, countryCode, country);
+              return;
             }
-          }
-        }
-      } catch (e) {
-        // Retain verified local fallback manifest
-      }
-    })();
-  }
-
-  let wpTransitionTimer = null;
-  let currentWpRequestId = 0;
-
-  function applyWallpaper(index, crossfade = true) {
-    if (!wallpapers || wallpapers.length === 0) return;
-    const thisReqId = ++currentWpRequestId;
-    const wp = wallpapers[index];
-    const targetUrl = wp.local_url || wp.url || wp.fallback_url;
-    const locName = wp.location || wp.title || "India";
-
-    const layerA = document.getElementById("wallpaperLayerA");
-    const layerB = document.getElementById("wallpaperLayerB");
-    const wpLocText = document.getElementById("wallpaperLocation");
-    const prevBtn = document.getElementById("prevWallpaperBtn");
-    const nextBtn = document.getElementById("nextWallpaperBtn");
-
-    if (!layerA || !layerB) return;
-    if (wpLocText) wpLocText.textContent = locName;
-
-    // Synchronize accessible labels and titles on arrow controls
-    if (prevBtn) {
-      const prevIdx = (index - 1 + wallpapers.length) % wallpapers.length;
-      const prevLoc = wallpapers[prevIdx]?.location || "Previous Wallpaper";
-      prevBtn.setAttribute("aria-label", `Previous Wallpaper: ${prevLoc}`);
-      prevBtn.setAttribute("title", `Previous: ${prevLoc}`);
-    }
-    if (nextBtn) {
-      const nextIdx = (index + 1) % wallpapers.length;
-      const nextLoc = wallpapers[nextIdx]?.location || "Next Wallpaper";
-      nextBtn.setAttribute("aria-label", `Next Wallpaper: ${nextLoc}`);
-      nextBtn.setAttribute("title", `Next: ${nextLoc}`);
+          } catch (e) {}
+          updateLocUI("India", "in", "India");
+        },
+        (err) => {
+          console.warn("Geolocation permission not granted or unavailable:", err.message);
+          updateLocUI("India", "in", "India");
+          localStorage.removeItem("staunt_user_location");
+          localStorage.removeItem("staunt_user_country_code");
+        },
+        { timeout: 7000, maximumAge: 60000 }
+      );
     }
 
-    const reducedMotion = document.body.classList.contains("reduced-motion") ||
-      (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-
-    function activateTarget(src) {
-      if (thisReqId !== currentWpRequestId) return;
-      if (wpTransitionTimer) {
-        clearTimeout(wpTransitionTimer);
-        wpTransitionTimer = null;
-      }
-
-      if (activeWpLayer === "A") {
-        layerB.style.backgroundImage = `url('${src}')`;
-        layerB.classList.add("active");
-        if (reducedMotion || !crossfade) {
-          layerA.classList.remove("active");
-        } else {
-          wpTransitionTimer = setTimeout(() => {
-            layerA.classList.remove("active");
-            wpTransitionTimer = null;
-          }, 350);
-        }
-        activeWpLayer = "B";
-      } else {
-        layerA.style.backgroundImage = `url('${src}')`;
-        layerA.classList.add("active");
-        if (reducedMotion || !crossfade) {
-          layerB.classList.remove("active");
-        } else {
-          wpTransitionTimer = setTimeout(() => {
-            layerB.classList.remove("active");
-            wpTransitionTimer = null;
-          }, 350);
-        }
-        activeWpLayer = "A";
-      }
+    if (homeLocPill) {
+      homeLocPill.addEventListener("click", requestLocation);
     }
-
-    // Direct preloading with fallback
-    const imgLoader = new Image();
-    let loaded = false;
-
-    imgLoader.onload = () => {
-      if (thisReqId !== currentWpRequestId) return;
-      loaded = true;
-      activateTarget(targetUrl);
-    };
-
-    imgLoader.onerror = () => {
-      if (thisReqId !== currentWpRequestId) return;
-      const fb = wp.fallback_url || "/static/wallpapers/himachal.svg";
-      activateTarget(fb);
-    };
-
-    setTimeout(() => {
-      if (thisReqId === currentWpRequestId && !loaded) {
-        activateTarget(wp.fallback_url || "/static/wallpapers/himachal.svg");
-      }
-    }, 1200);
-
-    imgLoader.src = targetUrl;
-  }
-
-  function startWallpaperRotation() {
-    stopWallpaperRotation();
-    if (!isWpRotating || wpIntervalMs <= 0) return;
-    wpRotationTimer = setInterval(() => {
-      currentWpIndex = (currentWpIndex + 1) % wallpapers.length;
-      applyWallpaper(currentWpIndex, true);
-    }, wpIntervalMs);
-  }
-
-  function stopWallpaperRotation() {
-    if (wpRotationTimer) {
-      clearInterval(wpRotationTimer);
-      wpRotationTimer = null;
+    if (footerLoc) {
+      footerLoc.addEventListener("click", requestLocation);
+      footerLoc.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          requestLocation();
+        }
+      });
     }
   }
 
@@ -3409,28 +3378,149 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    if (visualBtn) {
-      visualBtn.addEventListener("click", () => {
-        const imgUrl = prompt("Enter an image URL to find related web information:");
-        if (imgUrl && imgUrl.trim()) {
-          homeInput.value = imgUrl.trim();
-          headerInput.value = imgUrl.trim();
-          executeSearch(imgUrl.trim(), "images");
+    // Combined Visual Search Controller
+    const visualModal = document.getElementById("visualSearchModal");
+    const closeVisualModalBtn = document.getElementById("closeVisualModalBtn");
+    const discVisualCard = document.getElementById("discVisualCard");
+    const fileInput = document.getElementById("homeVisualFileInput");
+    const dropzone = document.getElementById("visualDropzone");
+    const browseText = document.getElementById("visualBrowseText");
+    const urlForm = document.getElementById("visualUrlForm");
+    const urlInput = document.getElementById("visualUrlInput");
+    const cameraPanel = document.getElementById("visualCameraPanel");
+    const camStartBtn = document.getElementById("visualCamStartBtn");
+    const camSnapBtn = document.getElementById("visualCamSnapBtn");
+    const camVideo = document.getElementById("visualCameraVideo");
+    const camCanvas = document.getElementById("visualCameraCanvas");
+    let activeStream = null;
+
+    function openVisualModal() {
+      if (visualModal) {
+        visualModal.style.display = "flex";
+        document.body.classList.add("modal-open");
+        // Check camera support conditionally
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && cameraPanel) {
+          cameraPanel.style.display = "block";
+        }
+      }
+    }
+
+    function closeVisualModal() {
+      if (visualModal) visualModal.style.display = "none";
+      document.body.classList.remove("modal-open");
+      if (activeStream) {
+        activeStream.getTracks().forEach(t => t.stop());
+        activeStream = null;
+      }
+      if (camVideo) camVideo.style.display = "none";
+      if (camSnapBtn) camSnapBtn.style.display = "none";
+      if (camStartBtn) camStartBtn.style.display = "inline-flex";
+    }
+
+    function handleSelectedFile(file) {
+      if (!file) return;
+      const cleanName = (file.name || "image")
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[_-]+/g, " ")
+        .trim();
+      const q = cleanName || "image search";
+      closeVisualModal();
+      if (homeInput) homeInput.value = q;
+      if (headerInput) headerInput.value = q;
+      executeSearch(q, "images");
+    }
+
+    if (visualBtn) visualBtn.addEventListener("click", openVisualModal);
+    if (discVisualCard) discVisualCard.addEventListener("click", openVisualModal);
+    if (closeVisualModalBtn) closeVisualModalBtn.addEventListener("click", closeVisualModal);
+    if (visualModal) {
+      visualModal.addEventListener("click", (e) => {
+        if (e.target === visualModal) closeVisualModal();
+      });
+    }
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && visualModal && visualModal.style.display === "flex") {
+        closeVisualModal();
+      }
+    });
+
+    if (browseText && fileInput) {
+      browseText.addEventListener("click", (e) => {
+        e.stopPropagation();
+        fileInput.click();
+      });
+    }
+    if (dropzone && fileInput) {
+      dropzone.addEventListener("click", () => fileInput.click());
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("drag-over");
+      });
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.classList.remove("drag-over");
+      });
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("drag-over");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleSelectedFile(e.dataTransfer.files[0]);
+        }
+      });
+    }
+    if (fileInput) {
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files && fileInput.files[0]) {
+          handleSelectedFile(fileInput.files[0]);
         }
       });
     }
 
-    // Connect suggestion chips
-    document.querySelectorAll(".query-chip").forEach(chip => {
-      chip.addEventListener("click", () => {
-        const q = chip.getAttribute("data-query");
-        if (q) {
-          homeInput.value = q;
-          headerInput.value = q;
-          executeSearch(q, "all");
+    if (urlForm && urlInput) {
+      urlForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const u = urlInput.value.trim();
+        if (u) {
+          closeVisualModal();
+          if (homeInput) homeInput.value = u;
+          if (headerInput) headerInput.value = u;
+          executeSearch(u, "images");
         }
       });
-    });
+    }
+
+    // Camera capture if supported
+    if (camStartBtn && camVideo && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      camStartBtn.addEventListener("click", async () => {
+        try {
+          activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+          camVideo.srcObject = activeStream;
+          camVideo.style.display = "block";
+          camStartBtn.style.display = "none";
+          if (camSnapBtn) camSnapBtn.style.display = "inline-flex";
+        } catch (err) {
+          console.warn("Camera access denied or unavailable:", err);
+          alert("Camera access was not granted or is unavailable. Please select an image file instead.");
+        }
+      });
+    }
+
+    if (camSnapBtn && camCanvas && camVideo) {
+      camSnapBtn.addEventListener("click", () => {
+        try {
+          camCanvas.width = camVideo.videoWidth || 640;
+          camCanvas.height = camVideo.videoHeight || 480;
+          const ctx = camCanvas.getContext("2d");
+          ctx.drawImage(camVideo, 0, 0, camCanvas.width, camCanvas.height);
+          closeVisualModal();
+          const q = "camera visual snapshot";
+          if (homeInput) homeInput.value = q;
+          if (headerInput) headerInput.value = q;
+          executeSearch(q, "images");
+        } catch (err) {
+          closeVisualModal();
+        }
+      });
+    }
   }
 
   // --- 10. HERO SEARCH ACTIONS ("STAUNT Search" & "I'm Feeling Lucky") ---
@@ -3572,6 +3662,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initializations
   initWallpaperManager();
+  initLocationSystem();
   initShortcutsManager();
   initWeatherWidget();
   initTrendingAndMarkets();
