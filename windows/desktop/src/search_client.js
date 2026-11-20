@@ -132,6 +132,10 @@
       return ENGINE_METADATA[key] || ENGINE_METADATA.staunt;
     }
 
+    getAllEngines() {
+      return { ...ENGINE_METADATA };
+    }
+
     /**
      * Deterministic query classification:
      * - BLOCKED: dangerous executable/injection URI (javascript:, vbscript:, data:text/html)

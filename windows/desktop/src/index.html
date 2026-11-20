@@ -4821,7 +4821,7 @@
       function buildCommandsCatalog() {
         const activeTab = currentTabs.find(t => t.id === activeTabId) || null;
         const isWeb = Boolean(activeTab && activeTab.url && /^https?:\/\//i.test(activeTab.url));
-        return [
+        const commands = [
           { id: 'new-tab', title: 'New Tab', sub: 'Open a fresh New Tab page', kbd: 'Ctrl+T', run: () => api.createTab('staunt://newtab') },
           { id: 'close-tab', title: 'Close Current Tab', sub: 'Close active tab', kbd: 'Ctrl+W', run: () => { if (activeTabId) api.closeTab(activeTabId); } },
           { id: 'switch-tab', title: 'Search & Switch Tabs', sub: 'Search open and recently closed tabs', kbd: 'Ctrl+Shift+A', run: () => openTabSearch() },
@@ -4838,17 +4838,31 @@
           { id: 'open-history', title: 'Open History', sub: 'Browse visited pages', kbd: 'Ctrl+H', run: () => openHistoryModal() },
           { id: 'open-bookmarks', title: 'Open Bookmarks', sub: 'Manage saved bookmarks', kbd: 'Ctrl+Shift+O', run: () => openBookmarksModal() },
           { id: 'open-settings', title: 'Open Settings', sub: 'Search engine, privacy shield & preferences', kbd: 'Ctrl+Shift+Del', run: () => openSettingsModal() },
-          { id: 'engine-google', title: 'Search Engine: Google', sub: 'Switch default search engine to Google', kbd: '', run: async () => { await api.saveSettings({ searchEngine: 'google' }); searchClient.setSearchEngine('google'); showDownloadToast('Search engine set to Google', 2200); } },
-          { id: 'engine-ddg', title: 'Search Engine: DuckDuckGo', sub: 'Switch default search engine to DuckDuckGo', kbd: '', run: async () => { await api.saveSettings({ searchEngine: 'duckduckgo' }); searchClient.setSearchEngine('duckduckgo'); showDownloadToast('Search engine set to DuckDuckGo', 2200); } },
-          { id: 'engine-bing', title: 'Search Engine: Bing', sub: 'Switch default search engine to Bing', kbd: '', run: async () => { await api.saveSettings({ searchEngine: 'bing' }); searchClient.setSearchEngine('bing'); showDownloadToast('Search engine set to Bing', 2200); } },
-          { id: 'engine-brave', title: 'Search Engine: Brave', sub: 'Switch default search engine to Brave Search', kbd: '', run: async () => { await api.saveSettings({ searchEngine: 'brave' }); searchClient.setSearchEngine('brave'); showDownloadToast('Search engine set to Brave', 2200); } },
-          { id: 'engine-ecosia', title: 'Search Engine: Ecosia', sub: 'Switch default search engine to Ecosia', kbd: '', run: async () => { await api.saveSettings({ searchEngine: 'ecosia' }); searchClient.setSearchEngine('ecosia'); showDownloadToast('Search engine set to Ecosia', 2200); } },
-          { id: 'engine-staunt', title: 'Search Engine: STAUNT', sub: 'Switch default search engine to STAUNT Search', kbd: '', run: async () => { await api.saveSettings({ searchEngine: 'staunt' }); searchClient.setSearchEngine('staunt'); showDownloadToast('Search engine set to STAUNT', 2200); } },
           { id: 'toggle-favbar', title: 'Toggle Favourites Bar', sub: 'Show or hide the quick favourites bar', kbd: 'Ctrl+Shift+B', run: () => toggleFavouritesBarState() },
           { id: 'find-page', title: 'Find in Page', sub: 'Search text on current page', kbd: 'Ctrl+F', run: () => openFindBar() },
           { id: 'toggle-fullscreen', title: 'Toggle Fullscreen', sub: 'Enter or exit fullscreen mode', kbd: 'F11', run: () => { if (typeof api.toggleFullscreen === 'function') api.toggleFullscreen(); } },
           { id: 'shortcuts-ref', title: 'Keyboard Shortcuts Reference', sub: 'View all browser shortcuts', kbd: 'Ctrl+/', run: () => openShortcutsModal() }
         ];
+
+        // Dynamically add all 24 verified search engines
+        if (typeof searchClient !== 'undefined' && typeof searchClient.getAllEngines === 'function') {
+          const allEngines = searchClient.getAllEngines();
+          Object.keys(allEngines).forEach(key => {
+            const eng = allEngines[key];
+            commands.push({
+              id: `engine-${key}`,
+              title: `Search Engine: ${eng.name}`,
+              sub: `Switch default search engine to ${eng.name} (${eng.category || 'Global'})`,
+              kbd: '',
+              run: async () => {
+                await api.saveSettings({ searchEngine: key });
+                searchClient.setSearchEngine(key);
+                showDownloadToast(`Search engine set to ${eng.name}`, 2200);
+              }
+            });
+          });
+        }
+        return commands;
       }
 
       function renderCommandPalette() {
