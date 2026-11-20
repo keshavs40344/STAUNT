@@ -429,6 +429,112 @@ const READING_LIST_FILE = path.join(USER_DATA_PATH, 'staunt_reading_list.json');
 let readingListDB = readJsonWithBak(READING_LIST_FILE, []);
 if (!Array.isArray(readingListDB)) readingListDB = [];
 
+// =============================================================================
+// PHASE 8: SITE PERMISSIONS & PRIVACY CONTROL VAULT
+// =============================================================================
+const SITE_PERMISSIONS_FILE = path.join(USER_DATA_PATH, 'staunt_site_permissions.json');
+const DEFAULT_GLOBAL_PERMISSIONS = {
+  camera: 'ask',
+  microphone: 'ask',
+  location: 'ask',
+  notifications: 'ask',
+  'clipboard-read': 'ask',
+  popups: 'block',
+  fullscreen: 'allow'
+};
+
+const VALID_PERMISSION_TYPES = ['camera', 'microphone', 'location', 'notifications', 'clipboard-read', 'popups', 'fullscreen'];
+const VALID_PERMISSION_VALUES = ['allow', 'block', 'ask', 'default'];
+
+let rawPerms = readJsonWithBak(SITE_PERMISSIONS_FILE, null);
+if (!rawPerms || typeof rawPerms !== 'object') {
+  rawPerms = {
+    globalDefaults: { ...DEFAULT_GLOBAL_PERMISSIONS },
+    siteOverrides: {}
+  };
+}
+if (!rawPerms.globalDefaults || typeof rawPerms.globalDefaults !== 'object') {
+  rawPerms.globalDefaults = { ...DEFAULT_GLOBAL_PERMISSIONS };
+}
+if (!rawPerms.siteOverrides || typeof rawPerms.siteOverrides !== 'object') {
+  rawPerms.siteOverrides = {};
+}
+let permissionsDB = rawPerms;
+
+// In-memory permissions store for Incognito sessions (zero disk leakage)
+const incognitoPermissionsStore = new Map();
+
+function savePermissionsDB() {
+  try {
+    atomicWriteJson(SITE_PERMISSIONS_FILE, permissionsDB);
+  } catch (err) {
+    console.warn('[SITE PERMISSIONS] Failed to save site permissions to disk:', err.message);
+  }
+}
+
+function normalizeSiteOrigin(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  try {
+    const u = new URL(rawUrl);
+    if (u.protocol === 'http:' || u.protocol === 'https:') {
+      return u.origin.toLowerCase();
+    }
+    if (u.protocol === 'staunt:') {
+      return 'staunt://' + (u.hostname || '').toLowerCase();
+    }
+  } catch (_) {}
+  return '';
+}
+
+function isSiteOriginSecure(origin) {
+  if (!origin || typeof origin !== 'string') return false;
+  return origin.startsWith('https://') ||
+    origin.startsWith('http://localhost') ||
+    origin.startsWith('http://127.0.0.1') ||
+    origin.startsWith('http://[::1]') ||
+    origin.startsWith('staunt://');
+}
+
+function normalizePermissionNames(permission, details) {
+  const p = String(permission || '').toLowerCase().trim();
+  if (p === 'media') {
+    if (details && Array.isArray(details.mediaTypes)) {
+      const hasVid = details.mediaTypes.includes('video');
+      const hasAud = details.mediaTypes.includes('audio');
+      if (hasVid && hasAud) return ['camera', 'microphone'];
+      if (hasVid) return ['camera'];
+      if (hasAud) return ['microphone'];
+    }
+    return ['camera', 'microphone'];
+  }
+  if (p === 'camera') return ['camera'];
+  if (p === 'microphone') return ['microphone'];
+  if (p === 'geolocation') return ['location'];
+  if (p === 'notifications') return ['notifications'];
+  if (p === 'clipboard-read') return ['clipboard-read'];
+  if (p === 'fullscreen') return ['fullscreen'];
+  if (p === 'popups') return ['popups'];
+  return [p];
+}
+
+function getEffectivePermissionForSite(origin, permission, isIncognito = false) {
+  if (!origin) return permissionsDB.globalDefaults[permission] || DEFAULT_GLOBAL_PERMISSIONS[permission] || 'ask';
+
+  if (isIncognito) {
+    const incogRules = incognitoPermissionsStore.get(origin);
+    if (incogRules && incogRules[permission] && incogRules[permission] !== 'default') {
+      return incogRules[permission];
+    }
+  }
+
+  const siteRules = permissionsDB.siteOverrides[origin];
+  if (siteRules && siteRules[permission] && siteRules[permission] !== 'default') {
+    return siteRules[permission];
+  }
+
+  return permissionsDB.globalDefaults[permission] || DEFAULT_GLOBAL_PERMISSIONS[permission] || 'ask';
+}
+
 function saveSessionTabs() {
   if (tabs.size === 0) return;
   const sessionTabs = [];
@@ -943,65 +1049,120 @@ function configureSessionSecurity(ses, isIncognito = false) {
   ses.setPermissionRequestHandler(async (webContents, permission, callback, details) => {
     const permLower = String(permission || '').toLowerCase();
     const url = (details && details.requestingUrl) || (webContents && !webContents.isDestroyed() ? webContents.getURL() : '');
+    const origin = normalizeSiteOrigin(url);
 
     if (ALWAYS_DENY_PERMS.includes(permLower)) {
       console.warn(`[SECURITY HARDWARE GATE] Denied raw hardware API: ${permission}`);
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('permission-requested', { permission, url, granted: false, reason: 'hardware-blocked' });
+        mainWindow.webContents.send('permission-requested', { permission, url, origin, granted: false, reason: 'hardware-blocked' });
       }
       return callback(false);
     }
 
-    let origin = '';
-    let isSecureOrigin = false;
+    const categories = normalizePermissionNames(permLower, details);
+    const requiresSecure = ['camera', 'microphone', 'location', 'notifications', 'clipboard-read'];
+    const isSecure = isSiteOriginSecure(origin);
+
+    if (!isSecure && categories.some(cat => requiresSecure.includes(cat))) {
+      console.warn(`[PERMISSION GATE] Denied ${permission} for insecure origin: ${url}`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('permission-requested', { permission, url, origin, granted: false, reason: 'insecure-origin' });
+      }
+      return callback(false);
+    }
+
+    let anyBlocked = false;
+    let allAllowed = true;
+    const needPromptCategories = [];
+
+    for (const cat of categories) {
+      const decision = getEffectivePermissionForSite(origin, cat, isIncognito);
+      if (decision === 'block') {
+        anyBlocked = true;
+        allAllowed = false;
+        break;
+      } else if (decision === 'allow') {
+        // permitted
+      } else {
+        allAllowed = false;
+        needPromptCategories.push(cat);
+      }
+    }
+
+    if (anyBlocked) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('permission-requested', { permission, url, origin, granted: false, reason: 'site-blocked' });
+      }
+      return callback(false);
+    }
+
+    if (allAllowed) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('permission-requested', { permission, url, origin, granted: true, reason: 'site-allowed' });
+      }
+      return callback(true);
+    }
+
+    if (!mainWindow || mainWindow.isDestroyed()) return callback(false);
+
     try {
-      const parsed = new URL(url);
-      origin = parsed.origin;
-      isSecureOrigin = parsed.protocol === 'https:' || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1' || parsed.hostname === '[::1]';
-    } catch (_) {}
+      const displayLabel = needPromptCategories.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(' & ');
+      const res = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: ['Block', 'Allow'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Site Permission Request',
+        message: `${origin || url} wants access to ${displayLabel} (${permission})`,
+        detail: 'Only allow permissions on sites you trust.'
+      });
+      const granted = res && res.response === 1;
+      const decValue = granted ? 'allow' : 'block';
 
-    if (PROMPT_REQUIRED_PERMS.includes(permLower)) {
-      if (!isSecureOrigin) {
-        console.warn(`[PERMISSION GATE] Denied ${permission} for insecure origin: ${url}`);
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('permission-requested', { permission, url, granted: false, reason: 'insecure-origin' });
+      for (const cat of needPromptCategories) {
+        if (isIncognito) {
+          if (!incognitoPermissionsStore.has(origin)) incognitoPermissionsStore.set(origin, {});
+          incognitoPermissionsStore.get(origin)[cat] = decValue;
+        } else {
+          if (!permissionsDB.siteOverrides[origin]) permissionsDB.siteOverrides[origin] = {};
+          permissionsDB.siteOverrides[origin][cat] = decValue;
+          permissionsDB.siteOverrides[origin].updatedAt = Date.now();
         }
-        return callback(false);
+      }
+      if (!isIncognito) {
+        savePermissionsDB();
       }
 
-      const cacheKey = `${isIncognito ? 'incog:' : ''}${origin}|${permLower}`;
-      if (!isIncognito && sessionPermissionCache.has(cacheKey)) {
-        return callback(sessionPermissionCache.get(cacheKey));
-      }
-
-      if (!mainWindow || mainWindow.isDestroyed()) return callback(false);
-
-      try {
-        const res = await dialog.showMessageBox(mainWindow, {
-          type: 'question',
-          buttons: ['Block', 'Allow'],
-          defaultId: 0,
-          cancelId: 0,
-          title: 'Site Permission Request',
-          message: `${origin || url} wants access to ${permission}`,
-          detail: 'Only allow permissions on sites you trust.'
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('permission-requested', {
+          permission,
+          url,
+          origin,
+          granted,
+          reason: granted ? 'user-allowed' : 'user-denied'
         });
-        const granted = res && res.response === 1;
-        if (!isIncognito) sessionPermissionCache.set(cacheKey, granted);
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('permission-requested', { permission, url, granted, reason: granted ? 'user-allowed' : 'user-denied' });
-        }
-        return callback(granted);
-      } catch (_) {
-        return callback(false);
+        mainWindow.webContents.send('site-permissions-updated', { origin });
       }
+      return callback(granted);
+    } catch (_) {
+      return callback(false);
     }
+  });
 
-    const allowBenign = isSecureOrigin || isLocalPageUrl(url, NEWTAB_PAGE_FILE) || url.startsWith('http://');
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('permission-requested', { permission, url, granted: allowBenign });
-    }
-    return callback(allowBenign);
+  ses.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+    const permLower = String(permission || '').toLowerCase();
+    if (ALWAYS_DENY_PERMS.includes(permLower)) return false;
+
+    const url = requestingOrigin || (webContents && !webContents.isDestroyed() ? webContents.getURL() : '');
+    const origin = normalizeSiteOrigin(url);
+    if (!origin) return false;
+
+    const categories = normalizePermissionNames(permLower, details);
+    const requiresSecure = ['camera', 'microphone', 'location', 'notifications', 'clipboard-read'];
+    const isSecure = isSiteOriginSecure(origin);
+    if (!isSecure && categories.some(cat => requiresSecure.includes(cat))) return false;
+
+    return categories.every(cat => getEffectivePermissionForSite(origin, cat, isIncognito) === 'allow');
   });
 
   ses.on('will-download', (_event, item) => {
@@ -1257,6 +1418,21 @@ function setupWebContentsEvents(tabObj) {
       return { action: 'deny' };
     }
 
+    const currentUrl = wc.getURL();
+    const tabOrigin = normalizeSiteOrigin(currentUrl);
+    const popupDecision = getEffectivePermissionForSite(tabOrigin, 'popups', tabObj.isIncognito);
+
+    if (popupDecision === 'block') {
+      const isCritical = isCriticalWhitelisted(url) || /accounts\.google\.com|appleid\.apple\.com|github\.com\/login|oauth|stripe\.com|razorpay\.com|paypal\.com/i.test(url);
+      if (!isCritical) {
+        console.warn(`[SECURITY POPUP GATE] Pop-up blocked for ${tabOrigin} -> ${url}`);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('toast-message', `Pop-up blocked for ${tabOrigin || 'this site'}`);
+        }
+        return { action: 'deny' };
+      }
+    }
+
     if (isCriticalWhitelisted(url) || /accounts\.google\.com|appleid\.apple\.com|github\.com\/login|oauth|stripe\.com|razorpay\.com|paypal\.com/i.test(url) || disposition === 'new-window') {
       return {
         action: 'allow',
@@ -1279,6 +1455,18 @@ function setupWebContentsEvents(tabObj) {
 
     createTab(url, { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito });
     return { action: 'deny' };
+  });
+
+  wc.on('enter-html-full-screen', (event) => {
+    const origin = normalizeSiteOrigin(wc.getURL());
+    const fullscreenDecision = getEffectivePermissionForSite(origin, 'fullscreen', tabObj.isIncognito);
+    if (fullscreenDecision === 'block') {
+      console.warn(`[SECURITY FULLSCREEN GATE] Fullscreen request blocked for origin: ${origin}`);
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('toast-message', `Fullscreen blocked for ${origin || 'this site'}`);
+      }
+    }
   });
 
   // Navigation Guard & Protocol Armor
@@ -3765,6 +3953,155 @@ ipcMain.on('open-auth-page', (e) => {
     ? `${STAUNT_AUTH_URL}&client=desktop`
     : `${STAUNT_AUTH_URL}?client=desktop`;
   createTab(authUrl);
+});
+
+// =============================================================================
+// PHASE 8: SITE PERMISSIONS & PRIVACY CONTROL CENTER IPC HANDLERS
+// =============================================================================
+
+ipcMain.handle('get-site-permissions', (e, targetOrigin) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const tab = tabs.get(activeTabId);
+  const activeUrl = tab && tab.view && !tab.view.webContents.isDestroyed() ? tab.view.webContents.getURL() : (tab ? tab.url : '');
+  const activeOrigin = normalizeSiteOrigin(activeUrl);
+  const origin = targetOrigin ? normalizeSiteOrigin(targetOrigin) : activeOrigin;
+  const isIncog = tab ? Boolean(tab.isIncognito) : false;
+
+  const overrides = isIncog
+    ? { ...(incognitoPermissionsStore.get(origin) || {}) }
+    : { ...(permissionsDB.siteOverrides[origin] || {}) };
+
+  const effective = {};
+  for (const p of VALID_PERMISSION_TYPES) {
+    effective[p] = getEffectivePermissionForSite(origin, p, isIncog);
+  }
+
+  return {
+    ok: true,
+    origin,
+    isSecure: isSiteOriginSecure(origin),
+    isIncognito: isIncog,
+    overrides,
+    effective,
+    globalDefaults: { ...permissionsDB.globalDefaults },
+    supportedPermissions: VALID_PERMISSION_TYPES
+  };
+});
+
+ipcMain.handle('set-site-permission', (e, payload) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (!payload || typeof payload !== 'object') return { ok: false, error: 'Invalid payload' };
+  const origin = normalizeSiteOrigin(payload.origin);
+  const permission = String(payload.permission || '').toLowerCase().trim();
+  const value = String(payload.value || '').toLowerCase().trim();
+
+  if (!origin || !VALID_PERMISSION_TYPES.includes(permission) || !VALID_PERMISSION_VALUES.includes(value)) {
+    return { ok: false, error: 'Invalid origin, permission, or value' };
+  }
+
+  const tab = tabs.get(activeTabId);
+  const isIncog = tab && normalizeSiteOrigin(tab.url) === origin ? Boolean(tab.isIncognito) : false;
+
+  if (value === 'default') {
+    if (isIncog) {
+      if (incognitoPermissionsStore.has(origin)) {
+        delete incognitoPermissionsStore.get(origin)[permission];
+        if (Object.keys(incognitoPermissionsStore.get(origin)).length === 0) {
+          incognitoPermissionsStore.delete(origin);
+        }
+      }
+    } else {
+      if (permissionsDB.siteOverrides[origin]) {
+        delete permissionsDB.siteOverrides[origin][permission];
+        const remainingKeys = Object.keys(permissionsDB.siteOverrides[origin]).filter(k => k !== 'updatedAt');
+        if (remainingKeys.length === 0) {
+          delete permissionsDB.siteOverrides[origin];
+        }
+        savePermissionsDB();
+      }
+    }
+  } else {
+    if (isIncog) {
+      if (!incognitoPermissionsStore.has(origin)) incognitoPermissionsStore.set(origin, {});
+      incognitoPermissionsStore.get(origin)[permission] = value;
+    } else {
+      if (!permissionsDB.siteOverrides[origin]) permissionsDB.siteOverrides[origin] = {};
+      permissionsDB.siteOverrides[origin][permission] = value;
+      permissionsDB.siteOverrides[origin].updatedAt = Date.now();
+      savePermissionsDB();
+    }
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('site-permissions-updated', { origin, permission, value });
+  }
+  return { ok: true, origin, permission, value };
+});
+
+ipcMain.handle('reset-site-permissions', (e, targetOrigin) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const origin = normalizeSiteOrigin(targetOrigin);
+  if (!origin) return { ok: false, error: 'Invalid origin' };
+
+  const tab = tabs.get(activeTabId);
+  const isIncog = tab && normalizeSiteOrigin(tab.url) === origin ? Boolean(tab.isIncognito) : false;
+
+  if (isIncog) {
+    incognitoPermissionsStore.delete(origin);
+  } else {
+    delete permissionsDB.siteOverrides[origin];
+    savePermissionsDB();
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('site-permissions-updated', { origin, reset: true });
+  }
+  return { ok: true, origin };
+});
+
+ipcMain.handle('get-all-site-permissions', (e) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  return {
+    ok: true,
+    globalDefaults: { ...permissionsDB.globalDefaults },
+    siteOverrides: { ...permissionsDB.siteOverrides },
+    supportedPermissions: VALID_PERMISSION_TYPES
+  };
+});
+
+ipcMain.handle('set-global-permission-default', (e, payload) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (!payload || typeof payload !== 'object') return { ok: false, error: 'Invalid payload' };
+  const permission = String(payload.permission || '').toLowerCase().trim();
+  const value = String(payload.value || '').toLowerCase().trim();
+
+  if (!VALID_PERMISSION_TYPES.includes(permission) || !['allow', 'block', 'ask'].includes(value)) {
+    return { ok: false, error: 'Invalid permission or default value' };
+  }
+
+  // Safety guard: camera, microphone, location must never silently default to 'allow' without prompt
+  if (['camera', 'microphone', 'location'].includes(permission) && value === 'allow') {
+    return { ok: false, error: 'Hardware sensor permissions (Camera, Microphone, Location) cannot be globally granted by default' };
+  }
+
+  permissionsDB.globalDefaults[permission] = value;
+  savePermissionsDB();
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('global-permissions-updated', { globalDefaults: permissionsDB.globalDefaults });
+  }
+  return { ok: true, globalDefaults: permissionsDB.globalDefaults };
+});
+
+ipcMain.handle('reset-all-site-permissions', (e) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  permissionsDB.siteOverrides = {};
+  savePermissionsDB();
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('global-permissions-updated', { globalDefaults: permissionsDB.globalDefaults, siteOverrides: {} });
+  }
+  return { ok: true };
 });
 
 // App Lifecycle with Single Instance Lock (prevent duplicate windows)

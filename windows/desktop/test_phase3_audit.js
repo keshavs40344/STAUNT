@@ -130,6 +130,10 @@ app.whenReady().then(async () => {
   ipcMain.handle('get-favourites-bar-visible', async () => settingsState.showFavouritesBar);
   ipcMain.handle('check-is-bookmarked', async () => true);
   ipcMain.handle('get-account-state', async () => ({ isLoggedIn: false }));
+  ipcMain.handle('get-all-site-permissions', async () => ({ globalDefaults: { camera: 'ask', microphone: 'ask', location: 'ask', notifications: 'ask', 'clipboard-read': 'ask', popups: 'block', fullscreen: 'allow' }, sites: {} }));
+  ipcMain.handle('get-site-permissions', async () => ({ origin: 'about:blank', isSecure: true, globalDefaults: {}, permissions: {} }));
+  ipcMain.handle('open-download-checked', async (e, p) => ({ success: true }));
+  ipcMain.handle('show-in-folder-checked', async (e, p) => ({ success: true }));
 
   ipcMain.on('open-download', (e, p) => openedFiles.push(p));
   ipcMain.on('show-in-folder', (e, p) => shownInFolder.push(p));

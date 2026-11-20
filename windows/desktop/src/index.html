@@ -447,7 +447,20 @@
       color: var(--staunt-status-secure);
       display: flex;
       align-items: center;
+      justify-content: center;
       font-size: 11px;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 6px;
+      transition: background 0.15s ease, transform 0.1s ease;
+      user-select: none;
+    }
+    .lock-indicator:hover {
+      background: rgba(212, 163, 89, 0.14);
+    }
+    .lock-indicator:focus-visible {
+      outline: 1.5px solid #d4a359;
+      background: rgba(212, 163, 89, 0.18);
     }
     .lock-indicator svg { width: 13px; height: 13px; }
     .omnibox-field {
@@ -1644,6 +1657,103 @@
       transform: scale(1.1);
     }
 
+    /* Phase 8 Site Permissions UI */
+    .perm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .perm-row:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(212, 163, 89, 0.2);
+    }
+    .perm-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .perm-icon {
+      color: #d4a359;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .perm-label-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .perm-label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #f8fafc;
+    }
+    .perm-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .perm-select {
+      background: var(--staunt-bg-surface);
+      color: var(--staunt-text-primary);
+      border: 1px solid var(--staunt-border-medium);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      font-family: var(--font-stack);
+      outline: none;
+      cursor: pointer;
+    }
+    .perm-select:focus {
+      border-color: #d4a359;
+    }
+    .perm-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 500;
+    }
+    .perm-badge.allow {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .perm-badge.block {
+      background: rgba(244, 63, 94, 0.15);
+      color: #f43f5e;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .perm-badge.ask {
+      background: rgba(212, 163, 89, 0.15);
+      color: #d4a359;
+      border: 1px solid rgba(212, 163, 89, 0.3);
+    }
+    .perm-site-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      gap: 8px;
+    }
+    .perm-site-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
     @media print {
       #desktop-topbar, #desktop-favourites-bar, #findBar, .reader-toolbar {
         display: none !important;
@@ -1721,7 +1831,7 @@
     <!-- Unified Omnibox with Autocomplete -->
     <div class="omnibox-container no-drag">
       <div class="omnibox-box">
-        <div class="lock-indicator" id="lockIcon">
+        <div class="lock-indicator" id="lockIcon" role="button" tabindex="0" aria-label="View site information and permissions" title="View site information and permissions">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         </div>
         <input 
@@ -2216,6 +2326,25 @@
           </select>
         </div>
 
+        <!-- Site Permissions & Privacy Control Center (Phase 8) -->
+        <div class="modal-section-title" style="margin-top: 14px;" id="settingsSitePermissionsSection">Site Permissions &amp; Privacy Control Center</div>
+        
+        <div style="font-size: 12px; font-weight: 600; color: #f8fafc; margin-top: 6px;">Global Default Permissions</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Applied to all websites unless custom site overrides are configured.</div>
+        <div id="globalPermDefaultsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;"></div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; margin-bottom: 6px;">
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: #f8fafc;">Custom Website Exceptions</div>
+            <div style="font-size: 11px; color: #94a3b8;">Websites with explicit Allow, Block, or Ask rules.</div>
+          </div>
+          <button type="button" class="btn-cancel btn-danger" id="btnResetAllSitePermissions" style="font-size: 11px; padding: 4px 10px;">Reset All Sites</button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="text" id="permissionSitesSearchInput" class="form-input" placeholder="Search saved websites..." style="flex: 1; font-size: 11.5px; padding: 6px 10px;" />
+        </div>
+        <div id="permissionSitesContainer" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--staunt-border-medium); border-radius: 6px; padding: 8px; background: rgba(0, 0, 0, 0.2);"></div>
+
         <!-- Downloads Location -->
         <div class="modal-section-title" style="margin-top: 8px;">Downloads Location</div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -2378,6 +2507,42 @@
       </div>
       <div class="modal-footer">
         <button class="btn-primary-action" id="btnCloseShortcutsModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 8: SITE PERMISSIONS & PRIVACY CONTROL CENTER MODAL -->
+  <div class="modal-overlay" id="sitePermissionsModal" role="dialog" aria-modal="true" aria-label="Site Permissions and Privacy">
+    <div class="modal-card" style="width: 520px; max-height: 85vh;">
+      <div class="modal-header" style="align-items: center; justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+          <div id="permSiteSecurityIcon" style="display:flex; align-items:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div style="overflow:hidden;">
+            <div class="modal-title" id="permSiteOriginLabel" style="font-size: 13.5px; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">https://example.com</div>
+            <div id="permSiteSecurityBadge" style="font-size: 11px; color: #10b981; font-weight: 500;">Connection is secure (HTTPS)</div>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btnSitePermissionsClose" aria-label="Close permissions dialog">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 14px 18px; gap: 12px; overflow-y: auto; max-height: calc(85vh - 130px);">
+        <!-- Notice banner for Insecure or Incognito -->
+        <div id="permSiteNoticeBanner" style="display:none; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; line-height: 1.4;"></div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 2px; border-bottom: 1px solid var(--staunt-border-medium);">
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8;">Permissions</span>
+          <button type="button" id="btnResetCurrentSitePermissions" style="background:none; border:none; color: #d4a359; font-size: 11.5px; cursor: pointer; text-decoration: underline; padding: 0;">Reset to defaults</button>
+        </div>
+
+        <!-- Permissions Rows Container -->
+        <div id="permSiteItemsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn-cancel" id="btnOpenGlobalSettingsFromModal" style="color: #94a3b8; font-size: 11.5px;">Global Site Settings...</button>
+        <button type="button" class="btn-primary-action" id="btnCloseSitePermissionsModal">Done</button>
       </div>
     </div>
   </div>
@@ -2763,7 +2928,7 @@
       let _lastFocusBeforeModal = null;
       let _wasAnyModalActive = false;
       function syncModalState() {
-        const p7Modals = ['commandPaletteModal','tabSearchModal','readingListModal','readerModeModal','groupEditModal','shortcutsModal']
+        const p7Modals = ['commandPaletteModal','tabSearchModal','readingListModal','readerModeModal','groupEditModal','shortcutsModal','sitePermissionsModal']
           .map(id => document.getElementById(id));
         const activeModal = [settingsModal, historyModal, bookmarksModal, downloadsModal, aboutModal, accountModal, favouriteEditModal, ...p7Modals]
           .find(m => m && m.classList.contains('active'));
@@ -2874,7 +3039,193 @@
             }
           } catch (e) {}
         }
+        await loadSettingsPermissionsUI();
       }
+
+      const PERM_METADATA = {
+        camera: {
+          label: 'Camera',
+          desc: 'Access video capture hardware',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+          options: ['ask', 'allow', 'block'],
+          secureOnly: true
+        },
+        microphone: {
+          label: 'Microphone',
+          desc: 'Access audio recording hardware',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+          options: ['ask', 'allow', 'block'],
+          secureOnly: true
+        },
+        location: {
+          label: 'Location',
+          desc: 'Access your geographic position',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>',
+          options: ['ask', 'allow', 'block'],
+          secureOnly: true
+        },
+        notifications: {
+          label: 'Notifications',
+          desc: 'Display desktop alerts and notices',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+          options: ['ask', 'allow', 'block'],
+          secureOnly: true
+        },
+        'clipboard-read': {
+          label: 'Clipboard Access',
+          desc: 'Read text from system clipboard',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>',
+          options: ['ask', 'allow', 'block'],
+          secureOnly: true
+        },
+        popups: {
+          label: 'Pop-ups & Redirects',
+          desc: 'Open new windows and tabs',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>',
+          options: ['block', 'allow'],
+          secureOnly: false
+        },
+        fullscreen: {
+          label: 'Fullscreen',
+          desc: 'Allow page to expand to full screen',
+          icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>',
+          options: ['allow', 'block'],
+          secureOnly: false
+        }
+      };
+
+      let cachedSiteOverrides = {};
+      async function loadSettingsPermissionsUI() {
+        if (typeof api.getAllSitePermissions !== 'function') return;
+        try {
+          const permData = await api.getAllSitePermissions();
+          if (!permData || !permData.ok) return;
+
+          // 1. Render Global Defaults Grid
+          const grid = document.getElementById('globalPermDefaultsGrid');
+          if (grid) {
+            grid.innerHTML = '';
+            const gDefs = permData.globalDefaults || {};
+            Object.keys(PERM_METADATA).forEach(key => {
+              const meta = PERM_METADATA[key];
+              const cell = document.createElement('div');
+              cell.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px;';
+              
+              const left = document.createElement('div');
+              left.style.cssText = 'display:flex; align-items:center; gap:8px; overflow:hidden;';
+              left.innerHTML = `<span style="color:#d4a359; display:flex;">${meta.icon}</span><span style="font-size:11.5px; color:#f8fafc; font-weight:500;">${meta.label}</span>`;
+              
+              const sel = document.createElement('select');
+              sel.className = 'perm-select';
+              sel.style.fontSize = '11px';
+              sel.style.padding = '3px 6px';
+              
+              const opts = meta.options.filter(o => {
+                if (['camera', 'microphone', 'location'].includes(key) && o === 'allow') return false;
+                return true;
+              });
+
+              opts.forEach(opt => {
+                const optEl = document.createElement('option');
+                optEl.value = opt;
+                optEl.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
+                if (gDefs[key] === opt) optEl.selected = true;
+                sel.appendChild(optEl);
+              });
+
+              sel.addEventListener('change', async () => {
+                const res = await api.setGlobalPermissionDefault({ permission: key, value: sel.value });
+                if (res && res.ok) {
+                  showDownloadToast(`Global default for ${meta.label} set to ${sel.value}`, 2000);
+                } else {
+                  showDownloadToast((res && res.error) || 'Failed to update global default', 2400);
+                  loadSettingsPermissionsUI();
+                }
+              });
+
+              cell.appendChild(left);
+              cell.appendChild(sel);
+              grid.appendChild(cell);
+            });
+          }
+
+          // 2. Render Saved Site Exceptions
+          renderSavedSiteExceptions(permData.siteOverrides || {});
+        } catch (_) {}
+      }
+
+      function renderSavedSiteExceptions(overrides) {
+        cachedSiteOverrides = overrides || {};
+        const container = document.getElementById('permissionSitesContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const query = (document.getElementById('permissionSitesSearchInput')?.value || '').toLowerCase().trim();
+        const siteEntries = Object.keys(cachedSiteOverrides).filter(origin => {
+          return !query || origin.toLowerCase().includes(query);
+        });
+
+        if (siteEntries.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:16px 8px; font-size:11.5px; color:#64748b;">${query ? 'No matching website exceptions found' : 'No custom website permissions configured yet. Sites will appear here when you customize their permissions.'}</div>`;
+          return;
+        }
+
+        siteEntries.forEach(origin => {
+          const rules = cachedSiteOverrides[origin] || {};
+          const row = document.createElement('div');
+          row.className = 'perm-site-row';
+
+          const left = document.createElement('div');
+          left.style.cssText = 'display:flex; flex-direction:column; gap:3px; overflow:hidden; flex:1;';
+          
+          const domainSpan = document.createElement('span');
+          domainSpan.style.cssText = 'font-size:12px; font-weight:500; color:#f8fafc; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;';
+          domainSpan.textContent = origin;
+          left.appendChild(domainSpan);
+
+          const badgesWrap = document.createElement('div');
+          badgesWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px;';
+          
+          Object.keys(rules).forEach(k => {
+            if (k === 'updatedAt' || !PERM_METADATA[k]) return;
+            const badge = document.createElement('span');
+            badge.className = `perm-badge ${rules[k]}`;
+            badge.textContent = `${PERM_METADATA[k].label}: ${rules[k]}`;
+            badgesWrap.appendChild(badge);
+          });
+          left.appendChild(badgesWrap);
+
+          const btnReset = document.createElement('button');
+          btnReset.type = 'button';
+          btnReset.className = 'btn-cancel';
+          btnReset.style.cssText = 'padding:3px 8px; font-size:10.5px; color:#ef4444; border-color:rgba(239,68,68,0.3);';
+          btnReset.textContent = 'Reset';
+          btnReset.title = `Reset permissions for ${origin}`;
+          btnReset.addEventListener('click', async () => {
+            await api.resetSitePermissions(origin);
+            showDownloadToast(`Reset permissions for ${origin}`, 2000);
+            delete cachedSiteOverrides[origin];
+            renderSavedSiteExceptions(cachedSiteOverrides);
+          });
+
+          row.appendChild(left);
+          row.appendChild(btnReset);
+          container.appendChild(row);
+        });
+      }
+
+      document.getElementById('permissionSitesSearchInput')?.addEventListener('input', () => {
+        renderSavedSiteExceptions(cachedSiteOverrides);
+      });
+
+      document.getElementById('btnResetAllSitePermissions')?.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to reset all custom website permissions back to global defaults?')) return;
+        await api.resetAllSitePermissions();
+        showDownloadToast('All custom site permissions have been reset.', 2200);
+        cachedSiteOverrides = {};
+        renderSavedSiteExceptions({});
+      });
+
       function closeSettingsModal() {
         if (settingsModal) settingsModal.classList.remove('active');
         syncModalState();
@@ -4502,6 +4853,18 @@
           else if (action === 'open-reading-list') openReadingListModal();
           else if (action === 'toggle-reader-mode') toggleReaderMode();
           else if (action === 'open-shortcuts-modal') openShortcutsModal();
+          else if (action === 'open-site-permissions') openSitePermissionsModal();
+          else if (action === 'escape') {
+            closeCommandPalette();
+            closeTabSearch();
+            closeReadingListModal();
+            closeReaderMode();
+            closeGroupEditModal();
+            closeShortcutsModal();
+            closeSitePermissionsModal();
+            closeSettingsModal();
+            closeFindBar();
+          }
         });
       }
 
@@ -4761,6 +5124,7 @@
           closeReaderMode();
           closeGroupEditModal();
           closeShortcutsModal();
+          closeSitePermissionsModal();
           if (threeDotMenu) threeDotMenu.classList.remove('active');
           if (favContextMenu) favContextMenu.style.display = 'none';
           if (favOverflowMenu) favOverflowMenu.style.display = 'none';
@@ -4798,7 +5162,7 @@
       const shortcutsModal = document.getElementById('shortcutsModal');
 
       function closeAllPhase7Except(keepEl) {
-        [commandPaletteModal, tabSearchModal, readingListModal, readerModeModal, groupEditModal, shortcutsModal].forEach(m => {
+        [commandPaletteModal, tabSearchModal, readingListModal, readerModeModal, groupEditModal, shortcutsModal, sitePermissionsModal].forEach(m => {
           if (m && m !== keepEl) m.classList.remove('active');
         });
       }
@@ -4838,6 +5202,7 @@
           { id: 'open-history', title: 'Open History', sub: 'Browse visited pages', kbd: 'Ctrl+H', run: () => openHistoryModal() },
           { id: 'open-bookmarks', title: 'Open Bookmarks', sub: 'Manage saved bookmarks', kbd: 'Ctrl+Shift+O', run: () => openBookmarksModal() },
           { id: 'open-settings', title: 'Open Settings', sub: 'Search engine, privacy shield & preferences', kbd: 'Ctrl+Shift+Del', run: () => openSettingsModal() },
+          { id: 'site-permissions', title: 'Site Permissions & Privacy Control Center', sub: 'Manage camera, mic, location, and site security controls', kbd: '', run: () => openSitePermissionsModal() },
           { id: 'toggle-favbar', title: 'Toggle Favourites Bar', sub: 'Show or hide the quick favourites bar', kbd: 'Ctrl+Shift+B', run: () => toggleFavouritesBarState() },
           { id: 'find-page', title: 'Find in Page', sub: 'Search text on current page', kbd: 'Ctrl+F', run: () => openFindBar() },
           { id: 'toggle-fullscreen', title: 'Toggle Fullscreen', sub: 'Enter or exit fullscreen mode', kbd: 'F11', run: () => { if (typeof api.toggleFullscreen === 'function') api.toggleFullscreen(); } },
@@ -5337,6 +5702,227 @@
       document.getElementById('btnShortcutsClose')?.addEventListener('click', closeShortcutsModal);
       document.getElementById('btnCloseShortcutsModal')?.addEventListener('click', closeShortcutsModal);
       shortcutsModal?.addEventListener('click', (e) => { if (e.target === shortcutsModal) closeShortcutsModal(); });
+
+      // ========================================================================
+      // PHASE 8 CONTROLLER: SITE PERMISSIONS & PRIVACY CONTROL CENTER
+      // ========================================================================
+      const sitePermissionsModal = document.getElementById('sitePermissionsModal');
+      const permSiteOriginLabel = document.getElementById('permSiteOriginLabel');
+      const permSiteSecurityBadge = document.getElementById('permSiteSecurityBadge');
+      const permSiteSecurityIcon = document.getElementById('permSiteSecurityIcon');
+      const permSiteNoticeBanner = document.getElementById('permSiteNoticeBanner');
+      const permSiteItemsList = document.getElementById('permSiteItemsList');
+      const btnResetCurrentSitePermissions = document.getElementById('btnResetCurrentSitePermissions');
+      const btnSitePermissionsClose = document.getElementById('btnSitePermissionsClose');
+      const btnCloseSitePermissionsModal = document.getElementById('btnCloseSitePermissionsModal');
+      const btnOpenGlobalSettingsFromModal = document.getElementById('btnOpenGlobalSettingsFromModal');
+
+      let currentSitePermData = null;
+
+      async function openSitePermissionsModal(targetOrigin) {
+        if (!sitePermissionsModal) return;
+        const activeTab = currentTabs.find(t => t.id === activeTabId);
+        const currentUrl = (activeTab && activeTab.url) || deskOmnibox?.value || '';
+        const originToQuery = targetOrigin || currentUrl;
+
+        closeAllPhase7Except(sitePermissionsModal);
+        sitePermissionsModal.classList.add('active');
+        syncModalState();
+
+        if (typeof api.getSitePermissions === 'function') {
+          currentSitePermData = await api.getSitePermissions(originToQuery);
+        } else {
+          currentSitePermData = {
+            ok: true,
+            origin: originToQuery,
+            isSecure: /^https:\/\/|^http:\/\/(localhost|127\.0\.0\.1)/i.test(originToQuery),
+            isIncognito: Boolean(activeTab && activeTab.isIncognito),
+            overrides: {},
+            effective: { camera: 'ask', microphone: 'ask', location: 'ask', notifications: 'ask', 'clipboard-read': 'ask', popups: 'block', fullscreen: 'allow' },
+            globalDefaults: { camera: 'ask', microphone: 'ask', location: 'ask', notifications: 'ask', 'clipboard-read': 'ask', popups: 'block', fullscreen: 'allow' }
+          };
+        }
+
+        renderSitePermissionsContent(currentSitePermData);
+      }
+
+      function closeSitePermissionsModal() {
+        if (sitePermissionsModal) sitePermissionsModal.classList.remove('active');
+        syncModalState();
+      }
+
+      function renderSitePermissionsContent(data) {
+        if (!data) return;
+        const origin = data.origin || 'Current Site';
+        if (permSiteOriginLabel) permSiteOriginLabel.textContent = origin;
+
+        if (permSiteSecurityBadge && permSiteSecurityIcon) {
+          if (data.isSecure) {
+            permSiteSecurityBadge.textContent = data.isIncognito ? 'Connection is secure (HTTPS) • Private Session' : 'Connection is secure (HTTPS)';
+            permSiteSecurityBadge.style.color = '#10b981';
+            permSiteSecurityIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+          } else if (origin.startsWith('staunt://')) {
+            permSiteSecurityBadge.textContent = 'STAUNT Internal System Page';
+            permSiteSecurityBadge.style.color = '#d4a359';
+            permSiteSecurityIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4a359" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+          } else {
+            permSiteSecurityBadge.textContent = 'Not secure (HTTP — unencrypted connection)';
+            permSiteSecurityBadge.style.color = '#f59e0b';
+            permSiteSecurityIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
+          }
+        }
+
+        if (permSiteNoticeBanner) {
+          if (!data.isSecure && !origin.startsWith('staunt://')) {
+            permSiteNoticeBanner.style.display = 'block';
+            permSiteNoticeBanner.style.background = 'rgba(245, 158, 11, 0.12)';
+            permSiteNoticeBanner.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+            permSiteNoticeBanner.style.color = '#fbbf24';
+            permSiteNoticeBanner.innerHTML = '<strong>Security Policy:</strong> This site uses an unencrypted connection. Sensitive hardware access (Camera, Microphone, Location) is automatically blocked to protect your privacy.';
+          } else if (data.isIncognito) {
+            permSiteNoticeBanner.style.display = 'block';
+            permSiteNoticeBanner.style.background = 'rgba(56, 189, 248, 0.12)';
+            permSiteNoticeBanner.style.border = '1px solid rgba(56, 189, 248, 0.3)';
+            permSiteNoticeBanner.style.color = '#38bdf8';
+            permSiteNoticeBanner.textContent = 'Incognito Session: Permission changes here apply strictly to this private tab and will not be stored permanently.';
+          } else {
+            permSiteNoticeBanner.style.display = 'none';
+          }
+        }
+
+        if (permSiteItemsList) {
+          permSiteItemsList.innerHTML = '';
+          const overrides = data.overrides || {};
+          const gDefs = data.globalDefaults || {};
+
+          Object.keys(PERM_METADATA).forEach(key => {
+            const meta = PERM_METADATA[key];
+            const row = document.createElement('div');
+            row.className = 'perm-row';
+
+            const info = document.createElement('div');
+            info.className = 'perm-info';
+            info.innerHTML = `
+              <div class="perm-icon">${meta.icon}</div>
+              <div class="perm-label-wrap">
+                <div class="perm-label">${meta.label}</div>
+                <div class="perm-desc">${meta.desc}</div>
+              </div>
+            `;
+            row.appendChild(info);
+
+            if (!data.isSecure && meta.secureOnly && !origin.startsWith('staunt://')) {
+              const blockedBadge = document.createElement('div');
+              blockedBadge.className = 'perm-badge block';
+              blockedBadge.title = 'Insecure HTTP: Powerful device APIs cannot be accessed on unencrypted connections';
+              blockedBadge.textContent = 'Blocked (Insecure Origin)';
+              row.appendChild(blockedBadge);
+            } else {
+              const sel = document.createElement('select');
+              sel.className = 'perm-select';
+              sel.dataset.perm = key;
+
+              const globalVal = gDefs[key] || 'ask';
+              const capitalDef = globalVal.charAt(0).toUpperCase() + globalVal.slice(1);
+
+              const defaultOpt = document.createElement('option');
+              defaultOpt.value = 'default';
+              defaultOpt.textContent = `Default (${capitalDef})`;
+              sel.appendChild(defaultOpt);
+
+              meta.options.forEach(opt => {
+                const optEl = document.createElement('option');
+                optEl.value = opt;
+                optEl.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
+                sel.appendChild(optEl);
+              });
+
+              sel.value = overrides[key] || 'default';
+
+              sel.addEventListener('change', async () => {
+                if (typeof api.setSitePermission === 'function') {
+                  await api.setSitePermission({
+                    origin: data.origin,
+                    permission: key,
+                    value: sel.value
+                  });
+                  showDownloadToast(`Updated ${meta.label} permission for ${data.origin}`, 2000);
+                  if (overrides[key] !== sel.value) {
+                    if (sel.value === 'default') delete overrides[key];
+                    else overrides[key] = sel.value;
+                  }
+                }
+              });
+
+              row.appendChild(sel);
+            }
+
+            permSiteItemsList.appendChild(row);
+          });
+        }
+      }
+
+      if (btnResetCurrentSitePermissions) {
+        btnResetCurrentSitePermissions.addEventListener('click', async () => {
+          if (!currentSitePermData || !currentSitePermData.origin) return;
+          if (typeof api.resetSitePermissions === 'function') {
+            await api.resetSitePermissions(currentSitePermData.origin);
+            showDownloadToast(`Reset permissions for ${currentSitePermData.origin}`, 2000);
+            openSitePermissionsModal(currentSitePermData.origin);
+          }
+        });
+      }
+
+      if (btnSitePermissionsClose) btnSitePermissionsClose.addEventListener('click', closeSitePermissionsModal);
+      if (btnCloseSitePermissionsModal) btnCloseSitePermissionsModal.addEventListener('click', closeSitePermissionsModal);
+      if (btnOpenGlobalSettingsFromModal) {
+        btnOpenGlobalSettingsFromModal.addEventListener('click', () => {
+          closeSitePermissionsModal();
+          openSettingsModal();
+          setTimeout(() => {
+            document.getElementById('settingsSitePermissionsSection')?.scrollIntoView({ behavior: 'smooth' });
+          }, 120);
+        });
+      }
+      sitePermissionsModal?.addEventListener('click', (e) => {
+        if (e.target === sitePermissionsModal) closeSitePermissionsModal();
+      });
+
+      if (lockIcon) {
+        lockIcon.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openSitePermissionsModal();
+        });
+        lockIcon.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openSitePermissionsModal();
+          }
+        });
+      }
+
+      if (typeof api.onSitePermissionsUpdated === 'function') {
+        api.onSitePermissionsUpdated((data) => {
+          if (settingsModal && settingsModal.classList.contains('active')) {
+            loadSettingsPermissionsUI();
+          }
+          if (sitePermissionsModal && sitePermissionsModal.classList.contains('active') && currentSitePermData && data && data.origin === currentSitePermData.origin) {
+            openSitePermissionsModal(currentSitePermData.origin);
+          }
+        });
+      }
+
+      if (typeof api.onGlobalPermissionsUpdated === 'function') {
+        api.onGlobalPermissionsUpdated(() => {
+          if (settingsModal && settingsModal.classList.contains('active')) {
+            loadSettingsPermissionsUI();
+          }
+          if (sitePermissionsModal && sitePermissionsModal.classList.contains('active') && currentSitePermData) {
+            openSitePermissionsModal(currentSitePermData.origin);
+          }
+        });
+      }
 
       function escapeHtml(str) {
         if (!str) return '';

@@ -360,7 +360,30 @@ const secureAPI = Object.freeze({
   removeReadingListItem: (id) => ipcRenderer.invoke('remove-reading-list-item', sanitizeString(id, 64)),
   toggleReadingListRead: (id) => ipcRenderer.invoke('toggle-reading-list-read', sanitizeString(id, 64)),
 
-  extractReaderArticle: () => ipcRenderer.invoke('extract-reader-article')
+  extractReaderArticle: () => ipcRenderer.invoke('extract-reader-article'),
+
+  // Phase 8: Site Permissions & Privacy Control Center
+  getSitePermissions: (origin) => ipcRenderer.invoke('get-site-permissions', sanitizeString(origin, 512)),
+  setSitePermission: (payload) => {
+    if (!payload || typeof payload !== 'object') return Promise.resolve({ ok: false, error: 'Invalid payload' });
+    return ipcRenderer.invoke('set-site-permission', {
+      origin: sanitizeString(payload.origin, 512),
+      permission: sanitizeString(payload.permission, 64),
+      value: sanitizeString(payload.value, 32)
+    });
+  },
+  resetSitePermissions: (origin) => ipcRenderer.invoke('reset-site-permissions', sanitizeString(origin, 512)),
+  getAllSitePermissions: () => ipcRenderer.invoke('get-all-site-permissions'),
+  setGlobalPermissionDefault: (payload) => {
+    if (!payload || typeof payload !== 'object') return Promise.resolve({ ok: false, error: 'Invalid payload' });
+    return ipcRenderer.invoke('set-global-permission-default', {
+      permission: sanitizeString(payload.permission, 64),
+      value: sanitizeString(payload.value, 32)
+    });
+  },
+  resetAllSitePermissions: () => ipcRenderer.invoke('reset-all-site-permissions'),
+  onSitePermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('site-permissions-updated', (_e, d) => cb(d)); },
+  onGlobalPermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('global-permissions-updated', (_e, d) => cb(d)); }
 });
 
 // Expose both namespaces (stauntAPI & stauntSecureBridge)
