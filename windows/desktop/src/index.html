@@ -3262,6 +3262,27 @@
         }
       }
 
+      // Native Windows File Drag-and-Drop (Open local HTML, PDF, text, images in tab)
+      window.addEventListener('dragover', (e) => {
+        if (e.target && e.target.closest && (e.target.closest('.tab-item') || e.target.closest('.favourite-chip'))) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+
+      window.addEventListener('drop', (e) => {
+        if (e.target && e.target.closest && (e.target.closest('.tab-item') || e.target.closest('.favourite-chip'))) return;
+        e.preventDefault();
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const droppedFile = e.dataTransfer.files[0];
+          if (droppedFile && droppedFile.path) {
+            const fileUrl = 'file:///' + droppedFile.path.replace(/\\/g, '/');
+            if (typeof api.createTab === 'function') {
+              api.createTab(fileUrl);
+            }
+          }
+        }
+      });
+
       // Three-Dot Floating Menu
       if (btnMenu) {
         btnMenu.addEventListener('click', (e) => {

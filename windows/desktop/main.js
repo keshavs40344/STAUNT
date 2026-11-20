@@ -2,7 +2,7 @@
 // Former Google Project Zero / Chromium Security Team Architectural Grade
 // Resolves Viewport Freeze & Blank Screen via Precision WebContentsView Geometry
 
-const { app, BrowserWindow, WebContentsView, BrowserView, session, ipcMain, Menu, dialog, clipboard, screen, shell } = require('electron');
+const { app, BrowserWindow, WebContentsView, BrowserView, session, ipcMain, Menu, dialog, clipboard, screen, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { isHomographOrDeceptive } = require('./src/adblocker');
@@ -941,6 +941,8 @@ const menuTemplate = [
 function createMainWindow() {
   const validatedState = getValidatedWindowState();
   mainWindow = new BrowserWindow({
+    title: 'Staunt Browser Ultra',
+    icon: path.join(__dirname, 'assets', 'icon.ico'),
     width: validatedState.width,
     height: validatedState.height,
     x: validatedState.x,
@@ -1077,7 +1079,24 @@ function createMainWindow() {
     scheduleSaveWindowState();
   });
   
-  mainWindow.on('close', () => {
+  let isClosingConfirmed = false;
+  mainWindow.on('close', (e) => {
+    if (!isClosingConfirmed && typeof activeDownloadItems !== 'undefined' && activeDownloadItems.size > 0) {
+      const choice = dialog.showMessageBoxSync(mainWindow, {
+        type: 'warning',
+        buttons: ['Cancel', 'Close Anyway'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Active Downloads in Progress',
+        message: `You have ${activeDownloadItems.size} active download${activeDownloadItems.size > 1 ? 's' : ''} in progress.`,
+        detail: 'Closing STAUNT now will cancel any in-progress downloads.'
+      });
+      if (choice === 0) {
+        e.preventDefault();
+        return;
+      }
+      isClosingConfirmed = true;
+    }
     saveSessionTabs();
     saveWindowState();
     // Clean up all tab views to prevent orphaned WebContentsView instances
@@ -1346,6 +1365,28 @@ function configureSessionSecurity(ses, isIncognito = false) {
           totalBytes: downloadEntry.totalBytes,
           receivedBytes: downloadEntry.receivedBytes
         });
+      }
+
+      if (state === 'completed') {
+        try {
+          if (Notification && Notification.isSupported()) {
+            const notif = new Notification({
+              title: 'Download Complete',
+              body: fileName,
+              icon: path.join(__dirname, 'assets', 'icon.ico')
+            });
+            notif.on('click', () => {
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                if (mainWindow.isMinimized()) mainWindow.restore();
+                mainWindow.focus();
+              }
+              if (targetPath && fs.existsSync(targetPath)) {
+                shell.showItemInFolder(targetPath);
+              }
+            });
+            notif.show();
+          }
+        } catch (_) {}
       }
     });
   });
@@ -1782,8 +1823,20 @@ function setupWebContentsEvents(tabObj) {
         mainWindow.webContents.focus();
         mainWindow.webContents.send('chrome-shortcut', 'open-shortcuts-modal');
       }
+    } else if (isCtrl && !input.shift && !input.alt && /^[1-9]$/.test(key)) {
+      event.preventDefault();
+      const tabNum = parseInt(key, 10);
+      const allTabIds = Array.from(tabs.keys());
+      if (tabNum === 9 && allTabIds.length > 0) {
+        switchTab(allTabIds[allTabIds.length - 1]);
+      } else if (tabNum >= 1 && tabNum <= allTabIds.length) {
+        switchTab(allTabIds[tabNum - 1]);
+      }
     } else if (input.key === 'Escape') {
-      if (isFindBarOpen && mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
+        event.preventDefault();
+        mainWindow.setFullScreen(false);
+      } else if (isFindBarOpen && mainWindow && !mainWindow.isDestroyed()) {
         event.preventDefault();
         mainWindow.webContents.send('chrome-shortcut', 'close-find-bar');
       } else if (tabObj.isLoading) {
@@ -1819,6 +1872,10 @@ function setupWebContentsEvents(tabObj) {
     recordHistory(tabObj.url, title, tabObj);
     notifyTabUpdated(tabObj);
     broadcastUrlSync(tabObj);
+    if (tabObj.id === activeTabId && mainWindow && !mainWindow.isDestroyed()) {
+      const cleanTitle = (title || '').trim();
+      mainWindow.setTitle(cleanTitle ? `${cleanTitle} — Staunt Browser Ultra` : 'Staunt Browser Ultra');
+    }
   });
 
   wc.on('page-favicon-updated', (e, favicons) => {
@@ -2144,6 +2201,8 @@ function switchTab(tabId) {
       origin: targetOrigin,
       credentials: matching.map(c => ({ id: c.id, username: c.username }))
     });
+    const cleanTitle = (targetTab.title || '').trim();
+    mainWindow.setTitle(cleanTitle ? `${cleanTitle} — Staunt Browser Ultra` : 'Staunt Browser Ultra');
   }
 }
 
@@ -5039,16 +5098,41 @@ ipcMain.handle('import-bookmarks-html', async (e) => {
   }
 });
 
+// Windows Desktop Identity & Integration
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.vastuda.stauntbrowser');
+}
+app.setName('Staunt Browser Ultra');
+
+// Register Default Protocol Clients (HTTP, HTTPS, STAUNT)
+if (!process.defaultApp) {
+  try {
+    app.setAsDefaultProtocolClient('http');
+    app.setAsDefaultProtocolClient('https');
+    app.setAsDefaultProtocolClient('staunt');
+  } catch (_) {}
+}
+
 // App Lifecycle with Single Instance Lock (prevent duplicate windows)
 const gotTheSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!gotTheSingleInstanceLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, commandLine) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
+
+      // Open external link or file if passed in command line arguments
+      if (Array.isArray(commandLine) && commandLine.length > 1) {
+        const candidate = commandLine[commandLine.length - 1];
+        if (candidate && typeof candidate === 'string' && !candidate.startsWith('-')) {
+          if (/^https?:\/\//i.test(candidate) || candidate.startsWith('staunt://') || (fs.existsSync(candidate) && fs.statSync(candidate).isFile())) {
+            createTab(candidate);
+          }
+        }
+      }
     }
   });
 
