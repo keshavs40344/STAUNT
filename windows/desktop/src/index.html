@@ -2139,6 +2139,8 @@
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" id="btnBookmarkCurrentPageModal">★ Bookmark Current Tab</button>
+        <button class="btn-cancel" id="btnImportBookmarks" title="Import bookmarks from HTML file">Import</button>
+        <button class="btn-cancel" id="btnExportBookmarks" title="Export bookmarks as HTML file">Export</button>
         <button class="btn-primary-action" id="btnCloseBookmarksModal">Done</button>
       </div>
     </div>
@@ -2152,20 +2154,67 @@
         <button class="modal-close" id="btnDownloadsClose">&times;</button>
       </div>
       <div class="modal-body">
+        <div style="display:flex; gap:8px; padding:0 0 10px 0; align-items:center;">
+          <input type="text" class="modal-filter-input" id="downloadsFilterInput" placeholder="Filter downloads..." style="flex:1; margin:0;" />
+          <button class="btn-cancel" id="btnClearCompletedDownloads" style="white-space:nowrap; padding:6px 12px; font-size:12px;">Clear Completed</button>
+        </div>
         <div class="modal-scroll-list" id="downloadsScrollList">
           <div class="empty-list-notice">No downloads found.</div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" id="btnClearDownloadsListBtn">Clear List</button>
+        <button class="btn-cancel" id="btnClearDownloadsListBtn">Clear All</button>
         <button class="btn-primary-action" id="btnCloseDownloadsModal">Done</button>
       </div>
     </div>
   </div>
 
+  <!-- Password Manager Modal (Phase 9) -->
+  <div class="modal-overlay" id="passwordManagerModal" role="dialog" aria-modal="true">
+    <div class="modal-box" style="width:540px;">
+      <div class="modal-header">
+        <div class="modal-title">🔑 Saved Passwords</div>
+        <button class="modal-close" id="btnPasswordManagerClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; gap:8px; padding:0 0 10px 0; align-items:center;">
+          <input type="text" class="modal-filter-input" id="passwordManagerFilter" placeholder="Search saved passwords..." style="flex:1; margin:0;" />
+          <button class="btn-cancel" id="btnDeleteAllPasswords" style="white-space:nowrap; padding:6px 12px; font-size:12px; color:#c0392b; border-color:#c0392b;" title="Delete all saved passwords">Delete All</button>
+        </div>
+        <div class="modal-scroll-list" id="passwordManagerList">
+          <div class="empty-list-notice"><div style="font-size:28px; margin-bottom:8px;">🔒</div>No saved passwords yet.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary-action" id="btnClosePasswordManager">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Password Toast (Phase 9) -->
+  <div id="savePasswordToast" role="alertdialog" aria-label="Save password prompt" style="
+    display:none; position:fixed; bottom:70px; right:20px; z-index:99999;
+    background:var(--glass-bg,#1a2232); border:1px solid var(--accent-gold,#d4a359);
+    border-radius:10px; padding:14px 16px; min-width:280px; max-width:360px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.5); font-family:inherit; color:var(--text-primary,#e8e8e8);">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+      <span style="font-size:18px;">🔑</span>
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Save password?</div>
+        <div id="savePassOriginLabel" style="font-size:11px; color:var(--text-secondary,#aaa); word-break:break-all;"></div>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--text-secondary,#aaa); margin-bottom:10px;">
+      Username: <span id="savePassUsernameLabel" style="color:var(--text-primary,#e8e8e8); font-weight:500;"></span>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="btnSavePassNever" class="btn-cancel" style="font-size:12px; padding:5px 12px;">Not now</button>
+      <button id="btnSavePassNow" class="btn-primary-action" style="font-size:12px; padding:5px 14px;">Save</button>
+    </div>
+  </div>
+
   <!-- STAUNT Account Modal -->
-  <div class="modal-overlay" id="accountModal" role="dialog" aria-modal="true">
-    <div class="modal-box" style="width: 440px;">
+  <div class="modal-overlay" id="accountModal" role="dialog" aria-modal="true">    <div class="modal-box" style="width: 440px;">
       <div class="modal-header">
         <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
           <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(212,163,89,0.15); color:var(--accent-gold); font-size:14px; font-weight:bold;">+</span>
@@ -3005,7 +3054,7 @@
       let _lastFocusBeforeModal = null;
       let _wasAnyModalActive = false;
       function syncModalState() {
-        const p7Modals = ['commandPaletteModal','tabSearchModal','readingListModal','readerModeModal','groupEditModal','shortcutsModal','sitePermissionsModal']
+        const p7Modals = ['commandPaletteModal','tabSearchModal','readingListModal','readerModeModal','groupEditModal','shortcutsModal','sitePermissionsModal','passwordManagerModal']
           .map(id => document.getElementById(id));
         const activeModal = [settingsModal, historyModal, bookmarksModal, downloadsModal, aboutModal, accountModal, favouriteEditModal, ...p7Modals]
           .find(m => m && m.classList.contains('active'));
@@ -4287,6 +4336,54 @@
       });
       downloadsModal?.addEventListener('click', (e) => { if (e.target === downloadsModal) closeDownloadsModal(); });
 
+      // Phase 9: Downloads filter input
+      const downloadsFilterInput = document.getElementById('downloadsFilterInput');
+      let _lastDownloadsItems = [];
+      const _origRenderDownloadsItems = renderDownloadsItems;
+      function renderDownloadsItems(items) {
+        _lastDownloadsItems = items || [];
+        const q = (downloadsFilterInput ? downloadsFilterInput.value : '').toLowerCase().trim();
+        const filtered = q ? _lastDownloadsItems.filter(d => (d.fileName||'').toLowerCase().includes(q) || (d.url||'').toLowerCase().includes(q)) : _lastDownloadsItems;
+        _origRenderDownloadsItems(filtered);
+      }
+      downloadsFilterInput?.addEventListener('input', () => {
+        renderDownloadsItems(_lastDownloadsItems);
+      });
+
+      // Phase 9: Clear Completed Downloads button
+      document.getElementById('btnClearCompletedDownloads')?.addEventListener('click', async () => {
+        if (typeof api.clearCompletedDownloads === 'function') {
+          await api.clearCompletedDownloads();
+          if (typeof api.getDownloads === 'function') {
+            renderDownloadsItems(await api.getDownloads() || []);
+          }
+        }
+      });
+
+      // Phase 9: Bookmarks Export / Import
+      document.getElementById('btnExportBookmarks')?.addEventListener('click', async () => {
+        if (typeof api.exportBookmarksHtml === 'function') {
+          const res = await api.exportBookmarksHtml();
+          if (res && res.ok) {
+            showToast(`✓ Exported ${res.count} bookmarks`);
+          } else if (res && res.error && res.error !== 'Cancelled') {
+            showToast('Export failed: ' + res.error);
+          }
+        }
+      });
+      document.getElementById('btnImportBookmarks')?.addEventListener('click', async () => {
+        if (typeof api.importBookmarksHtml === 'function') {
+          const res = await api.importBookmarksHtml();
+          if (res && res.ok) {
+            showToast(`✓ Imported ${res.added} bookmarks (${res.total} total)`);
+            // Refresh bookmarks list
+            if (typeof openBookmarksModal === 'function') { closeBookmarksModal(); openBookmarksModal(); }
+          } else if (res && res.error && res.error !== 'Cancelled') {
+            showToast('Import failed: ' + res.error);
+          }
+        }
+      });
+
       // About Modal
       function openAboutModal() {
         if (aboutModal) aboutModal.classList.add('active');
@@ -4299,6 +4396,123 @@
       btnAboutClose?.addEventListener('click', closeAboutModal);
       btnCloseAboutModal?.addEventListener('click', closeAboutModal);
       aboutModal?.addEventListener('click', (e) => { if (e.target === aboutModal) closeAboutModal(); });
+
+      // =====================================================================
+      // Phase 9: Password Manager
+      // =====================================================================
+      const passwordManagerModal = document.getElementById('passwordManagerModal');
+      const passwordManagerList = document.getElementById('passwordManagerList');
+      const passwordManagerFilter = document.getElementById('passwordManagerFilter');
+      let _pwFilterQuery = '';
+      let _pwAllCredentials = [];
+
+      function openPasswordManagerModal() {
+        if (!passwordManagerModal) return;
+        passwordManagerModal.classList.add('active');
+        syncModalState();
+        renderPasswordManagerList();
+      }
+      function closePasswordManagerModal() {
+        if (passwordManagerModal) passwordManagerModal.classList.remove('active');
+        syncModalState();
+      }
+
+      async function renderPasswordManagerList() {
+        if (!passwordManagerList) return;
+        passwordManagerList.innerHTML = '<div class="empty-list-notice">Loading...</div>';
+        try {
+          const creds = typeof api.getAllCredentials === 'function' ? (await api.getAllCredentials() || []) : [];
+          _pwAllCredentials = creds;
+          _applyPasswordFilter();
+        } catch(err) {
+          passwordManagerList.innerHTML = '<div class="empty-list-notice">Error loading passwords.</div>';
+        }
+      }
+
+      function _applyPasswordFilter() {
+        const q = _pwFilterQuery.toLowerCase();
+        const filtered = q ? _pwAllCredentials.filter(c => c.origin.includes(q) || (c.username||'').toLowerCase().includes(q)) : _pwAllCredentials;
+        _renderPasswordRows(filtered);
+      }
+
+      function _renderPasswordRows(creds) {
+        if (!passwordManagerList) return;
+        if (!creds || creds.length === 0) {
+          passwordManagerList.innerHTML = '<div class="empty-list-notice"><div style="font-size:28px; margin-bottom:8px;">🔒</div>No saved passwords yet.</div>';
+          return;
+        }
+        passwordManagerList.innerHTML = '';
+        creds.forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'list-entry-item';
+          row.innerHTML = `
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(212,163,89,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">🔑</div>
+            <div class="entry-info" style="flex:1;min-width:0;">
+              <span class="entry-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.origin)}">${escapeHtml(c.origin)}</span>
+              <span class="entry-meta" style="display:block;">${c.username ? escapeHtml(c.username) : '<em style="color:#64748b">No username</em>'}</span>
+            </div>
+            <div class="entry-actions">
+              <button class="entry-btn-sm btn-pw-delete" data-id="${escapeHtml(c.id)}" title="Delete saved password">Delete</button>
+            </div>
+          `;
+          row.querySelector('.btn-pw-delete')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (typeof api.deleteCredential === 'function') {
+              await api.deleteCredential(c.id);
+              _pwAllCredentials = _pwAllCredentials.filter(x => x.id !== c.id);
+              _applyPasswordFilter();
+            }
+          });
+          passwordManagerList.appendChild(row);
+        });
+      }
+
+      passwordManagerFilter?.addEventListener('input', (e) => {
+        _pwFilterQuery = e.target.value || '';
+        _applyPasswordFilter();
+      });
+      document.getElementById('btnPasswordManagerClose')?.addEventListener('click', closePasswordManagerModal);
+      document.getElementById('btnClosePasswordManager')?.addEventListener('click', closePasswordManagerModal);
+      passwordManagerModal?.addEventListener('click', (e) => { if (e.target === passwordManagerModal) closePasswordManagerModal(); });
+      document.getElementById('btnDeleteAllPasswords')?.addEventListener('click', async () => {
+        if (!confirm('Delete ALL saved passwords? This cannot be undone.')) return;
+        if (typeof api.deleteAllCredentials === 'function') {
+          await api.deleteAllCredentials();
+          _pwAllCredentials = [];
+          _applyPasswordFilter();
+        }
+      });
+
+      // Phase 9: Save Password Prompt (triggered by main process when form submit detected)
+      const savePasswordToast = document.getElementById('savePasswordToast');
+      let _pendingSavePayload = null;
+      function showSavePasswordToast(data) {
+        if (!savePasswordToast) return;
+        _pendingSavePayload = data;
+        const originLabel = document.getElementById('savePassOriginLabel');
+        const usernameLabel = document.getElementById('savePassUsernameLabel');
+        if (originLabel) originLabel.textContent = data.origin || '';
+        if (usernameLabel) usernameLabel.textContent = data.username || '(none)';
+        savePasswordToast.style.display = 'block';
+        // Auto-dismiss after 12 seconds
+        clearTimeout(savePasswordToast._dismissTimer);
+        savePasswordToast._dismissTimer = setTimeout(() => { savePasswordToast.style.display = 'none'; _pendingSavePayload = null; }, 12000);
+      }
+      document.getElementById('btnSavePassNow')?.addEventListener('click', async () => {
+        if (_pendingSavePayload && typeof api.saveCredential === 'function') {
+          const res = await api.saveCredential(_pendingSavePayload);
+          if (res && res.ok) showToast('✓ Password saved');
+        }
+        savePasswordToast.style.display = 'none';
+        _pendingSavePayload = null;
+      });
+      document.getElementById('btnSavePassNever')?.addEventListener('click', () => {
+        savePasswordToast.style.display = 'none';
+        _pendingSavePayload = null;
+      });
+      if (typeof api.onSavePasswordPrompt === 'function') {
+        api.onSavePasswordPrompt((data) => { if (data) showSavePasswordToast(data); });
+      }
 
       // Account & Sync Modal
       async function openAccountModal() {
@@ -5340,7 +5554,8 @@
           { id: 'toggle-favbar', title: 'Toggle Favourites Bar', sub: 'Show or hide the quick favourites bar', kbd: 'Ctrl+Shift+B', run: () => toggleFavouritesBarState() },
           { id: 'find-page', title: 'Find in Page', sub: 'Search text on current page', kbd: 'Ctrl+F', run: () => openFindBar() },
           { id: 'toggle-fullscreen', title: 'Toggle Fullscreen', sub: 'Enter or exit fullscreen mode', kbd: 'F11', run: () => { if (typeof api.toggleFullscreen === 'function') api.toggleFullscreen(); } },
-          { id: 'shortcuts-ref', title: 'Keyboard Shortcuts Reference', sub: 'View all browser shortcuts', kbd: 'Ctrl+/', run: () => openShortcutsModal() }
+          { id: 'shortcuts-ref', title: 'Keyboard Shortcuts Reference', sub: 'View all browser shortcuts', kbd: 'Ctrl+/', run: () => openShortcutsModal() },
+          { id: 'manage-passwords', title: 'Manage Passwords', sub: 'View and delete saved passwords from the vault', kbd: '', run: () => openPasswordManagerModal() }
         ];
 
         // Dynamically add all 24 verified search engines

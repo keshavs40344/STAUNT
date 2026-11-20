@@ -392,7 +392,31 @@ const secureAPI = Object.freeze({
   removeWebsiteData: (domain) => ipcRenderer.invoke('remove-website-data', sanitizeString(domain, 256)),
   clearBrowsingDataSelective: (payload) => ipcRenderer.invoke('clear-browsing-data-selective', payload),
   onSitePermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('site-permissions-updated', (_e, d) => cb(d)); },
-  onGlobalPermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('global-permissions-updated', (_e, d) => cb(d)); }
+  onGlobalPermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('global-permissions-updated', (_e, d) => cb(d)); },
+
+  // Phase 9: Password Vault API
+  getCredentials: (origin) => ipcRenderer.invoke('get-credentials', sanitizeString(origin, 512)),
+  saveCredential: (payload) => {
+    if (!payload || typeof payload !== 'object') return Promise.resolve({ ok: false });
+    return ipcRenderer.invoke('save-credential', {
+      origin: sanitizeString(payload.origin, 512),
+      username: sanitizeString(payload.username, 256),
+      password: sanitizeString(payload.password, 1024)
+    });
+  },
+  deleteCredential: (id) => ipcRenderer.invoke('delete-credential', sanitizeString(id, 64)),
+  fillCredential: (id) => ipcRenderer.invoke('fill-credential', sanitizeString(id, 64)),
+  getAllCredentials: () => ipcRenderer.invoke('get-all-credentials'),
+  checkSavedCredential: (origin) => ipcRenderer.invoke('check-saved-credential', sanitizeString(origin, 512)),
+  deleteAllCredentials: () => ipcRenderer.invoke('delete-all-credentials'),
+  onSavePasswordPrompt: (cb) => { if (typeof cb === 'function') ipcRenderer.on('save-password-prompt', (_e, d) => cb(d)); },
+
+  // Phase 9: Download Manager Enhancements
+  clearCompletedDownloads: () => ipcRenderer.invoke('clear-completed-downloads'),
+
+  // Phase 9: Bookmark HTML Export / Import
+  exportBookmarksHtml: () => ipcRenderer.invoke('export-bookmarks-html'),
+  importBookmarksHtml: () => ipcRenderer.invoke('import-bookmarks-html')
 });
 
 // Expose both namespaces (stauntAPI & stauntSecureBridge)

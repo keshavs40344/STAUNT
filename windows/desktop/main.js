@@ -457,6 +457,47 @@ let readingListDB = readJsonWithBak(READING_LIST_FILE, []);
 if (!Array.isArray(readingListDB)) readingListDB = [];
 
 // =============================================================================
+// PHASE 9: PASSWORD VAULT (AES-256-GCM, PBKDF2 — Zero Plaintext on Disk)
+// =============================================================================
+const crypto = require('crypto');
+const CREDENTIALS_FILE = path.join(USER_DATA_PATH, 'staunt_credentials.json');
+let credentialsDB = readJsonWithBak(CREDENTIALS_FILE, []);
+if (!Array.isArray(credentialsDB)) credentialsDB = [];
+
+// Key derivation: machine-local, stable, never stored externally
+function getVaultKey() {
+  const seed = crypto.createHash('sha256')
+    .update(USER_DATA_PATH + 'STAUNT_VAULT_V1_KEY')
+    .digest();
+  return crypto.scryptSync(seed, 'staunt-credentials-salt-v1', 32);
+}
+
+function encryptCredential(plaintext) {
+  const key = getVaultKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const enc = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return JSON.stringify({ iv: iv.toString('hex'), enc: enc.toString('hex'), tag: tag.toString('hex') });
+}
+
+function decryptCredential(stored) {
+  try {
+    const key = getVaultKey();
+    const { iv, enc, tag } = JSON.parse(stored);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
+    decipher.setAuthTag(Buffer.from(tag, 'hex'));
+    return decipher.update(Buffer.from(enc, 'hex')) + decipher.final('utf8');
+  } catch (_) {
+    return null;
+  }
+}
+
+function saveCredentialsDB() {
+  atomicWriteJson(CREDENTIALS_FILE, credentialsDB);
+}
+
+// =============================================================================
 // PHASE 8: SITE PERMISSIONS & PRIVACY CONTROL VAULT
 // =============================================================================
 const SITE_PERMISSIONS_FILE = path.join(USER_DATA_PATH, 'staunt_site_permissions.json');
@@ -4309,6 +4350,182 @@ ipcMain.handle('clear-browsing-data-selective', async (e, payload) => {
     }
     await Promise.allSettled(tasks);
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+// =============================================================================
+// PHASE 9: PASSWORD VAULT IPC HANDLERS
+// =============================================================================
+
+ipcMain.handle('get-credentials', (e, origin) => {
+  if (!verifyIpcSender(e)) return [];
+  const org = String(origin || '').trim().toLowerCase();
+  if (!org) return [];
+  return credentialsDB
+    .filter(c => c.origin === org)
+    .map(c => ({ id: c.id, origin: c.origin, username: c.username, createdAt: c.createdAt, updatedAt: c.updatedAt }));
+});
+
+ipcMain.handle('save-credential', (e, payload) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const { origin, username, password } = payload || {};
+  const org = String(origin || '').trim().toLowerCase().slice(0, 512);
+  const user = String(username || '').trim().slice(0, 256);
+  const pass = String(password || '').slice(0, 1024);
+  if (!org || !pass) return { ok: false, error: 'origin and password required' };
+  const encPass = encryptCredential(pass);
+  const existing = credentialsDB.findIndex(c => c.origin === org && c.username === user);
+  const now = Date.now();
+  if (existing !== -1) {
+    credentialsDB[existing].encryptedPassword = encPass;
+    credentialsDB[existing].updatedAt = now;
+  } else {
+    credentialsDB.unshift({
+      id: now.toString(36) + Math.random().toString(36).substr(2, 6),
+      origin: org,
+      username: user,
+      encryptedPassword: encPass,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+  saveCredentialsDB();
+  return { ok: true };
+});
+
+ipcMain.handle('delete-credential', (e, id) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const cleanId = String(id || '').trim().slice(0, 64);
+  const before = credentialsDB.length;
+  credentialsDB = credentialsDB.filter(c => c.id !== cleanId);
+  if (credentialsDB.length < before) {
+    saveCredentialsDB();
+    return { ok: true };
+  }
+  return { ok: false, error: 'Not found' };
+});
+
+ipcMain.handle('fill-credential', (e, id) => {
+  if (!verifyIpcSender(e)) return null;
+  const cleanId = String(id || '').trim().slice(0, 64);
+  const cred = credentialsDB.find(c => c.id === cleanId);
+  if (!cred) return null;
+  const password = decryptCredential(cred.encryptedPassword);
+  if (password === null) return null;
+  return { username: cred.username, password };
+});
+
+ipcMain.handle('get-all-credentials', (e) => {
+  if (!verifyIpcSender(e)) return [];
+  return credentialsDB.map(c => ({
+    id: c.id,
+    origin: c.origin,
+    username: c.username,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt
+  }));
+});
+
+ipcMain.handle('check-saved-credential', (e, origin) => {
+  if (!verifyIpcSender(e)) return false;
+  const org = String(origin || '').trim().toLowerCase();
+  return credentialsDB.some(c => c.origin === org);
+});
+
+ipcMain.handle('delete-all-credentials', (e) => {
+  if (!verifyIpcSender(e)) return { ok: false };
+  credentialsDB = [];
+  saveCredentialsDB();
+  return { ok: true };
+});
+
+// =============================================================================
+// PHASE 9: DOWNLOAD MANAGER ENHANCEMENTS
+// =============================================================================
+
+ipcMain.handle('clear-completed-downloads', (e) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const before = downloadsDB.length;
+  downloadsDB = downloadsDB.filter(d => d.state !== 'completed' && d.state !== 'cancelled' && d.state !== 'interrupted');
+  atomicWriteJson(DOWNLOADS_FILE, downloadsDB);
+  return { ok: true, removed: before - downloadsDB.length, remaining: downloadsDB.length };
+});
+
+// =============================================================================
+// PHASE 9: BOOKMARK HTML EXPORT / IMPORT
+// =============================================================================
+
+ipcMain.handle('export-bookmarks-html', async (e) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, error: 'No window' };
+  try {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Bookmarks',
+      defaultPath: 'staunt_bookmarks.html',
+      filters: [{ name: 'HTML Files', extensions: ['html', 'htm'] }]
+    });
+    if (canceled || !filePath) return { ok: false, error: 'Cancelled' };
+    const lines = [
+      '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
+      '<!-- This is an automatically generated file. -->',
+      '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
+      '<TITLE>Bookmarks</TITLE>',
+      '<H1>Bookmarks</H1>',
+      '<DL><p>'
+    ];
+    for (const bm of bookmarksDB) {
+      const addDate = bm.createdAt ? Math.floor(bm.createdAt / 1000) : Math.floor(Date.now() / 1000);
+      const title = escapeHtml(bm.title || bm.url || '');
+      const url = escapeHtml(bm.url || '');
+      lines.push(`    <DT><A HREF="${url}" ADD_DATE="${addDate}">${title}</A>`);
+    }
+    lines.push('</DL><p>');
+    fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
+    return { ok: true, count: bookmarksDB.length, filePath };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('import-bookmarks-html', async (e) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, error: 'No window' };
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import Bookmarks',
+      filters: [{ name: 'HTML Files', extensions: ['html', 'htm'] }],
+      properties: ['openFile']
+    });
+    if (canceled || !filePaths || !filePaths[0]) return { ok: false, error: 'Cancelled' };
+    const raw = fs.readFileSync(filePaths[0], 'utf-8');
+    // Parse Netscape bookmark format: <A HREF="url" ADD_DATE="ts">Title</A>
+    const regex = /<A\s[^>]*HREF="([^"]+)"[^>]*>([^<]*)<\/A>/gi;
+    let match;
+    let added = 0;
+    const existingUrls = new Set(bookmarksDB.map(b => b.url));
+    while ((match = regex.exec(raw)) !== null) {
+      const url = match[1].trim();
+      const title = match[2].trim() || url;
+      if (!url || url.startsWith('javascript:') || url.startsWith('data:')) continue;
+      if (existingUrls.has(url)) continue;
+      const now = Date.now();
+      bookmarksDB.push({
+        id: now.toString(36) + Math.random().toString(36).substr(2, 6),
+        url,
+        title: title.slice(0, 256),
+        favicon: '',
+        createdAt: now
+      });
+      existingUrls.add(url);
+      added++;
+    }
+    if (added > 0) atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
+    }
+    return { ok: true, added, total: bookmarksDB.length };
   } catch (err) {
     return { ok: false, error: err.message };
   }
