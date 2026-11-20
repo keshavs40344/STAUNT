@@ -65,6 +65,47 @@
       --text-dim: var(--staunt-text-dim);
     }
 
+    [data-theme="dark-oled"] {
+      --staunt-bg-chrome: #000000;
+      --staunt-bg-toolbar: #050505;
+      --staunt-bg-surface: #0f0f0f;
+      --staunt-bg-surface-hover: #1f1f1f;
+      --staunt-bg-omnibox: #000000;
+      --staunt-bg-omnibox-focus: #0a0a0a;
+    }
+    [data-theme="light"] {
+      color-scheme: light;
+      --staunt-bg-chrome: #e2e8f0;
+      --staunt-bg-toolbar: #f1f5f9;
+      --staunt-bg-surface: #ffffff;
+      --staunt-bg-surface-hover: #e2e8f0;
+      --staunt-bg-surface-active: #cbd5e1;
+      --staunt-bg-omnibox: #ffffff;
+      --staunt-bg-omnibox-focus: #f8fafc;
+      --staunt-text-primary: #0f172a;
+      --staunt-text-secondary: #475569;
+      --staunt-text-muted: #64748b;
+      --staunt-text-dim: #64748b;
+      --staunt-border-subtle: rgba(0, 0, 0, 0.1);
+      --staunt-border-medium: rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="sepia"] {
+      color-scheme: light;
+      --staunt-bg-chrome: #e8dcc4;
+      --staunt-bg-toolbar: #f4ecd8;
+      --staunt-bg-surface: #fdf6e2;
+      --staunt-bg-surface-hover: #ebdcb9;
+      --staunt-bg-surface-active: #dfcca5;
+      --staunt-bg-omnibox: #fdf6e2;
+      --staunt-bg-omnibox-focus: #faf1d8;
+      --staunt-text-primary: #3d2f14;
+      --staunt-text-secondary: #6e5832;
+      --staunt-text-muted: #826c44;
+      --staunt-text-dim: #826c44;
+      --staunt-border-subtle: rgba(61, 47, 20, 0.15);
+      --staunt-border-medium: rgba(61, 47, 20, 0.25);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -2439,6 +2480,58 @@
           </div>
         </div>
 
+        <!-- Phase 10: Appearance & Personalization -->
+        <div class="modal-section-title" style="margin-top: 14px;">Appearance &amp; Personalization</div>
+
+        <div class="modal-row">
+          <label class="modal-label" for="settingUiTheme">Browser Theme</label>
+          <select class="modal-select" id="settingUiTheme">
+            <option value="dark" selected>Dark (Sovereign Navy)</option>
+            <option value="dark-oled">OLED Black</option>
+            <option value="light">Light</option>
+            <option value="sepia">Sepia</option>
+          </select>
+        </div>
+
+        <div class="modal-row">
+          <label class="modal-label" for="settingAccentColor">Accent Color</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="color" id="settingAccentColor" value="#d4a359" style="width:38px; height:28px; border:none; border-radius:4px; cursor:pointer; background:none; padding:0;" title="Pick accent color" />
+            <span id="settingAccentColorHex" style="font-size:12px; color:#94a3b8;">#d4a359</span>
+            <button type="button" id="btnResetAccentColor" class="btn-cancel" style="font-size:11px; padding:4px 8px;">Reset</button>
+          </div>
+        </div>
+
+        <div class="modal-row">
+          <label class="modal-label" for="settingFontSize">Interface Font Size</label>
+          <select class="modal-select" id="settingFontSize">
+            <option value="12">Small (12px)</option>
+            <option value="13" selected>Default (13px)</option>
+            <option value="14">Medium (14px)</option>
+            <option value="15">Large (15px)</option>
+            <option value="16">Extra Large (16px)</option>
+          </select>
+        </div>
+
+        <!-- Phase 10: Performance -->
+        <div class="modal-section-title" style="margin-top: 14px;">Performance</div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0;">
+          <div>
+            <div style="font-size:12.5px; font-weight:500; color:#f8fafc;">Hardware Acceleration</div>
+            <div style="font-size:11px; color:#94a3b8;">Use GPU for rendering. Requires restart to take effect.</div>
+          </div>
+          <input type="checkbox" id="settingHardwareAccel" checked style="accent-color:#d4a359; width:16px; height:16px; cursor:pointer;" />
+        </div>
+
+        <div style="padding:8px 0; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-size:12.5px; font-weight:500; color:#f8fafc;">Browser Memory Usage</div>
+            <div id="settingsMemoryDisplay" style="font-size:11px; color:#94a3b8;">Click to refresh</div>
+          </div>
+          <button type="button" id="btnRefreshMemoryStats" class="btn-cancel" style="font-size:11px; padding:4px 10px;">Refresh</button>
+        </div>
+
         <!-- Clear Browsing Data -->
         <div class="modal-section-title" style="margin-top: 14px;">Clear Browsing Data</div>
         <div class="modal-row">
@@ -3168,6 +3261,18 @@
                   downloadPathInput.value = defaultPath || 'Default Downloads Folder';
                 }
               }
+              const themeSelect = document.getElementById('settingUiTheme');
+              if (themeSelect && currentSettings.uiTheme) themeSelect.value = currentSettings.uiTheme;
+              const accentColorInput = document.getElementById('settingAccentColor');
+              const accentColorHex = document.getElementById('settingAccentColorHex');
+              if (accentColorInput && currentSettings.accentColor) {
+                accentColorInput.value = currentSettings.accentColor;
+                if (accentColorHex) accentColorHex.textContent = currentSettings.accentColor;
+              }
+              const fontSizeSelect = document.getElementById('settingFontSize');
+              if (fontSizeSelect && currentSettings.fontSize) fontSizeSelect.value = currentSettings.fontSize;
+              const hwAccelCheck = document.getElementById('settingHardwareAccel');
+              if (hwAccelCheck) hwAccelCheck.checked = currentSettings.hardwareAcceleration !== false;
             }
           } catch (e) {}
         }
@@ -3494,6 +3599,11 @@
         const dntCheck = document.getElementById('settingDoNotTrack');
         const gpcCheck = document.getElementById('settingGlobalPrivacyControl');
         const cookiePolicySelect = document.getElementById('settingCookiePolicy');
+        const themeSelect = document.getElementById('settingUiTheme');
+        const accentColorInput = document.getElementById('settingAccentColor');
+        const fontSizeSelect = document.getElementById('settingFontSize');
+        const hwAccelCheck = document.getElementById('settingHardwareAccel');
+
         if (typeof api.saveSettings === 'function') {
           const nextEngine = engineSelect ? engineSelect.value : 'staunt';
           const nextCustomUrl = customUrlInput ? customUrlInput.value.trim() : '';
@@ -3506,7 +3616,11 @@
             downloadPath: downloadPathInput ? downloadPathInput.value.trim() : '',
             doNotTrack: dntCheck ? dntCheck.checked : true,
             globalPrivacyControl: gpcCheck ? gpcCheck.checked : true,
-            cookiePolicy: cookiePolicySelect ? cookiePolicySelect.value : 'block-third-party'
+            cookiePolicy: cookiePolicySelect ? cookiePolicySelect.value : 'block-third-party',
+            uiTheme: themeSelect ? themeSelect.value : 'dark',
+            accentColor: accentColorInput ? accentColorInput.value : '#d4a359',
+            fontSize: fontSizeSelect ? fontSizeSelect.value : '13',
+            hardwareAcceleration: hwAccelCheck ? hwAccelCheck.checked : true
           });
           if (saveRes && saveRes.success === false) {
             showDownloadToast(saveRes.error || 'Could not save settings', 3000);
@@ -3514,6 +3628,11 @@
           }
           searchClient.setSearchEngine(nextEngine, nextCustomUrl);
           if (saveRes && saveRes.settings && homeInput) homeInput.value = saveRes.settings.homeUrl;
+          if (saveRes && saveRes.settings) {
+            if (saveRes.settings.uiTheme) applyUiTheme(saveRes.settings.uiTheme);
+            if (saveRes.settings.accentColor) applyAccentColor(saveRes.settings.accentColor);
+            if (saveRes.settings.fontSize) applyFontSize(saveRes.settings.fontSize);
+          }
           syncShieldPill(shieldSelect ? shieldSelect.value : 'standard');
           if (favBarCheck && typeof api.toggleFavouritesBar === 'function') {
             await api.toggleFavouritesBar(favBarCheck.checked);
@@ -3522,6 +3641,74 @@
         }
         closeSettingsModal();
       });
+
+      // Phase 10: Appearance & Theme helpers
+      function applyUiTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName || 'dark');
+      }
+      function applyAccentColor(hex) {
+        if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return;
+        const root = document.documentElement;
+        root.style.setProperty('--staunt-brand-primary', hex);
+        root.style.setProperty('--staunt-brand-accent', hex);
+        root.style.setProperty('--accent-gold', hex);
+        root.style.setProperty('--staunt-brand-hover', hex);
+      }
+      function applyFontSize(size) {
+        const sz = parseInt(size, 10);
+        if (!sz || sz < 12 || sz > 18) return;
+        document.documentElement.style.fontSize = sz + 'px';
+      }
+
+      document.getElementById('settingAccentColor')?.addEventListener('input', (e) => {
+        const hex = e.target.value;
+        const hexLabel = document.getElementById('settingAccentColorHex');
+        if (hexLabel) hexLabel.textContent = hex;
+        applyAccentColor(hex);
+      });
+      document.getElementById('btnResetAccentColor')?.addEventListener('click', () => {
+        const accentInput = document.getElementById('settingAccentColor');
+        const hexLabel = document.getElementById('settingAccentColorHex');
+        if (accentInput) accentInput.value = '#d4a359';
+        if (hexLabel) hexLabel.textContent = '#d4a359';
+        applyAccentColor('#d4a359');
+      });
+      document.getElementById('settingUiTheme')?.addEventListener('change', (e) => {
+        applyUiTheme(e.target.value);
+      });
+      document.getElementById('settingFontSize')?.addEventListener('change', (e) => {
+        applyFontSize(e.target.value);
+      });
+
+      // Phase 10: Performance memory usage query
+      document.getElementById('btnRefreshMemoryStats')?.addEventListener('click', async () => {
+        const memDisplay = document.getElementById('settingsMemoryDisplay');
+        if (!memDisplay) return;
+        memDisplay.textContent = 'Measuring...';
+        if (typeof api.getRuntimeStats === 'function') {
+          try {
+            const stats = await api.getRuntimeStats();
+            if (stats) {
+              memDisplay.textContent = `Memory (RSS): ${stats.rssMB} MB | Heap: ${stats.heapUsedMB} MB | Active tabs: ${stats.tabCount}`;
+            } else {
+              memDisplay.textContent = 'Memory data unavailable';
+            }
+          } catch (_) {
+            memDisplay.textContent = 'Error querying memory stats';
+          }
+        }
+      });
+
+      // Apply initial personalization settings on startup
+      if (typeof api.getSettings === 'function') {
+        api.getSettings().then(s => {
+          if (s) {
+            if (s.uiTheme) applyUiTheme(s.uiTheme);
+            if (s.accentColor) applyAccentColor(s.accentColor);
+            if (s.fontSize) applyFontSize(s.fontSize);
+          }
+        }).catch(() => {});
+      }
       if (btnConfirmClear) {
         btnConfirmClear.addEventListener('click', async () => {
           const range = timeRangeSelect ? timeRangeSelect.value : '24h';

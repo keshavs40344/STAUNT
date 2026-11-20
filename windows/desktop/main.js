@@ -320,7 +320,10 @@ const DEFAULT_SETTINGS = {
   showFavouritesBar: true,
   doNotTrack: true,
   globalPrivacyControl: true,
-  cookiePolicy: 'block-third-party'
+  cookiePolicy: 'block-third-party',
+  uiTheme: 'dark',
+  accentColor: '#d4a359',
+  fontSize: '13'
 };
 let settingsDB = { ...DEFAULT_SETTINGS };
 
@@ -3522,7 +3525,8 @@ ipcMain.handle('save-settings', (e, newSettings) => {
   if (!verifyIpcSender(e)) return { success: false };
   if (newSettings && typeof newSettings === 'object') {
     const validated = {};
-    const SUPPORTED_ENGINES = ['staunt', 'google', 'duckduckgo', 'bing', 'brave', 'ecosia', 'yahoo', 'startpage', 'custom'];
+    const allKnownEngines = Object.keys(nativeSearchClient.getAllEngines ? nativeSearchClient.getAllEngines() : {});
+    const SUPPORTED_ENGINES = allKnownEngines.length > 0 ? allKnownEngines.concat(['custom']) : ['staunt', 'google', 'duckduckgo', 'bing', 'brave', 'ecosia', 'yahoo', 'startpage', 'custom'];
     if (typeof newSettings.searchEngine === 'string' && SUPPORTED_ENGINES.includes(newSettings.searchEngine.toLowerCase())) {
       validated.searchEngine = newSettings.searchEngine.toLowerCase();
     }
@@ -3586,6 +3590,15 @@ ipcMain.handle('save-settings', (e, newSettings) => {
     }
     if (['block-third-party', 'allow-all', 'block-all'].includes(newSettings.cookiePolicy)) {
       validated.cookiePolicy = newSettings.cookiePolicy;
+    }
+    if (typeof newSettings.uiTheme === 'string' && ['dark', 'dark-oled', 'light', 'sepia'].includes(newSettings.uiTheme.toLowerCase())) {
+      validated.uiTheme = newSettings.uiTheme.toLowerCase();
+    }
+    if (typeof newSettings.accentColor === 'string' && /^#[0-9a-f]{6}$/i.test(newSettings.accentColor.trim())) {
+      validated.accentColor = newSettings.accentColor.trim().toLowerCase();
+    }
+    if (typeof newSettings.fontSize === 'string' && ['12', '13', '14', '15', '16'].includes(newSettings.fontSize.trim())) {
+      validated.fontSize = newSettings.fontSize.trim();
     }
     settingsDB = { ...settingsDB, ...validated };
     nativeSearchClient.setSearchEngine(settingsDB.searchEngine || 'staunt', settingsDB.customSearchUrl || '');
@@ -4543,6 +4556,12 @@ if (!gotTheSingleInstanceLock) {
       mainWindow.focus();
     }
   });
+
+  if (settingsDB.hardwareAcceleration === false) {
+    try {
+      app.disableHardwareAcceleration();
+    } catch (_) {}
+  }
 
   app.whenReady().then(() => {
     createMainWindow();
