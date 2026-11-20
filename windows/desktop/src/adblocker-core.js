@@ -316,6 +316,19 @@ async function initStauntShieldEngine(userDataPath) {
   return activeBlocker;
 }
 
+let siteShieldOverrideChecker = null;
+let privacyHeaderConfig = { dnt: true, gpc: true, cookiePolicy: 'block-third-party' };
+
+function setSiteShieldOverrideChecker(fn) {
+  siteShieldOverrideChecker = typeof fn === 'function' ? fn : null;
+}
+
+function setPrivacyHeaderConfig(cfg) {
+  if (cfg && typeof cfg === 'object') {
+    privacyHeaderConfig = { ...privacyHeaderConfig, ...cfg };
+  }
+}
+
 function enableShieldInSession(targetSession, onStatsUpdate) {
   if (!targetSession || SHIELD_SESSIONS.has(targetSession)) return;
   SHIELD_SESSIONS.add(targetSession);
@@ -328,6 +341,10 @@ function enableShieldInSession(targetSession, onStatsUpdate) {
 
   targetSession.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
     if (currentShieldLevel === 'off') {
+      return callback({ cancel: false });
+    }
+
+    if (siteShieldOverrideChecker && siteShieldOverrideChecker(details.initiator || details.url)) {
       return callback({ cancel: false });
     }
 
@@ -363,11 +380,32 @@ function enableShieldInSession(targetSession, onStatsUpdate) {
       delete headers['Sec-CH-UA-Platform-Version'];
       delete headers['Sec-CH-UA-Full-Version-List'];
 
-      headers['Sec-GPC'] = '1';
-      headers['DNT'] = '1';
+      if (privacyHeaderConfig.gpc !== false) {
+        headers['Sec-GPC'] = '1';
+      }
+      if (privacyHeaderConfig.dnt !== false) {
+        headers['DNT'] = '1';
+      }
     }
 
     callback({ requestHeaders: headers });
+  });
+
+  targetSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    const policy = privacyHeaderConfig.cookiePolicy || 'block-third-party';
+
+    if (policy === 'block-all') {
+      delete responseHeaders['set-cookie'];
+      delete responseHeaders['Set-Cookie'];
+    } else if (policy === 'block-third-party' && details.initiator) {
+      if (!isFirstParty(details.url, details.initiator) && !isCriticalWhitelisted(details.url)) {
+        delete responseHeaders['set-cookie'];
+        delete responseHeaders['Set-Cookie'];
+      }
+    }
+
+    callback({ responseHeaders });
   });
 }
 
@@ -397,6 +435,8 @@ module.exports = {
   attachShieldToWebContents,
   setShieldLevel,
   getShieldLevel,
+  setSiteShieldOverrideChecker,
+  setPrivacyHeaderConfig,
   isCriticalWhitelisted,
   isFirstParty,
   SURROGATES_SCRIPT,

@@ -131,7 +131,12 @@ app.whenReady().then(async () => {
   ipcMain.handle('check-is-bookmarked', async () => true);
   ipcMain.handle('get-account-state', async () => ({ isLoggedIn: false }));
   ipcMain.handle('get-all-site-permissions', async () => ({ globalDefaults: { camera: 'ask', microphone: 'ask', location: 'ask', notifications: 'ask', 'clipboard-read': 'ask', popups: 'block', fullscreen: 'allow' }, sites: {} }));
-  ipcMain.handle('get-site-permissions', async () => ({ origin: 'about:blank', isSecure: true, globalDefaults: {}, permissions: {} }));
+  ipcMain.handle('get-site-permissions', async () => ({ origin: 'about:blank', isSecure: true, globalDefaults: {}, permissions: {}, shieldEnabled: true, cookieCount: 0 }));
+  ipcMain.handle('get-all-website-data', async () => ({ ok: true, sites: [] }));
+  ipcMain.handle('remove-website-data', async () => ({ ok: true }));
+  ipcMain.handle('clear-site-storage', async () => ({ ok: true }));
+  ipcMain.handle('toggle-site-shield', async () => ({ ok: true }));
+  ipcMain.handle('clear-browsing-data-selective', async () => ({ ok: true }));
   ipcMain.handle('open-download-checked', async (e, p) => ({ success: true }));
   ipcMain.handle('show-in-folder-checked', async (e, p) => ({ success: true }));
 

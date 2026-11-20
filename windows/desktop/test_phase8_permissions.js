@@ -447,6 +447,91 @@ app.whenReady().then(async () => {
     const t14Ok = Boolean(bounds1024.fitsWidth && bounds1024.fitsHeight);
     record('T14-RESPONSIVE-VIEWPORTS', 'Responsive Layout at 1024x768 and 1366x768', t14Ok ? 'PASS' : 'FAIL', bounds1024);
 
+    // =========================================================================
+    // T15: Site-Specific Shield Control & Persistence
+    // =========================================================================
+    const shieldToggleOffRes = await win.webContents.executeJavaScript(`
+      window.stauntAPI.toggleSiteShield({ origin: '${baseUrl}', enabled: false })
+    `);
+    const permAfterShieldOff = await win.webContents.executeJavaScript(`
+      window.stauntAPI.getSitePermissions('${baseUrl}')
+    `);
+    const shieldToggleOnRes = await win.webContents.executeJavaScript(`
+      window.stauntAPI.toggleSiteShield({ origin: '${baseUrl}', enabled: true })
+    `);
+    const permAfterShieldOn = await win.webContents.executeJavaScript(`
+      window.stauntAPI.getSitePermissions('${baseUrl}')
+    `);
+
+    const t15Ok = Boolean(shieldToggleOffRes.ok && permAfterShieldOff.shieldEnabled === false &&
+      shieldToggleOnRes.ok && permAfterShieldOn.shieldEnabled === true);
+    record('T15-SITE-SHIELD-CONTROL', 'Per-Site Shield Override Toggle & State Query', t15Ok ? 'PASS' : 'FAIL', {
+      shieldOff: permAfterShieldOff.shieldEnabled,
+      shieldOn: permAfterShieldOn.shieldEnabled
+    });
+
+    // =========================================================================
+    // T16: Website Storage & Cookie Management
+    // =========================================================================
+    const storageSummary = await win.webContents.executeJavaScript(`
+      window.stauntAPI.getSiteStorageSummary('${baseUrl}')
+    `);
+    const allWebData = await win.webContents.executeJavaScript(`
+      window.stauntAPI.getAllWebsiteData()
+    `);
+    const clearStorageRes = await win.webContents.executeJavaScript(`
+      window.stauntAPI.clearSiteStorage('${baseUrl}')
+    `);
+
+    const t16Ok = Boolean(storageSummary.ok && typeof storageSummary.cookieCount === 'number' &&
+      allWebData.ok && Array.isArray(allWebData.sites) &&
+      clearStorageRes.ok);
+    record('T16-COOKIE-DATA-MANAGEMENT', 'Website Storage Inspection & Per-Site Clearing', t16Ok ? 'PASS' : 'FAIL', {
+      storageSummary,
+      sitesCount: allWebData.sites.length,
+      clearStorageRes
+    });
+
+    // =========================================================================
+    // T17: Granular Selective Clear Browsing Data
+    // =========================================================================
+    const selectiveClearRes = await win.webContents.executeJavaScript(`
+      window.stauntAPI.clearBrowsingDataSelective({
+        range: '1h',
+        history: true,
+        cookies: true,
+        cache: true,
+        downloads: true
+      })
+    `);
+
+    const t17Ok = Boolean(selectiveClearRes && selectiveClearRes.ok);
+    record('T17-CLEAR-BROWSING-DATA-SELECTIVE', 'Selective Browsing Data Clearing with Categories & Time Range', t17Ok ? 'PASS' : 'FAIL', selectiveClearRes);
+
+    // =========================================================================
+    // T18: Global Privacy Settings (DNT, GPC, Cookie Policy)
+    // =========================================================================
+    const savePrivacySettingsRes = await win.webContents.executeJavaScript(`
+      window.stauntAPI.saveSettings({
+        doNotTrack: true,
+        globalPrivacyControl: true,
+        cookiePolicy: 'block-third-party'
+      })
+    `);
+    const currentSettings = await win.webContents.executeJavaScript(`
+      window.stauntAPI.getSettings()
+    `);
+
+    const t18Ok = Boolean(savePrivacySettingsRes && savePrivacySettingsRes.success &&
+      currentSettings.doNotTrack === true &&
+      currentSettings.globalPrivacyControl === true &&
+      currentSettings.cookiePolicy === 'block-third-party');
+    record('T18-GLOBAL-PRIVACY-SETTINGS', 'Global Privacy Controls (DNT, GPC, Cookie Policy)', t18Ok ? 'PASS' : 'FAIL', {
+      doNotTrack: currentSettings.doNotTrack,
+      globalPrivacyControl: currentSettings.globalPrivacyControl,
+      cookiePolicy: currentSettings.cookiePolicy
+    });
+
     // Write final audit summary JSON
     fs.writeFileSync(path.join(SHOT_DIR, 'phase8_permissions_report.json'), JSON.stringify(results, null, 2));
 

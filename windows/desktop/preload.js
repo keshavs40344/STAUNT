@@ -382,6 +382,15 @@ const secureAPI = Object.freeze({
     });
   },
   resetAllSitePermissions: () => ipcRenderer.invoke('reset-all-site-permissions'),
+  toggleSiteShield: (payload) => ipcRenderer.invoke('toggle-site-shield', {
+    origin: sanitizeString(payload && payload.origin, 512),
+    enabled: Boolean(payload && payload.enabled)
+  }),
+  getSiteStorageSummary: (origin) => ipcRenderer.invoke('get-site-storage-summary', sanitizeString(origin, 512)),
+  clearSiteStorage: (origin) => ipcRenderer.invoke('clear-site-storage', sanitizeString(origin, 512)),
+  getAllWebsiteData: () => ipcRenderer.invoke('get-all-website-data'),
+  removeWebsiteData: (domain) => ipcRenderer.invoke('remove-website-data', sanitizeString(domain, 256)),
+  clearBrowsingDataSelective: (payload) => ipcRenderer.invoke('clear-browsing-data-selective', payload),
   onSitePermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('site-permissions-updated', (_e, d) => cb(d)); },
   onGlobalPermissionsUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('global-permissions-updated', (_e, d) => cb(d)); }
 });
