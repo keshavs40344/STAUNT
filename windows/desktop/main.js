@@ -290,6 +290,11 @@ function canTabGoForward(wc) {
 
 function isSafeHttpUrl(urlStr) {
   try {
+    if (typeof urlStr === 'string' && urlStr.toLowerCase().startsWith('view-source:')) {
+      const inner = urlStr.slice(12).trim();
+      const u = new URL(inner);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    }
     const u = new URL(urlStr);
     return u.protocol === 'http:' || u.protocol === 'https:';
   } catch (_) {
@@ -1600,7 +1605,7 @@ function setupWebContentsEvents(tabObj) {
         handleDesktopAuthLogout(tabObj);
         return;
       }
-      if (navigationUrl === 'about:blank' || navigationUrl.startsWith('about:')) {
+      if (navigationUrl === 'about:blank' || navigationUrl.startsWith('about:') || navigationUrl.toLowerCase().startsWith('view-source:')) {
         return;
       }
       const parsed = new URL(navigationUrl);
@@ -1631,7 +1636,61 @@ function setupWebContentsEvents(tabObj) {
     const isCtrl = Boolean(input.control || input.meta);
     const key = String(input.key || '').toLowerCase();
 
-    if (isCtrl && !input.shift && !input.alt && (key === 'l' || key === 'k' || key === 'e')) {
+    // Core Browser Shortcuts inside web page
+    if (isCtrl && !input.shift && !input.alt && key === 't') {
+      event.preventDefault();
+      createTab('staunt://newtab', { workspaceId: tabObj.workspaceId });
+    } else if (isCtrl && !input.shift && !input.alt && key === 'w') {
+      event.preventDefault();
+      closeTab(tabObj.id);
+    } else if (isCtrl && input.shift && !input.alt && key === 't') {
+      event.preventDefault();
+      undoCloseTab();
+    } else if (isCtrl && input.shift && !input.alt && key === 'n') {
+      event.preventDefault();
+      createTab('staunt://newtab', { workspaceId: tabObj.workspaceId, isIncognito: true });
+    } else if (isCtrl && !input.shift && !input.alt && key === 'd') {
+      event.preventDefault();
+      toggleBookmarkCurrentPage();
+    } else if (isCtrl && !input.shift && !input.alt && key === 'p') {
+      event.preventDefault();
+      if (!wc.isDestroyed()) wc.print({ silent: false, printBackground: true });
+    } else if (isCtrl && !input.shift && !input.alt && key === 's') {
+      event.preventDefault();
+      saveCurrentPage();
+    } else if (isCtrl && !input.shift && !input.alt && key === 'u') {
+      event.preventDefault();
+      const current = wc.getURL();
+      if (current && isSafeHttpUrl(current)) {
+        createTab('view-source:' + current, { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito });
+      }
+    } else if (isCtrl && (key === '=' || key === '+')) {
+      event.preventDefault();
+      const nextZoom = Math.min(3, (tabObj.zoomLevel || 0) + 0.5);
+      tabObj.zoomLevel = nextZoom;
+      if (!wc.isDestroyed()) wc.setZoomLevel(nextZoom);
+    } else if (isCtrl && (key === '-' || key === '_')) {
+      event.preventDefault();
+      const nextZoom = Math.max(-3, (tabObj.zoomLevel || 0) - 0.5);
+      tabObj.zoomLevel = nextZoom;
+      if (!wc.isDestroyed()) wc.setZoomLevel(nextZoom);
+    } else if (isCtrl && key === '0') {
+      event.preventDefault();
+      tabObj.zoomLevel = 0;
+      if (!wc.isDestroyed()) wc.setZoomLevel(0);
+    } else if (input.key === 'F5') {
+      event.preventDefault();
+      if (input.control) {
+        if (!wc.isDestroyed()) wc.reloadIgnoringCache();
+      } else {
+        handleReload();
+      }
+    } else if (input.key === 'F11') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      }
+    } else if (isCtrl && !input.shift && !input.alt && (key === 'l' || key === 'k' || key === 'e')) {
       event.preventDefault();
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.focus();
@@ -1954,6 +2013,10 @@ function setupWebContentsEvents(tabObj) {
       ...(params.isEditable ? [{ label: 'Paste', enabled: params.editFlags.canPaste, click: () => wc.paste() }] : []),
       { label: 'Select All', enabled: params.editFlags.canSelectAll !== false, click: () => wc.selectAll() },
       { type: 'separator' },
+      ...(isSafeHttpUrl(wc.getURL()) ? [
+        { label: 'View Page Source', click: () => createTab('view-source:' + wc.getURL(), { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito }) },
+        { type: 'separator' }
+      ] : []),
       { label: 'Inspect Element', click: () => { wc.inspectElement(params.x, params.y); } }
     ].filter(Boolean));
     const viewX = (isSplitViewActive && tabObj.id === secondaryTabId && mainWindow && !mainWindow.isDestroyed())
@@ -2189,19 +2252,42 @@ function handleStop() {
   }
 }
 
-// Tab Hibernation Engine (15 mins inactive)
-setInterval(() => {
+// Tab Hibernation Engine (15 mins inactive, skip pinned/audio/unsaved forms)
+setInterval(async () => {
   const now = Date.now();
   const HIBERNATE_THRESHOLD = 15 * 60 * 1000;
 
-  tabs.forEach((tab) => {
+  for (const tab of tabs.values()) {
     if (
       !tab.isHibernated &&
       tab.id !== activeTabId &&
       tab.id !== secondaryTabId &&
+      !tab.isPinned &&
       !tab.isAudioPlaying &&
-      (now - tab.lastActiveTime > HIBERNATE_THRESHOLD)
+      tab.url && !tab.url.startsWith('staunt://') &&
+      (now - (tab.lastActiveTime || now) > HIBERNATE_THRESHOLD)
     ) {
+      // Check if page has active forms or user unsaved data before sleeping
+      let hasUnsaved = false;
+      try {
+        if (tab.view && tab.view.webContents && !tab.view.webContents.isDestroyed()) {
+          hasUnsaved = await tab.view.webContents.executeJavaScript(`
+            (() => {
+              if (window.onbeforeunload) return true;
+              const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea');
+              for (const el of inputs) {
+                if (el.value && el.value !== el.defaultValue) return true;
+              }
+              return false;
+            })()
+          `);
+        }
+      } catch (_) {}
+
+      if (hasUnsaved) {
+        continue; // Protect user work from being discarded!
+      }
+
       console.log(`[RAM HIBERNATION] Sleeping tab ${tab.id}: ${tab.title}`);
       detachTabView(tab);
       try {
@@ -2217,7 +2303,7 @@ setInterval(() => {
       tab.isHibernated = true;
       notifyTabUpdated(tab);
     }
-  });
+  }
 }, 60000);
 
 function wakeHibernatedTab(tab) {
@@ -2317,6 +2403,13 @@ function formatUrlOrSearch(input) {
 
   if (!trimmed || trimmed === 'staunt://newtab' || trimmed === 'about:newtab' || trimmed === 'about:blank') {
     return newTabUrl;
+  }
+
+  if (trimmed.toLowerCase().startsWith('view-source:')) {
+    const sub = trimmed.slice(12).trim();
+    if (/^https?:\/\//i.test(sub)) {
+      return 'view-source:' + sub;
+    }
   }
 
   if (/^(javascript|vbscript):/i.test(trimmed) || /^data:\s*text\/html/i.test(trimmed) || trimmed.startsWith('file:')) {
