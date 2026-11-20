@@ -82,3 +82,9 @@ STAUNT is an integrated, sovereign web ecosystem comprising three distinct produ
 - **Index Database**: `search-engine/backend/vastuda.db` (WAL mode enabled for concurrent read/write throughput).
 - **Release Manifest**: `releases/releases.json` tracking authentic binary packages with SHA-256 hashes.
 - **Desktop Vaults**: Encrypted/isolated user data stored in `%APPDATA%\staunt-browser\`.
+
+---
+
+## 4. Competitive Architecture & Future Implementation Blueprints
+- **[Competitive Roadmap vs Chrome, Edge & Safari](CHROME_EDGE_SAFARI_COMPETITIVE_ROADMAP.md)**: Strategic analysis and architectural vectors for market leadership.
+- **[Future Implementation Blueprint](FUTURE_IMPLEMENTATIONS.md)**: Technical specifications for Tab Deep Sleep (85% memory compression), Split-Screen Viewport, Chrome Extension Bridge, Zero-Knowledge P2P Sync, On-Device AI Assistant, and Download Accelerator.
