@@ -25,4 +25,4 @@ nsis:
 publish:
   provider: github
   owner: keshavs40344
-  repo: VASTUDA
+  repo: STAUNT
