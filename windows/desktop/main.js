@@ -1646,6 +1646,9 @@ function setupWebContentsEvents(tabObj) {
     } else if (isCtrl && input.shift && !input.alt && key === 't') {
       event.preventDefault();
       undoCloseTab();
+    } else if (isCtrl && !input.shift && !input.alt && key === 'n') {
+      event.preventDefault();
+      createTab('staunt://newtab', { workspaceId: tabObj.workspaceId });
     } else if (isCtrl && input.shift && !input.alt && key === 'n') {
       event.preventDefault();
       createTab('staunt://newtab', { workspaceId: tabObj.workspaceId, isIncognito: true });
@@ -4660,8 +4663,102 @@ ipcMain.handle('autofill-active-tab', async (e, credId) => {
   }
 });
 
+let isVaultUnlocked = true;
+function isVaultCurrentlyLocked() {
+  if (!settingsDB || !settingsDB.masterPasswordHash) return false;
+  return !isVaultUnlocked;
+}
+function hashMasterPassword(password, salt) {
+  return crypto.scryptSync(password, salt || 'staunt-master-salt-v1', 32).toString('hex');
+}
+
+ipcMain.handle('is-vault-locked', (e) => {
+  if (!verifyIpcSender(e)) return { locked: false, hasMasterPassword: false };
+  return {
+    locked: isVaultCurrentlyLocked(),
+    hasMasterPassword: Boolean(settingsDB && settingsDB.masterPasswordHash)
+  };
+});
+
+ipcMain.handle('unlock-vault', (e, password) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (!settingsDB || !settingsDB.masterPasswordHash) {
+    isVaultUnlocked = true;
+    return { ok: true };
+  }
+  const inputPwd = String(password || '');
+  const salt = settingsDB.masterPasswordSalt || 'staunt-master-salt-v1';
+  const inputHash = hashMasterPassword(inputPwd, salt);
+  if (inputHash === settingsDB.masterPasswordHash) {
+    isVaultUnlocked = true;
+    return { ok: true };
+  }
+  return { ok: false, error: 'Incorrect master password' };
+});
+
+ipcMain.handle('lock-vault', (e) => {
+  if (!verifyIpcSender(e)) return { ok: false };
+  if (settingsDB && settingsDB.masterPasswordHash) {
+    isVaultUnlocked = false;
+  }
+  return { ok: true, locked: isVaultCurrentlyLocked() };
+});
+
+ipcMain.handle('set-master-password', (e, payload) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const currentPwd = String(payload && payload.currentPassword || '');
+  const newPwd = String(payload && payload.newPassword || '').trim();
+  if (settingsDB && settingsDB.masterPasswordHash) {
+    const salt = settingsDB.masterPasswordSalt || 'staunt-master-salt-v1';
+    const checkHash = hashMasterPassword(currentPwd, salt);
+    if (checkHash !== settingsDB.masterPasswordHash) {
+      return { ok: false, error: 'Current master password incorrect' };
+    }
+  }
+  if (!newPwd) {
+    delete settingsDB.masterPasswordHash;
+    delete settingsDB.masterPasswordSalt;
+    isVaultUnlocked = true;
+  } else {
+    const salt = crypto.randomBytes(16).toString('hex');
+    settingsDB.masterPasswordSalt = salt;
+    settingsDB.masterPasswordHash = hashMasterPassword(newPwd, salt);
+    isVaultUnlocked = true;
+  }
+  saveSettingsDB();
+  return { ok: true, hasMasterPassword: Boolean(settingsDB && settingsDB.masterPasswordHash) };
+});
+
+ipcMain.handle('copy-credential-password', (e, credId) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (isVaultCurrentlyLocked()) return { ok: false, error: 'Vault is locked' };
+  const cleanId = String(credId || '').trim();
+  const cred = credentialsDB.find(c => c.id === cleanId);
+  if (!cred) return { ok: false, error: 'Credential not found' };
+  const plain = decryptCredential(cred.encryptedPassword);
+  if (!plain) return { ok: false, error: 'Decryption failed' };
+  clipboard.writeText(plain);
+  return { ok: true };
+});
+
+ipcMain.handle('update-credential', (e, payload) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  if (isVaultCurrentlyLocked()) return { ok: false, error: 'Vault is locked' };
+  const cleanId = String(payload && payload.id || '').trim();
+  const cred = credentialsDB.find(c => c.id === cleanId);
+  if (!cred) return { ok: false, error: 'Credential not found' };
+  if (typeof payload.username === 'string') cred.username = payload.username.trim().slice(0, 256);
+  if (typeof payload.password === 'string' && payload.password) {
+    cred.encryptedPassword = encryptCredential(payload.password);
+  }
+  cred.updatedAt = Date.now();
+  saveCredentialsDB();
+  return { ok: true };
+});
+
 ipcMain.handle('get-all-credentials', (e) => {
   if (!verifyIpcSender(e)) return [];
+  if (isVaultCurrentlyLocked()) return [];
   return credentialsDB.map(c => ({
     id: c.id,
     origin: c.origin,

@@ -2238,31 +2238,52 @@
     </div>
   </div>
 
-  <!-- Password Manager Modal (Phase 9) -->
+  <!-- Password Manager Modal (Phase 9 & Production Hardened) -->
   <div class="modal-overlay" id="passwordManagerModal" role="dialog" aria-modal="true">
     <div class="modal-box" style="width:540px;">
       <div class="modal-header">
         <div class="modal-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4a359" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span>Saved Passwords</span>
+          <span>Password Vault</span>
         </div>
         <button class="modal-close" id="btnPasswordManagerClose">&times;</button>
       </div>
       <div class="modal-body">
-        <div style="display:flex; gap:8px; padding:0 0 10px 0; align-items:center;">
-          <input type="text" class="modal-filter-input" id="passwordManagerFilter" placeholder="Search saved passwords..." style="flex:1; margin:0;" />
-          <button class="btn-cancel" id="btnDeleteAllPasswords" style="white-space:nowrap; padding:6px 12px; font-size:12px; color:#f43f5e; border-color:rgba(244,63,94,0.3);" title="Delete all saved passwords">Delete All</button>
+        <!-- Vault Locked Screen -->
+        <div id="vaultLockScreen" style="display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px 16px; text-align:center; gap:12px;">
+          <div style="width:44px; height:44px; border-radius:50%; background:rgba(212,163,89,0.15); display:flex; align-items:center; justify-content:center; color:#d4a359;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style="font-size:14px; font-weight:600; color:var(--text-main);">Vault is Locked</div>
+          <div style="font-size:12px; color:var(--text-muted); max-width:320px;">Enter your master password to decrypt and view saved credentials.</div>
+          <div style="display:flex; gap:8px; width:100%; max-width:300px; margin-top:6px;">
+            <input type="password" id="vaultMasterPasswordInput" class="form-input" placeholder="Master Password" style="flex:1;" />
+            <button class="btn-primary-action" id="btnUnlockVaultAction">Unlock</button>
+          </div>
+          <div id="vaultUnlockError" style="font-size:11px; color:#f43f5e; display:none;"></div>
         </div>
-        <div class="modal-scroll-list" id="passwordManagerList">
-          <div class="empty-list-notice">
-            <div class="empty-list-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+
+        <!-- Vault Content Screen -->
+        <div id="vaultContentScreen">
+          <div style="display:flex; gap:8px; padding:0 0 10px 0; align-items:center;">
+            <input type="text" class="modal-filter-input" id="passwordManagerFilter" placeholder="Search saved passwords..." style="flex:1; margin:0;" />
+            <button class="btn-cancel" id="btnDeleteAllPasswords" style="white-space:nowrap; padding:6px 12px; font-size:12px; color:#f43f5e; border-color:rgba(244,63,94,0.3);" title="Delete all saved passwords">Delete All</button>
+          </div>
+          <div class="modal-scroll-list" id="passwordManagerList">
+            <div class="empty-list-notice">
+              <div class="empty-list-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <span>No saved passwords found.</span>
             </div>
-            <span>No saved passwords found.</span>
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn-cancel" id="btnConfigureMasterPassword" style="font-size:11.5px; padding:5px 10px;">Master Password...</button>
+          <button class="btn-cancel" id="btnLockVaultNow" style="font-size:11.5px; padding:5px 10px; display:none;">Lock Vault</button>
+        </div>
         <button class="btn-primary-action" id="btnClosePasswordManager">Done</button>
       </div>
     </div>
@@ -4677,6 +4698,30 @@
       }
 
       async function renderPasswordManagerList() {
+        const lockScreen = document.getElementById('vaultLockScreen');
+        const contentScreen = document.getElementById('vaultContentScreen');
+        const btnLock = document.getElementById('btnLockVaultNow');
+        
+        let lockState = { locked: false, hasMasterPassword: false };
+        if (typeof api.isVaultLocked === 'function') {
+          try { lockState = await api.isVaultLocked(); } catch(_) {}
+        }
+
+        if (lockState.locked) {
+          if (lockScreen) lockScreen.style.display = 'flex';
+          if (contentScreen) contentScreen.style.display = 'none';
+          if (btnLock) btnLock.style.display = 'none';
+          const pwInput = document.getElementById('vaultMasterPasswordInput');
+          if (pwInput) { pwInput.value = ''; pwInput.focus(); }
+          const errEl = document.getElementById('vaultUnlockError');
+          if (errEl) errEl.style.display = 'none';
+          return;
+        }
+
+        if (lockScreen) lockScreen.style.display = 'none';
+        if (contentScreen) contentScreen.style.display = 'block';
+        if (btnLock) btnLock.style.display = lockState.hasMasterPassword ? 'inline-block' : 'none';
+
         if (!passwordManagerList) return;
         passwordManagerList.innerHTML = '<div class="empty-list-notice">Loading...</div>';
         try {
@@ -4711,9 +4756,34 @@
               <span class="entry-meta" style="display:block;">${c.username ? escapeHtml(c.username) : '<em style="color:#64748b">No username</em>'}</span>
             </div>
             <div class="entry-actions">
+              <button class="entry-btn-sm btn-pw-copy-user" title="Copy username">User</button>
+              <button class="entry-btn-sm btn-pw-copy-pass" title="Copy decrypted password to clipboard">Copy Pass</button>
               <button class="entry-btn-sm btn-pw-delete" data-id="${escapeHtml(c.id)}" title="Delete saved password">Delete</button>
             </div>
           `;
+          row.querySelector('.btn-pw-copy-user')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (c.username) {
+              navigator.clipboard?.writeText(c.username).then(() => {
+                showDownloadToast('Username copied to clipboard', 1800);
+              }).catch(() => {});
+            } else {
+              showDownloadToast('No username saved', 1800);
+            }
+          });
+
+          row.querySelector('.btn-pw-copy-pass')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (typeof api.copyCredentialPassword === 'function') {
+              const res = await api.copyCredentialPassword(c.id);
+              if (res && res.ok) {
+                showDownloadToast('✓ Password copied to clipboard', 2200);
+              } else {
+                showDownloadToast(res && res.error ? res.error : 'Failed to copy password', 2200);
+              }
+            }
+          });
+
           row.querySelector('.btn-pw-delete')?.addEventListener('click', async (e) => {
             e.stopPropagation();
             if (typeof api.deleteCredential === 'function') {
@@ -4725,6 +4795,60 @@
           passwordManagerList.appendChild(row);
         });
       }
+
+      document.getElementById('btnUnlockVaultAction')?.addEventListener('click', async () => {
+        const pwInput = document.getElementById('vaultMasterPasswordInput');
+        const errEl = document.getElementById('vaultUnlockError');
+        const pwd = pwInput ? pwInput.value : '';
+        if (typeof api.unlockVault === 'function') {
+          const res = await api.unlockVault(pwd);
+          if (res && res.ok) {
+            renderPasswordManagerList();
+          } else {
+            if (errEl) {
+              errEl.textContent = res && res.error ? res.error : 'Incorrect master password';
+              errEl.style.display = 'block';
+            }
+          }
+        }
+      });
+
+      document.getElementById('vaultMasterPasswordInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('btnUnlockVaultAction')?.click();
+      });
+
+      document.getElementById('btnLockVaultNow')?.addEventListener('click', async () => {
+        if (typeof api.lockVault === 'function') {
+          await api.lockVault();
+          renderPasswordManagerList();
+          showDownloadToast('Vault locked', 1800);
+        }
+      });
+
+      document.getElementById('btnConfigureMasterPassword')?.addEventListener('click', async () => {
+        let lockState = { hasMasterPassword: false };
+        if (typeof api.isVaultLocked === 'function') {
+          try { lockState = await api.isVaultLocked(); } catch(_) {}
+        }
+        let currentPwd = '';
+        if (lockState.hasMasterPassword) {
+          currentPwd = prompt('Enter CURRENT master password:') || '';
+          if (!currentPwd) return;
+        }
+        const newPwd = prompt(lockState.hasMasterPassword 
+          ? 'Enter NEW master password (leave blank to remove master password):' 
+          : 'Enter NEW master password to protect your vault:');
+        if (newPwd === null) return;
+        if (typeof api.setMasterPassword === 'function') {
+          const res = await api.setMasterPassword({ currentPassword: currentPwd, newPassword: newPwd });
+          if (res && res.ok) {
+            showDownloadToast(res.hasMasterPassword ? '✓ Master password configured' : '✓ Master password removed', 2400);
+            renderPasswordManagerList();
+          } else {
+            alert(res && res.error ? res.error : 'Failed to update master password');
+          }
+        }
+      });
 
       passwordManagerFilter?.addEventListener('input', (e) => {
         _pwFilterQuery = e.target.value || '';

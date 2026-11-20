@@ -409,6 +409,19 @@ const secureAPI = Object.freeze({
   fillCredential: (id) => ipcRenderer.invoke('fill-credential', sanitizeString(id, 64)),
   autofillActiveTab: (credId) => ipcRenderer.invoke('autofill-active-tab', sanitizeString(credId, 64)),
   getAllCredentials: () => ipcRenderer.invoke('get-all-credentials'),
+  isVaultLocked: () => ipcRenderer.invoke('is-vault-locked'),
+  unlockVault: (password) => ipcRenderer.invoke('unlock-vault', sanitizeString(password, 256)),
+  lockVault: () => ipcRenderer.invoke('lock-vault'),
+  setMasterPassword: (payload) => ipcRenderer.invoke('set-master-password', {
+    currentPassword: sanitizeString(payload && payload.currentPassword, 256),
+    newPassword: sanitizeString(payload && payload.newPassword, 256)
+  }),
+  copyCredentialPassword: (id) => ipcRenderer.invoke('copy-credential-password', sanitizeString(id, 64)),
+  updateCredential: (payload) => ipcRenderer.invoke('update-credential', {
+    id: sanitizeString(payload && payload.id, 64),
+    username: sanitizeString(payload && payload.username, 256),
+    password: sanitizeString(payload && payload.password, 1024)
+  }),
   checkSavedCredential: (origin) => ipcRenderer.invoke('check-saved-credential', sanitizeString(origin, 512)),
   deleteAllCredentials: () => ipcRenderer.invoke('delete-all-credentials'),
   onSavePasswordPrompt: (cb) => { if (typeof cb === 'function') ipcRenderer.on('save-password-prompt', (_e, d) => cb(d)); },
