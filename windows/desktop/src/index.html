@@ -1999,6 +1999,16 @@
           <label class="modal-label" for="favInputUrl">Website URL</label>
           <input type="text" class="modal-filter-input" id="favInputUrl" placeholder="https://github.com" style="margin-bottom:0;" autocomplete="off" />
         </div>
+        <div class="modal-row" style="margin-top: 10px;">
+          <label class="modal-label" for="favInputFolder">Folder (Optional)</label>
+          <input type="text" class="modal-filter-input" id="favInputFolder" placeholder="e.g. Work, Research, Reading, Personal" style="margin-bottom:0;" autocomplete="off" list="favFolderDatalist" />
+          <datalist id="favFolderDatalist">
+            <option value="Work"></option>
+            <option value="Research"></option>
+            <option value="Personal"></option>
+            <option value="Reading"></option>
+          </datalist>
+        </div>
         <div id="favModalError" style="color: #f43f5e; font-size: 11.5px; display: none;"></div>
       </div>
       <div class="modal-footer">
@@ -3965,7 +3975,10 @@
             ${iconBlock}
             <div class="entry-info">
               <span class="entry-title">${escapeHtml(item.title || domain)}</span>
-              <span class="entry-meta">${escapeHtml(domain)}</span>
+              <span class="entry-meta">
+                ${escapeHtml(domain)}
+                ${item.folder ? `<span style="display:inline-block;padding:1px 6px;background:rgba(212,163,89,0.14);color:#d4a359;border-radius:3px;font-size:10px;font-weight:600;margin-left:6px;">📁 ${escapeHtml(item.folder)}</span>` : ''}
+              </span>
             </div>
             <div class="entry-actions">
               <button class="entry-btn-sm btn-edit-bm" title="Edit bookmark">Edit</button>
@@ -4003,7 +4016,11 @@
       if (bookmarksFilterInput) {
         bookmarksFilterInput.addEventListener('input', () => {
           const q = bookmarksFilterInput.value.toLowerCase().trim();
-          const filtered = currentBookmarksData.filter(b => (b.title && b.title.toLowerCase().includes(q)) || (b.url && b.url.toLowerCase().includes(q)));
+          const filtered = currentBookmarksData.filter(b => 
+            (b.title && b.title.toLowerCase().includes(q)) || 
+            (b.url && b.url.toLowerCase().includes(q)) ||
+            (b.folder && b.folder.toLowerCase().includes(q))
+          );
           renderBookmarksItems(filtered);
         });
       }
@@ -4037,6 +4054,7 @@
       const btnFavModalSave = document.getElementById('btnFavModalSave');
       const favInputName = document.getElementById('favInputName');
       const favInputUrl = document.getElementById('favInputUrl');
+      const favInputFolder = document.getElementById('favInputFolder');
       const favModalError = document.getElementById('favModalError');
       const menuItemToggleFavBar = document.getElementById('menuItemToggleFavBar');
       const labelToggleFavBar = document.getElementById('labelToggleFavBar');
@@ -4361,6 +4379,7 @@
 
         if (favInputName) favInputName.value = defaultTitle;
         if (favInputUrl) favInputUrl.value = defaultUrl;
+        if (favInputFolder) favInputFolder.value = '';
 
         if (favouriteEditModal) {
           favouriteEditModal.classList.add('active');
@@ -4376,6 +4395,7 @@
         if (favModalError) favModalError.style.display = 'none';
         if (favInputName) favInputName.value = item.title || '';
         if (favInputUrl) favInputUrl.value = item.url || '';
+        if (favInputFolder) favInputFolder.value = item.folder || '';
 
         if (favouriteEditModal) {
           favouriteEditModal.classList.add('active');
@@ -4393,6 +4413,7 @@
       async function saveFavouriteModal() {
         const name = (favInputName?.value || '').trim();
         let url = (favInputUrl?.value || '').trim();
+        const folder = (favInputFolder?.value || '').trim();
 
         if (!name) {
           if (favModalError) {
@@ -4429,12 +4450,12 @@
 
         if (editingFavId) {
           if (typeof api.editBookmark === 'function') {
-            await api.editBookmark(editingFavId, { title: name, url });
+            await api.editBookmark(editingFavId, { title: name, url, folder });
             showDownloadToast('Favourite updated', 1800);
           }
         } else {
           if (typeof api.addBookmark === 'function') {
-            api.addBookmark({ title: name, url, favicon: getFaviconUrl(url) });
+            api.addBookmark({ title: name, url, favicon: getFaviconUrl(url), folder });
             showDownloadToast('Favourite added', 1800);
           }
         }

@@ -169,6 +169,12 @@
           ? 'Unable to reach STAUNT Search for "' + query + '". Check your internet connection and retry.'
           : 'Unable to reach STAUNT Search. Check your internet connection and retry.';
         btnSearch.style.display = 'none';
+      } else if (kind === 'crash') {
+        iconWrap.classList.add('security');
+        errTitle.textContent = 'Tab Process Terminated';
+        errDesc.textContent = 'The web rendering process for this tab unexpectedly stopped' + (desc ? ' (' + desc + ')' : '') + '. Click Reload Tab to restore this page.';
+        btnRetry.textContent = 'Reload Tab';
+        btnSearch.style.display = 'none';
       }
 
       if (targetUrl) {

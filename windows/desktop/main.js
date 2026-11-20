@@ -1796,13 +1796,7 @@ function setupWebContentsEvents(tabObj) {
   // Fault-Tolerant Crash Guard
   wc.on('render-process-gone', (e, details) => {
     console.error(`[CRASH GUARD] Tab ${tabObj.id} render process terminated:`, details.reason);
-    detachTabView(tabObj);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('tab-crashed', {
-        tabId: tabObj.id,
-        reason: details.reason
-      });
-    }
+    recoverCrashedTab(tabObj, details.reason);
   });
 
   // Find In Page Result Listener (wires match ordinal & count back to renderer)
@@ -2370,6 +2364,104 @@ function wakeHibernatedTab(tab) {
   notifyTabUpdated(tab);
 }
 
+function recoverCrashedTab(tabObj, reason) {
+  if (!tabObj || !tabs.has(tabObj.id)) return;
+  tabObj.isError = true;
+  tabObj.failedUrl = tabObj.url;
+  tabObj.title = 'Tab Crashed';
+  notifyTabUpdated(tabObj);
+  broadcastUrlSync(tabObj);
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('tab-crashed', {
+      tabId: tabObj.id,
+      reason: reason || 'crashed'
+    });
+    mainWindow.webContents.send('toast-message', `Tab terminated (${reason || 'crashed'}). Reload to recover.`);
+  }
+
+  detachTabView(tabObj);
+  try {
+    if (tabObj.view && tabObj.view.webContents && !tabObj.view.webContents.isDestroyed()) {
+      tabObj.view.webContents.stop();
+      tabObj.view.webContents.close();
+      if (typeof tabObj.view.webContents.destroy === 'function') tabObj.view.webContents.destroy();
+    }
+  } catch (_) {}
+
+  try {
+    const tabSes = tabObj.session || (tabObj.isIncognito ? session.fromPartition(`incognito-${Date.now()}-${tabObj.id}`, { cache: false }) : session.defaultSession);
+    const webPrefs = {
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      nodeIntegrationInWorker: false,
+      nodeIntegrationInSubFrames: false,
+      enableRemoteModule: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      session: tabSes,
+      plugins: true,
+      enableWebSQL: false,
+      webviewTag: false
+    };
+
+    if (typeof WebContentsView !== 'undefined') {
+      tabObj.view = new WebContentsView({ webPreferences: webPrefs });
+    } else {
+      tabObj.view = new BrowserView({ webPreferences: webPrefs });
+    }
+    if (tabObj.view.setBackgroundColor) tabObj.view.setBackgroundColor('#090a0f');
+
+    setupWebContentsEvents(tabObj);
+    if (activeTabId === tabObj.id) {
+      attachTabView(tabObj);
+      updateLayoutBounds();
+    }
+
+    const errParams = new URLSearchParams({
+      url: tabObj.failedUrl || '',
+      code: '-1',
+      desc: reason || 'crashed',
+      kind: 'crash',
+      q: '',
+      searchBase: STAUNT_SEARCH_URL
+    });
+    const errorFileUrl = pathToFileURL(ERROR_PAGE_FILE).href + '?' + errParams.toString();
+    tabObj.view.webContents.loadURL(errorFileUrl).catch(() => {});
+  } catch (err) {
+    console.error(`[CRASH GUARD] Recovery failed for tab ${tabObj.id}:`, err.message);
+  }
+}
+
+function hibernateTabManually(tabId) {
+  const tab = tabs.get(tabId);
+  if (!tab || tab.isHibernated || tabId === activeTabId || tabId === secondaryTabId) {
+    return { success: false, reason: 'Tab cannot be put to sleep' };
+  }
+  if (tab.isPinned) {
+    return { success: false, reason: 'Pinned tabs cannot be put to sleep' };
+  }
+  if (tab.isAudioPlaying) {
+    return { success: false, reason: 'Tabs playing audio cannot be put to sleep' };
+  }
+  detachTabView(tab);
+  try {
+    if (tab.view && tab.view.webContents && !tab.view.webContents.isDestroyed()) {
+      tab.view.webContents.stop();
+      tab.view.webContents.close();
+      if (typeof tab.view.webContents.destroy === 'function') tab.view.webContents.destroy();
+    }
+  } catch (_) {}
+  tab.view = null;
+  tab.isHibernated = true;
+  notifyTabUpdated(tab);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('toast-message', `Tab "${(tab.title || 'Tab').slice(0, 24)}" put to sleep (memory saved)`);
+  }
+  return { success: true };
+}
+
 function toggleSplitView(secId) {
   if (isSplitViewActive && (!secId || secId === secondaryTabId)) {
     if (secondaryTabId && tabs.has(secondaryTabId)) {
@@ -2637,6 +2729,19 @@ ipcMain.on('toggle-split-view', (e, secId) => {
   toggleSplitView(secId);
 });
 
+ipcMain.handle('hibernate-tab', (e, tabId) => {
+  if (!verifyIpcSender(e) || typeof tabId !== 'number') return { success: false };
+  return hibernateTabManually(tabId);
+});
+
+ipcMain.handle('wake-tab', (e, tabId) => {
+  if (!verifyIpcSender(e) || typeof tabId !== 'number') return { success: false };
+  const tab = tabs.get(tabId);
+  if (!tab) return { success: false };
+  if (tab.isHibernated) wakeHibernatedTab(tab);
+  return { success: true };
+});
+
 ipcMain.on('toggle-mute-tab', (e, tabId) => {
   if (!verifyIpcSender(e)) return;
   const targetId = typeof tabId === 'number' ? tabId : activeTabId;
@@ -2751,6 +2856,7 @@ ipcMain.on('add-bookmark', (e, item) => {
     const cleanUrl = typeof item.url === 'string' ? item.url.trim().slice(0, 2048) : '';
     const cleanTitle = typeof item.title === 'string' && item.title.trim() ? item.title.trim().slice(0, 256) : 'Untitled';
     const cleanFavicon = typeof item.favicon === 'string' ? item.favicon.trim().slice(0, 2048) : '';
+    const cleanFolder = typeof item.folder === 'string' ? item.folder.trim().slice(0, 64) : '';
     if (!cleanUrl) return;
 
     const normNew = normalizeBookmarkUrl(cleanUrl);
@@ -2758,6 +2864,7 @@ ipcMain.on('add-bookmark', (e, item) => {
     if (existing) {
       existing.title = cleanTitle;
       if (cleanFavicon) existing.favicon = cleanFavicon;
+      if (cleanFolder) existing.folder = cleanFolder;
       atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
@@ -2771,6 +2878,7 @@ ipcMain.on('add-bookmark', (e, item) => {
       title: cleanTitle,
       url: cleanUrl,
       favicon: cleanFavicon,
+      folder: cleanFolder,
       createdAt: Date.now()
     };
     bookmarksDB.push(newItem);
@@ -2954,6 +3062,17 @@ ipcMain.on('show-tab-context-menu', (e, tabId, pos) => {
         tab.isMuted = !tab.isMuted;
         if (tab.view && tab.view.webContents) tab.view.webContents.setAudioMuted(tab.isMuted);
         notifyTabUpdated(tab);
+      }
+    },
+    {
+      label: tab.isHibernated ? 'Wake Tab' : 'Sleep Tab (Save Memory)',
+      enabled: !tab.isPinned && targetId !== activeTabId && !(tab.url && tab.url.startsWith('staunt://')),
+      click: () => {
+        if (tab.isHibernated) {
+          wakeHibernatedTab(tab);
+        } else {
+          hibernateTabManually(targetId);
+        }
       }
     },
     { type: 'separator' },
@@ -3386,11 +3505,12 @@ ipcMain.handle('delete-bookmark', (e, id) => {
 
 ipcMain.handle('edit-bookmark', (e, payload) => {
   if (!verifyIpcSender(e) || !payload || typeof payload !== 'object') return { success: false };
-  const { id, title, url } = payload;
+  const { id, title, url, folder } = payload;
   const b = bookmarksDB.find(item => item.id === id);
   if (!b) return { success: false, error: 'Not found' };
   if (typeof title === 'string' && title.trim()) b.title = title.trim().slice(0, 256);
   if (typeof url === 'string' && url.trim()) b.url = url.trim().slice(0, 2048);
+  if (typeof folder === 'string') b.folder = folder.trim().slice(0, 64);
   atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
@@ -3454,7 +3574,12 @@ ipcMain.handle('clear-downloads', (e) => {
 
 ipcMain.on('create-window', (e) => {
   if (!verifyIpcSender(e)) return;
-  createMainWindow();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    createTab('staunt://newtab');
+    mainWindow.focus();
+  } else {
+    createMainWindow();
+  }
 });
 
 ipcMain.on('create-incognito-window', (e) => {
@@ -3802,6 +3927,11 @@ ipcMain.handle('save-settings', (e, newSettings) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('shield-level-changed', settingsDB.shieldLevel || 'standard');
       mainWindow.webContents.send('settings-updated', settingsDB);
+    }
+    for (const tab of tabs.values()) {
+      if (tab.view && tab.view.webContents && !tab.view.webContents.isDestroyed()) {
+        tab.view.webContents.send('settings-updated', settingsDB);
+      }
     }
   }
   return { success: true, settings: settingsDB };
@@ -4815,11 +4945,29 @@ ipcMain.handle('export-bookmarks-html', async (e) => {
       '<H1>Bookmarks</H1>',
       '<DL><p>'
     ];
+    // Group bookmarks by folder for full folder hierarchy export
+    const folderMap = new Map();
+    folderMap.set('', []);
     for (const bm of bookmarksDB) {
+      const f = (bm.folder || '').trim();
+      if (!folderMap.has(f)) folderMap.set(f, []);
+      folderMap.get(f).push(bm);
+    }
+    // Unfiled root bookmarks
+    for (const bm of (folderMap.get('') || [])) {
       const addDate = bm.createdAt ? Math.floor(bm.createdAt / 1000) : Math.floor(Date.now() / 1000);
-      const title = escapeHtml(bm.title || bm.url || '');
-      const url = escapeHtml(bm.url || '');
-      lines.push(`    <DT><A HREF="${url}" ADD_DATE="${addDate}">${title}</A>`);
+      lines.push(`    <DT><A HREF="${escapeHtml(bm.url || '')}" ADD_DATE="${addDate}">${escapeHtml(bm.title || bm.url || '')}</A>`);
+    }
+    // Organized folders
+    for (const [folderName, bms] of folderMap.entries()) {
+      if (!folderName) continue;
+      lines.push(`    <DT><H3>${escapeHtml(folderName)}</H3>`);
+      lines.push('    <DL><p>');
+      for (const bm of bms) {
+        const addDate = bm.createdAt ? Math.floor(bm.createdAt / 1000) : Math.floor(Date.now() / 1000);
+        lines.push(`        <DT><A HREF="${escapeHtml(bm.url || '')}" ADD_DATE="${addDate}" FOLDER="${escapeHtml(folderName)}">${escapeHtml(bm.title || bm.url || '')}</A>`);
+      }
+      lines.push('    </DL><p>');
     }
     lines.push('</DL><p>');
     fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
@@ -4840,26 +4988,46 @@ ipcMain.handle('import-bookmarks-html', async (e) => {
     });
     if (canceled || !filePaths || !filePaths[0]) return { ok: false, error: 'Cancelled' };
     const raw = fs.readFileSync(filePaths[0], 'utf-8');
-    // Parse Netscape bookmark format: <A HREF="url" ADD_DATE="ts">Title</A>
-    const regex = /<A\s[^>]*HREF="([^"]+)"[^>]*>([^<]*)<\/A>/gi;
-    let match;
+    
+    // Parse Netscape bookmark format with hierarchical folder support
+    const folderRegex = /<H3[^>]*>([^<]+)<\/H3>/i;
+    const endFolderRegex = /<\/DL>/i;
+    const linkRegex = /<A\s[^>]*HREF="([^"]+)"[^>]*>([^<]*)<\/A>/i;
+    const folderAttrRegex = /FOLDER="([^"]+)"/i;
+    
+    let currentFolder = '';
     let added = 0;
     const existingUrls = new Set(bookmarksDB.map(b => b.url));
-    while ((match = regex.exec(raw)) !== null) {
-      const url = match[1].trim();
-      const title = match[2].trim() || url;
-      if (!url || url.startsWith('javascript:') || url.startsWith('data:')) continue;
-      if (existingUrls.has(url)) continue;
-      const now = Date.now();
-      bookmarksDB.push({
-        id: now.toString(36) + Math.random().toString(36).substr(2, 6),
-        url,
-        title: title.slice(0, 256),
-        favicon: '',
-        createdAt: now
-      });
-      existingUrls.add(url);
-      added++;
+    const rawLines = raw.split(/\r?\n/);
+
+    for (const line of rawLines) {
+      const folderMatch = folderRegex.exec(line);
+      if (folderMatch) {
+        currentFolder = folderMatch[1].trim();
+      }
+      if (endFolderRegex.test(line)) {
+        currentFolder = '';
+      }
+      const linkMatch = linkRegex.exec(line);
+      if (linkMatch) {
+        const url = linkMatch[1].trim();
+        const title = linkMatch[2].trim() || url;
+        if (!url || url.startsWith('javascript:') || url.startsWith('data:')) continue;
+        if (existingUrls.has(url)) continue;
+        const attrMatch = folderAttrRegex.exec(line);
+        const folder = (attrMatch ? attrMatch[1].trim() : currentFolder).slice(0, 64);
+        const now = Date.now();
+        bookmarksDB.push({
+          id: now.toString(36) + Math.random().toString(36).substr(2, 6),
+          url,
+          title: title.slice(0, 256),
+          favicon: '',
+          folder: folder,
+          createdAt: now
+        });
+        existingUrls.add(url);
+        added++;
+      }
     }
     if (added > 0) atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
     if (mainWindow && !mainWindow.isDestroyed()) {

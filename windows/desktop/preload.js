@@ -169,7 +169,8 @@ const secureAPI = Object.freeze({
       ipcRenderer.send('add-bookmark', {
         title: sanitizeString(item.title, 256),
         url: sanitizeString(item.url, 2048),
-        favicon: sanitizeString(item.favicon, 2048)
+        favicon: sanitizeString(item.favicon, 2048),
+        folder: sanitizeString(item.folder, 64)
       });
     }
   },
@@ -181,9 +182,12 @@ const secureAPI = Object.freeze({
     return ipcRenderer.invoke('edit-bookmark', {
       id: sanitizeString(id, 64),
       title: sanitizeString(item.title, 256),
-      url: sanitizeString(item.url, 2048)
+      url: sanitizeString(item.url, 2048),
+      folder: sanitizeString(item.folder, 64)
     });
   },
+  hibernateTab: (tabId) => ipcRenderer.invoke('hibernate-tab', typeof tabId === 'number' ? tabId : -1),
+  wakeTab: (tabId) => ipcRenderer.invoke('wake-tab', typeof tabId === 'number' ? tabId : -1),
   reorderBookmarks: (ids) => {
     if (!Array.isArray(ids)) return Promise.resolve({ success: false });
     return ipcRenderer.invoke('reorder-bookmarks', ids.map(id => sanitizeString(id, 64)).filter(Boolean));
