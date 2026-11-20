@@ -4,7 +4,8 @@
 **Release Date:** November 2026  
 **Edition:** Enterprise Hardened Desktop Edition  
 **Platform:** Windows 10/11 (x64)  
-**Binary Artifact:** `dist/win-unpacked/Staunt Browser Ultra.exe`  
+**Production NSIS Installer:** `windows/desktop/dist/Staunt Browser Ultra Setup 2.0.1.exe` (83,282,422 bytes)  
+**Binary Artifact:** `windows/desktop/dist/win-unpacked/Staunt Browser Ultra.exe`  
 **Application ID:** `com.vastuda.stauntbrowser`  
 **License:** MIT  
 **Total Development Budget:** ₹0 strictly (Zero paid APIs, zero external subscriptions)

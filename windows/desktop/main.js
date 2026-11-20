@@ -1560,6 +1560,26 @@ function setupWebContentsEvents(tabObj) {
 
   wc.on('will-navigate', (event, navigationUrl) => {
     try {
+      // Check for pending password submit before navigation (skip for Incognito)
+      if (!tabObj.isIncognito && wc && !wc.isDestroyed()) {
+        wc.executeJavaScript('document.documentElement.dataset.stauntPendingSubmit || ""')
+          .then(pending => {
+            if (pending) {
+              try {
+                const data = JSON.parse(pending);
+                const currentOrigin = normalizeSiteOrigin(wc.getURL());
+                if (data.p && currentOrigin && mainWindow && !mainWindow.isDestroyed()) {
+                  mainWindow.webContents.send('save-password-prompt', {
+                    origin: currentOrigin,
+                    username: data.u || '',
+                    password: data.p
+                  });
+                }
+              } catch (_) {}
+            }
+          }).catch(() => {});
+      }
+
       if (navigationUrl.startsWith('staunt://auth-callback')) {
         event.preventDefault();
         const currentUrl = wc.getURL();
@@ -1817,6 +1837,43 @@ function setupWebContentsEvents(tabObj) {
     tabObj.canGoForward = canTabGoForward(wc);
     notifyTabUpdated(tabObj);
     broadcastUrlSync(tabObj);
+
+    // Check credentials available for origin and notify renderer
+    const origin = normalizeSiteOrigin(loadedUrl);
+    if (origin && !tabObj.isIncognito && credentialsDB.length > 0) {
+      const matching = credentialsDB.filter(c => c.origin === origin);
+      if (matching.length > 0 && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('credentials-available-for-page', {
+          tabId: tabObj.id,
+          origin,
+          credentials: matching.map(c => ({ id: c.id, username: c.username }))
+        });
+      }
+    }
+
+    // Inject lightweight form submission monitor for password save detection on secure sites
+    if (origin && isSiteOriginSecure(origin) && !tabObj.isIncognito) {
+      wc.executeJavaScript(`
+        (() => {
+          if (window.__STAUNT_LOGIN_MONITOR__) return;
+          window.__STAUNT_LOGIN_MONITOR__ = true;
+          document.addEventListener('submit', (e) => {
+            try {
+              const form = e.target;
+              if (!form) return;
+              const pw = form.querySelector('input[type="password"]');
+              if (!pw || !pw.value) return;
+              const userEl = form.querySelector('input[type="email"], input[type="text"], input[name*="user"], input[name*="login"], input[id*="user"], input[id*="login"]');
+              const user = userEl ? userEl.value.trim() : '';
+              document.documentElement.dataset.stauntPendingSubmit = JSON.stringify({
+                u: user,
+                p: pw.value
+              });
+            } catch(_) {}
+          }, true);
+        })()
+      `).catch(() => {});
+    }
   });
 
   // Actionable Network Error Recovery Card (Zero Data-URI Leakage)
@@ -1990,6 +2047,15 @@ function switchTab(tabId) {
       isSplit: isSplitViewActive
     });
     broadcastUrlSync(targetTab);
+
+    // Send credentials available notification on tab switch
+    const targetOrigin = normalizeSiteOrigin(targetTab.url);
+    const matching = targetOrigin && !targetTab.isIncognito ? credentialsDB.filter(c => c.origin === targetOrigin) : [];
+    mainWindow.webContents.send('credentials-available-for-page', {
+      tabId: targetTab.id,
+      origin: targetOrigin,
+      credentials: matching.map(c => ({ id: c.id, username: c.username }))
+    });
   }
 }
 
@@ -4428,6 +4494,49 @@ ipcMain.handle('fill-credential', (e, id) => {
   const password = decryptCredential(cred.encryptedPassword);
   if (password === null) return null;
   return { username: cred.username, password };
+});
+
+ipcMain.handle('autofill-active-tab', async (e, credId) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const tab = tabs.get(activeTabId);
+  if (!tab || !tab.view || !tab.view.webContents || tab.view.webContents.isDestroyed()) {
+    return { ok: false, error: 'No active tab' };
+  }
+  const cleanId = String(credId || '').trim();
+  const cred = credentialsDB.find(c => c.id === cleanId);
+  if (!cred) return { ok: false, error: 'Credential not found' };
+  const tabOrigin = normalizeSiteOrigin(tab.view.webContents.getURL());
+  if (tabOrigin !== cred.origin) {
+    return { ok: false, error: 'Origin mismatch' };
+  }
+  const plainPassword = decryptCredential(cred.encryptedPassword);
+  if (!plainPassword) return { ok: false, error: 'Decryption failed' };
+
+  try {
+    const fillScript = `
+      (() => {
+        const user = ${JSON.stringify(cred.username || '')};
+        const pass = ${JSON.stringify(plainPassword)};
+        const pwField = document.querySelector('input[type="password"]');
+        if (!pwField) return false;
+        const form = pwField.form || document;
+        const userField = form.querySelector('input[type="email"], input[type="text"], input[name*="user"], input[name*="login"], input[id*="user"], input[id*="login"]') || document.querySelector('input[type="email"], input[type="text"]');
+        if (userField && user) {
+          userField.value = user;
+          userField.dispatchEvent(new Event('input', { bubbles: true }));
+          userField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        pwField.value = pass;
+        pwField.dispatchEvent(new Event('input', { bubbles: true }));
+        pwField.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      })()
+    `;
+    const res = await tab.view.webContents.executeJavaScript(fillScript);
+    return { ok: true, filled: Boolean(res), username: cred.username };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 });
 
 ipcMain.handle('get-all-credentials', (e) => {

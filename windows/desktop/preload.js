@@ -406,10 +406,12 @@ const secureAPI = Object.freeze({
   },
   deleteCredential: (id) => ipcRenderer.invoke('delete-credential', sanitizeString(id, 64)),
   fillCredential: (id) => ipcRenderer.invoke('fill-credential', sanitizeString(id, 64)),
+  autofillActiveTab: (credId) => ipcRenderer.invoke('autofill-active-tab', sanitizeString(credId, 64)),
   getAllCredentials: () => ipcRenderer.invoke('get-all-credentials'),
   checkSavedCredential: (origin) => ipcRenderer.invoke('check-saved-credential', sanitizeString(origin, 512)),
   deleteAllCredentials: () => ipcRenderer.invoke('delete-all-credentials'),
   onSavePasswordPrompt: (cb) => { if (typeof cb === 'function') ipcRenderer.on('save-password-prompt', (_e, d) => cb(d)); },
+  onCredentialsAvailable: (cb) => { if (typeof cb === 'function') ipcRenderer.on('credentials-available-for-page', (_e, d) => cb(d)); },
 
   // Phase 9: Download Manager Enhancements
   clearCompletedDownloads: () => ipcRenderer.invoke('clear-completed-downloads'),
