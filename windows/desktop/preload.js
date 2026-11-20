@@ -251,6 +251,7 @@ const secureAPI = Object.freeze({
   },
   clearCacheAsync: () => ipcRenderer.invoke('clear-browser-cache-async'),
   getRuntimeStats: () => ipcRenderer.invoke('get-runtime-stats'),
+  getMemoryStats: () => ipcRenderer.invoke('get-memory-stats'),
 
   toggleDevTools: () => {
     ipcRenderer.send('toggle-devtools');

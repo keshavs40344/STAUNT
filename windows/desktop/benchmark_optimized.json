@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-11-20T17:35:00.689Z",
+  "environment": {
+    "os": "Windows x64",
+    "electron": "33.4.11",
+    "chrome": "130.0.6723.191",
+    "node": "20.18.3"
+  },
+  "metrics": {
+    "coldStartupMs": 122,
+    "timeToFirstUsableInterfaceMs": 691,
+    "newTabLoadMs": 355,
+    "avgSwitchMs": 4.57,
+    "eventLoopLagMs": 4.01,
+    "memory": {
+      "oneTab": {
+        "processCount": 5,
+        "totalWorkingSetMb": 781.4,
+        "mainProcessMb": 103,
+        "gpuProcessMb": 450.9,
+        "renderersTotalMb": 0,
+        "heapUsedMb": 4
+      },
+      "fiveTabs": {
+        "processCount": 9,
+        "totalWorkingSetMb": 1105,
+        "mainProcessMb": 105.3,
+        "gpuProcessMb": 452.4,
+        "renderersTotalMb": 0,
+        "heapUsedMb": 4.1
+      },
+      "tenTabs": {
+        "processCount": 14,
+        "totalWorkingSetMb": 1513.1,
+        "mainProcessMb": 108.2,
+        "gpuProcessMb": 452.8,
+        "renderersTotalMb": 0,
+        "heapUsedMb": 4.4
+      },
+      "twentyTabs": {
+        "processCount": 24,
+        "totalWorkingSetMb": 2291.5,
+        "mainProcessMb": 112.2,
+        "gpuProcessMb": 420.5,
+        "renderersTotalMb": 0,
+        "heapUsedMb": 4.9
+      }
+    }
+  }
+}

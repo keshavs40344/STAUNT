@@ -310,9 +310,6 @@ const BOOKMARKS_FILE = path.join(USER_DATA_PATH, 'staunt_bookmarks_vault.json');
 const DOWNLOADS_FILE = path.join(USER_DATA_PATH, 'staunt_downloads_vault.json');
 const SETTINGS_FILE = path.join(USER_DATA_PATH, 'staunt_settings.json');
 
-let historyDB = [];
-let bookmarksDB = [];
-let downloadsDB = [];
 const DEFAULT_SETTINGS = {
   searchEngine: 'staunt',
   customSearchUrl: '',
@@ -332,9 +329,79 @@ const DEFAULT_SETTINGS = {
 };
 let settingsDB = { ...DEFAULT_SETTINGS };
 
-historyDB = readJsonWithBak(HISTORY_FILE, []) || [];
-bookmarksDB = readJsonWithBak(BOOKMARKS_FILE, []) || [];
-downloadsDB = readJsonWithBak(DOWNLOADS_FILE, []) || [];
+let historyDB = [];
+let bookmarksDB = [];
+let downloadsDB = [];
+let historyDBLoaded = false;
+let bookmarksDBLoaded = false;
+let downloadsDBLoaded = false;
+
+function ensureHistoryDB() {
+  if (!historyDBLoaded) {
+    historyDB = readJsonWithBak(HISTORY_FILE, []) || [];
+    historyDBLoaded = true;
+  }
+  return historyDB;
+}
+
+function ensureBookmarksDB() {
+  if (!bookmarksDBLoaded) {
+    bookmarksDB = readJsonWithBak(BOOKMARKS_FILE, []) || [];
+    bookmarksDBLoaded = true;
+  }
+  return bookmarksDB;
+}
+
+function ensureDownloadsDB() {
+  if (!downloadsDBLoaded) {
+    downloadsDB = readJsonWithBak(DOWNLOADS_FILE, []) || [];
+    downloadsDBLoaded = true;
+    let changed = false;
+    downloadsDB.forEach((d) => {
+      if (d && (d.state === 'progressing' || d.state === 'paused')) {
+        d.state = 'interrupted';
+        changed = true;
+      }
+    });
+    if (changed) scheduleSaveDownloads();
+  }
+  return downloadsDB;
+}
+
+let historySaveTimer = null;
+function scheduleSaveHistory() {
+  if (historySaveTimer) clearTimeout(historySaveTimer);
+  historySaveTimer = setTimeout(() => {
+    historySaveTimer = null;
+    atomicWriteJson(HISTORY_FILE, ensureHistoryDB().slice(0, 1000));
+  }, 1200);
+}
+
+function flushHistorySync() {
+  if (historySaveTimer) {
+    clearTimeout(historySaveTimer);
+    historySaveTimer = null;
+    atomicWriteJson(HISTORY_FILE, ensureHistoryDB().slice(0, 1000));
+  }
+}
+
+let downloadsSaveTimer = null;
+function scheduleSaveDownloads() {
+  if (downloadsSaveTimer) clearTimeout(downloadsSaveTimer);
+  downloadsSaveTimer = setTimeout(() => {
+    downloadsSaveTimer = null;
+    atomicWriteJson(DOWNLOADS_FILE, ensureDownloadsDB().slice(0, 100));
+  }, 1000);
+}
+
+function flushDownloadsSync() {
+  if (downloadsSaveTimer) {
+    clearTimeout(downloadsSaveTimer);
+    downloadsSaveTimer = null;
+    atomicWriteJson(DOWNLOADS_FILE, ensureDownloadsDB().slice(0, 100));
+  }
+}
+
 const loadedSettings = readJsonWithBak(SETTINGS_FILE, null);
 settingsDB = loadedSettings ? { ...DEFAULT_SETTINGS, ...loadedSettings } : { ...DEFAULT_SETTINGS };
 if (settingsDB.searchUrl && (
@@ -352,18 +419,6 @@ setPrivacyHeaderConfig({
   gpc: settingsDB.globalPrivacyControl !== false,
   cookiePolicy: settingsDB.cookiePolicy || 'block-third-party'
 });
-
-// Normalize any orphaned in-progress downloads from an unclean previous exit
-if (Array.isArray(downloadsDB)) {
-  let changed = false;
-  downloadsDB.forEach((d) => {
-    if (d && (d.state === 'progressing' || d.state === 'paused')) {
-      d.state = 'interrupted';
-      changed = true;
-    }
-  });
-  if (changed) atomicWriteJson(DOWNLOADS_FILE, downloadsDB.slice(0, 100));
-}
 
 function recordHistory(url, title, tabObj = null) {
   // Privacy Guarantee: NEVER persist Incognito tab browsing into history vault
@@ -383,6 +438,7 @@ function recordHistory(url, title, tabObj = null) {
     cleanUrl.startsWith('file:')
   ) return;
 
+  ensureHistoryDB();
   const cleanTitle = (title || cleanUrl).slice(0, 256);
   const now = Date.now();
 
@@ -392,7 +448,7 @@ function recordHistory(url, title, tabObj = null) {
       historyDB[0].title = cleanTitle;
     }
     historyDB[0].timestamp = now;
-    atomicWriteJson(HISTORY_FILE, historyDB.slice(0, 1000));
+    scheduleSaveHistory();
     return;
   }
 
@@ -406,10 +462,11 @@ function recordHistory(url, title, tabObj = null) {
   historyDB.unshift(entry);
   if (historyDB.length > 5000) historyDB.pop();
 
-  atomicWriteJson(HISTORY_FILE, historyDB.slice(0, 1000));
+  scheduleSaveHistory();
 }
 
 function clearHistoryRange(range = 'all') {
+  ensureHistoryDB();
   const now = Date.now();
   if (range === '1h' || range === 'last-hour') {
     const cutoff = now - 3600 * 1000;
@@ -431,6 +488,7 @@ function clearHistoryRange(range = 'all') {
 }
 
 function clearDownloadsRange(range = 'all') {
+  ensureDownloadsDB();
   const now = Date.now();
   let cutoff = 0;
   if (range === '1h' || range === 'last-hour') cutoff = now - 3600 * 1000;
@@ -449,6 +507,7 @@ function clearDownloadsRange(range = 'all') {
 
 function recordDownload(entry) {
   if (!entry || !entry.id) return;
+  ensureDownloadsDB();
   const existingIdx = downloadsDB.findIndex(d => d.id === entry.id);
   if (existingIdx !== -1) {
     downloadsDB[existingIdx] = { ...downloadsDB[existingIdx], ...entry };
@@ -456,21 +515,37 @@ function recordDownload(entry) {
     downloadsDB.unshift(entry);
     if (downloadsDB.length > 200) downloadsDB.pop();
   }
-  atomicWriteJson(DOWNLOADS_FILE, downloadsDB.slice(0, 100));
+  scheduleSaveDownloads();
 }
 
 const SESSION_FILE = path.join(USER_DATA_PATH, 'staunt_session_tabs.json');
 const READING_LIST_FILE = path.join(USER_DATA_PATH, 'staunt_reading_list.json');
-let readingListDB = readJsonWithBak(READING_LIST_FILE, []);
-if (!Array.isArray(readingListDB)) readingListDB = [];
+let readingListDB = [];
+let readingListDBLoaded = false;
+function ensureReadingListDB() {
+  if (!readingListDBLoaded) {
+    readingListDB = readJsonWithBak(READING_LIST_FILE, []) || [];
+    if (!Array.isArray(readingListDB)) readingListDB = [];
+    readingListDBLoaded = true;
+  }
+  return readingListDB;
+}
 
 // =============================================================================
 // PHASE 9: PASSWORD VAULT (AES-256-GCM, PBKDF2 — Zero Plaintext on Disk)
 // =============================================================================
 const crypto = require('crypto');
 const CREDENTIALS_FILE = path.join(USER_DATA_PATH, 'staunt_credentials.json');
-let credentialsDB = readJsonWithBak(CREDENTIALS_FILE, []);
-if (!Array.isArray(credentialsDB)) credentialsDB = [];
+let credentialsDB = [];
+let credentialsDBLoaded = false;
+function ensureCredentialsDB() {
+  if (!credentialsDBLoaded) {
+    credentialsDB = readJsonWithBak(CREDENTIALS_FILE, []) || [];
+    if (!Array.isArray(credentialsDB)) credentialsDB = [];
+    credentialsDBLoaded = true;
+  }
+  return credentialsDB;
+}
 
 // Key derivation: machine-local, stable, never stored externally
 function getVaultKey() {
@@ -706,6 +781,7 @@ function isUrlBookmarked(url) {
     clean.startsWith('file:') ||
     clean.startsWith('javascript:')
   ) return false;
+  ensureBookmarksDB();
   const normTarget = normalizeBookmarkUrl(clean);
   return bookmarksDB.some(b => normalizeBookmarkUrl(b.url) === normTarget);
 }
@@ -717,6 +793,7 @@ function toggleBookmarkCurrentPage() {
   if (!currentUrl || currentUrl.startsWith('staunt://') || currentUrl.includes('newtab.html') || currentUrl === 'about:blank') {
     return { bookmarked: false, url: currentUrl };
   }
+  ensureBookmarksDB();
   const normTarget = normalizeBookmarkUrl(currentUrl);
   const existingIdx = bookmarksDB.findIndex(b => normalizeBookmarkUrl(b.url) === normTarget);
   if (existingIdx !== -1) {
@@ -746,6 +823,7 @@ function toggleBookmarkCurrentPage() {
 }
 
 function deleteBookmark(id) {
+  ensureBookmarksDB();
   const initLen = bookmarksDB.length;
   bookmarksDB = bookmarksDB.filter(b => b.id !== id);
   atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
@@ -756,6 +834,7 @@ function deleteBookmark(id) {
 }
 
 function deleteHistoryItem(id) {
+  ensureHistoryDB();
   const initLen = historyDB.length;
   historyDB = historyDB.filter(h => h.id !== id);
   atomicWriteJson(HISTORY_FILE, historyDB);
@@ -763,6 +842,7 @@ function deleteHistoryItem(id) {
 }
 
 function deleteDownloadItem(id) {
+  ensureDownloadsDB();
   const initLen = downloadsDB.length;
   downloadsDB = downloadsDB.filter(d => d.id !== id);
   atomicWriteJson(DOWNLOADS_FILE, downloadsDB);
@@ -770,6 +850,7 @@ function deleteDownloadItem(id) {
 }
 
 function clearDownloads() {
+  ensureDownloadsDB();
   downloadsDB = [];
   atomicWriteJson(DOWNLOADS_FILE, []);
   return { success: true };
@@ -982,6 +1063,13 @@ function createMainWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    setImmediate(() => {
+      ensureHistoryDB();
+      ensureBookmarksDB();
+      ensureDownloadsDB();
+      ensureReadingListDB();
+      ensureCredentialsDB();
+    });
     ensureOmniboxPopupView();
     // Instantiate and attach initial WebContentsView immediately so viewport is never 0x0
     if (tabs.size === 0) {
@@ -1047,7 +1135,6 @@ function createMainWindow() {
   });
   mainWindow.on('move', () => {
     hideOmniboxPopup();
-    updateLayoutBounds();
     scheduleSaveWindowState();
   });
   mainWindow.on('maximize', () => {
@@ -1099,6 +1186,8 @@ function createMainWindow() {
       }
       isClosingConfirmed = true;
     }
+    flushHistorySync();
+    flushDownloadsSync();
     saveSessionTabs();
     saveWindowState();
     // Clean up all tab views to prevent orphaned WebContentsView instances
@@ -1967,7 +2056,7 @@ function setupWebContentsEvents(tabObj) {
 
     // Check credentials available for origin and notify renderer
     const origin = normalizeSiteOrigin(loadedUrl);
-    if (origin && !tabObj.isIncognito && credentialsDB.length > 0) {
+    if (origin && !tabObj.isIncognito && ensureCredentialsDB().length > 0) {
       const matching = credentialsDB.filter(c => c.origin === origin);
       if (matching.length > 0 && mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('credentials-available-for-page', {
@@ -2203,7 +2292,7 @@ function switchTab(tabId) {
 
     // Send credentials available notification on tab switch
     const targetOrigin = normalizeSiteOrigin(targetTab.url);
-    const matching = targetOrigin && !targetTab.isIncognito ? credentialsDB.filter(c => c.origin === targetOrigin) : [];
+    const matching = targetOrigin && !targetTab.isIncognito ? ensureCredentialsDB().filter(c => c.origin === targetOrigin) : [];
     mainWindow.webContents.send('credentials-available-for-page', {
       tabId: targetTab.id,
       origin: targetOrigin,
@@ -2221,6 +2310,9 @@ function attachTabView(tabObj) {
   } else if (mainWindow.setBrowserView) {
     mainWindow.setBrowserView(tabObj.view);
   }
+  if (tabObj.view.webContents && !tabObj.view.webContents.isDestroyed()) {
+    try { tabObj.view.webContents.setBackgroundThrottling(false); } catch (e) {}
+  }
 }
 
 function detachTabView(tabObj) {
@@ -2229,6 +2321,9 @@ function detachTabView(tabObj) {
     try { mainWindow.contentView.removeChildView(tabObj.view); } catch(e) {}
   } else if (mainWindow.removeBrowserView) {
     try { mainWindow.removeBrowserView(tabObj.view); } catch(e) {}
+  }
+  if (tabObj.view.webContents && !tabObj.view.webContents.isDestroyed()) {
+    try { tabObj.view.webContents.setBackgroundThrottling(true); } catch (e) {}
   }
 }
 
@@ -2344,10 +2439,16 @@ function handleStop() {
   }
 }
 
-// Tab Hibernation Engine (15 mins inactive, skip pinned/audio/unsaved forms)
+// Tab Hibernation Engine (Adaptive threshold, skip pinned/audio/unsaved forms)
 setInterval(async () => {
   const now = Date.now();
-  const HIBERNATE_THRESHOLD = 15 * 60 * 1000;
+  // Adaptive hibernation: under heavy tab load, safely hibernate older background tabs sooner
+  let HIBERNATE_THRESHOLD = 10 * 60 * 1000;
+  if (tabs.size > 10) {
+    HIBERNATE_THRESHOLD = 3 * 60 * 1000;
+  } else if (tabs.size > 5) {
+    HIBERNATE_THRESHOLD = 5 * 60 * 1000;
+  }
 
   for (const tab of tabs.values()) {
     if (
@@ -2839,11 +2940,48 @@ ipcMain.handle('clear-browser-cache-async', async (e) => {
 ipcMain.handle('get-runtime-stats', (e) => {
   if (!verifyIpcSender(e)) return null;
   const mem = process.memoryUsage();
+  const metrics = app.getAppMetrics();
+  let totalWorkingSetKb = 0;
+  metrics.forEach(m => {
+    if (m.memory && m.memory.workingSetSize) {
+      totalWorkingSetKb += m.memory.workingSetSize;
+    }
+  });
   return {
     tabCount: tabs.size,
     rssMB: Math.round((mem.rss / (1024 * 1024)) * 10) / 10,
     heapUsedMB: Math.round((mem.heapUsed / (1024 * 1024)) * 10) / 10,
-    appMetricsCount: app.getAppMetrics().length
+    totalWorkingSetMB: Math.round((totalWorkingSetKb / 1024) * 10) / 10,
+    appMetricsCount: metrics.length,
+    processBreakdown: metrics.map(m => ({
+      type: m.type,
+      pid: m.pid,
+      memoryMB: Math.round(((m.memory?.workingSetSize || 0) / 1024) * 10) / 10
+    }))
+  };
+});
+
+ipcMain.handle('get-memory-stats', (e) => {
+  if (!verifyIpcSender(e)) return null;
+  const mem = process.memoryUsage();
+  const metrics = app.getAppMetrics();
+  let totalWorkingSetKb = 0;
+  metrics.forEach(m => {
+    if (m.memory && m.memory.workingSetSize) {
+      totalWorkingSetKb += m.memory.workingSetSize;
+    }
+  });
+  return {
+    tabCount: tabs.size,
+    rssMB: Math.round((mem.rss / (1024 * 1024)) * 10) / 10,
+    heapUsedMB: Math.round((mem.heapUsed / (1024 * 1024)) * 10) / 10,
+    totalWorkingSetMB: Math.round((totalWorkingSetKb / 1024) * 10) / 10,
+    appMetricsCount: metrics.length,
+    processBreakdown: metrics.map(m => ({
+      type: m.type,
+      pid: m.pid,
+      memoryMB: Math.round(((m.memory?.workingSetSize || 0) / 1024) * 10) / 10
+    }))
   };
 });
 
@@ -2909,17 +3047,20 @@ ipcMain.on('set-find-bar-open', (e, open) => {
 
 ipcMain.handle('get-history', (e) => {
   if (!verifyIpcSender(e)) return [];
+  ensureHistoryDB();
   return historyDB.slice(0, 500);
 });
 
 ipcMain.handle('get-bookmarks', (e) => {
   if (!verifyIpcSender(e)) return [];
+  ensureBookmarksDB();
   return bookmarksDB;
 });
 
 ipcMain.on('add-bookmark', (e, item) => {
   if (!verifyIpcSender(e)) return;
   if (item && typeof item === 'object') {
+    ensureBookmarksDB();
     const cleanUrl = typeof item.url === 'string' ? item.url.trim().slice(0, 2048) : '';
     const cleanTitle = typeof item.title === 'string' && item.title.trim() ? item.title.trim().slice(0, 256) : 'Untitled';
     const cleanFavicon = typeof item.favicon === 'string' ? item.favicon.trim().slice(0, 2048) : '';
@@ -3400,6 +3541,7 @@ ipcMain.on('show-more-menu', (e, pos) => {
 // 5. Downloads & Vault Handlers
 ipcMain.handle('get-downloads', (e) => {
   if (!verifyIpcSender(e)) return [];
+  ensureDownloadsDB();
   return downloadsDB;
 });
 
@@ -3445,6 +3587,7 @@ ipcMain.handle('show-in-folder-checked', (e, itemPath) => {
 
 ipcMain.handle('pause-download', async (e, id) => {
   if (!verifyIpcSender(e)) return { success: false };
+  ensureDownloadsDB();
   const item = activeDownloadItems.get(id);
   if (!item) return { success: false, error: 'Download no longer active' };
   if (!item.isPaused()) item.pause();
@@ -3475,6 +3618,7 @@ ipcMain.handle('pause-download', async (e, id) => {
 
 ipcMain.handle('resume-download', async (e, id) => {
   if (!verifyIpcSender(e)) return { success: false };
+  ensureDownloadsDB();
   const item = activeDownloadItems.get(id);
   if (!item || !item.canResume()) return { success: false, error: 'Download cannot be resumed' };
   item.resume();
@@ -3511,6 +3655,7 @@ ipcMain.handle('cancel-download', (e, id) => {
 
 ipcMain.handle('retry-download', (e, id) => {
   if (!verifyIpcSender(e)) return { success: false };
+  ensureDownloadsDB();
   const entry = downloadsDB.find(d => d.id === id);
   const tab = tabs.get(activeTabId);
   if (!entry || !isSafeHttpUrl(entry.url) || !tab || !tab.view || !tab.view.webContents) {
@@ -3522,6 +3667,7 @@ ipcMain.handle('retry-download', (e, id) => {
 
 ipcMain.on('show-fav-context-menu', (e, favId, pos) => {
   if (!verifyIpcSender(e) || !mainWindow || mainWindow.isDestroyed()) return;
+  ensureBookmarksDB();
   const fav = bookmarksDB.find(b => b.id === favId);
   if (!fav) return;
   const menu = Menu.buildFromTemplate([
@@ -3536,6 +3682,7 @@ ipcMain.on('show-fav-context-menu', (e, favId, pos) => {
 
 ipcMain.on('show-fav-overflow-menu', (e, favIds, pos) => {
   if (!verifyIpcSender(e) || !mainWindow || mainWindow.isDestroyed()) return;
+  ensureBookmarksDB();
   const items = favIds.map(id => bookmarksDB.find(b => b.id === id)).filter(Boolean);
   if (items.length === 0) return;
   const menu = Menu.buildFromTemplate(items.map(fav => ({
@@ -3572,6 +3719,7 @@ ipcMain.handle('delete-bookmark', (e, id) => {
 
 ipcMain.handle('edit-bookmark', (e, payload) => {
   if (!verifyIpcSender(e) || !payload || typeof payload !== 'object') return { success: false };
+  ensureBookmarksDB();
   const { id, title, url, folder } = payload;
   const b = bookmarksDB.find(item => item.id === id);
   if (!b) return { success: false, error: 'Not found' };
@@ -3587,6 +3735,7 @@ ipcMain.handle('edit-bookmark', (e, payload) => {
 
 ipcMain.handle('reorder-bookmarks', (e, ids) => {
   if (!verifyIpcSender(e) || !Array.isArray(ids)) return { success: false };
+  ensureBookmarksDB();
   const map = new Map(bookmarksDB.map(b => [b.id, b]));
   const reordered = [];
   for (const id of ids) {
@@ -3707,6 +3856,9 @@ ipcMain.handle('get-suggestions', async (e, query) => {
   if (!trimmed) return [];
   const qLower = trimmed.toLowerCase();
   const qTokens = qLower.split(/\s+/).filter(Boolean);
+
+  ensureHistoryDB();
+  ensureBookmarksDB();
 
   // Build local visit frequency map cleanly
   const visitCounts = new Map();
@@ -4237,11 +4389,13 @@ ipcMain.handle('restore-closed-tab-at', (e, stackIndex) => {
 
 ipcMain.handle('get-reading-list', (e) => {
   if (!verifyIpcSender(e)) return [];
+  ensureReadingListDB();
   return readingListDB;
 });
 
 ipcMain.handle('add-reading-list-item', (e, payload) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  ensureReadingListDB();
   const active = tabs.get(activeTabId);
   if (active && active.isIncognito && (!payload || !payload.allowExternal)) {
     return { ok: false, error: 'Incognito pages cannot be saved to the persistent Reading List.' };
@@ -4288,6 +4442,7 @@ ipcMain.handle('add-reading-list-item', (e, payload) => {
 
 ipcMain.handle('remove-reading-list-item', (e, id) => {
   if (!verifyIpcSender(e)) return { ok: false, list: readingListDB };
+  ensureReadingListDB();
   const cleanId = String(id || '');
   readingListDB = readingListDB.filter(item => item.id !== cleanId);
   try {
@@ -4300,6 +4455,7 @@ ipcMain.handle('remove-reading-list-item', (e, id) => {
 
 ipcMain.handle('toggle-reading-list-read', (e, id) => {
   if (!verifyIpcSender(e)) return { ok: false, list: readingListDB };
+  ensureReadingListDB();
   const cleanId = String(id || '');
   const item = readingListDB.find(x => x.id === cleanId);
   if (!item) return { ok: false, list: readingListDB };
@@ -4761,6 +4917,7 @@ ipcMain.handle('clear-browsing-data-selective', async (e, payload) => {
 
 ipcMain.handle('get-credentials', (e, origin) => {
   if (!verifyIpcSender(e)) return [];
+  ensureCredentialsDB();
   const org = String(origin || '').trim().toLowerCase();
   if (!org) return [];
   return credentialsDB
@@ -4770,6 +4927,7 @@ ipcMain.handle('get-credentials', (e, origin) => {
 
 ipcMain.handle('save-credential', (e, payload) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  ensureCredentialsDB();
   const { origin, username, password } = payload || {};
   const org = String(origin || '').trim().toLowerCase().slice(0, 512);
   const user = String(username || '').trim().slice(0, 256);
@@ -4797,6 +4955,7 @@ ipcMain.handle('save-credential', (e, payload) => {
 
 ipcMain.handle('delete-credential', (e, id) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  ensureCredentialsDB();
   const cleanId = String(id || '').trim().slice(0, 64);
   const before = credentialsDB.length;
   credentialsDB = credentialsDB.filter(c => c.id !== cleanId);
@@ -4809,6 +4968,7 @@ ipcMain.handle('delete-credential', (e, id) => {
 
 ipcMain.handle('fill-credential', (e, id) => {
   if (!verifyIpcSender(e)) return null;
+  ensureCredentialsDB();
   const cleanId = String(id || '').trim().slice(0, 64);
   const cred = credentialsDB.find(c => c.id === cleanId);
   if (!cred) return null;
@@ -4819,6 +4979,7 @@ ipcMain.handle('fill-credential', (e, id) => {
 
 ipcMain.handle('autofill-active-tab', async (e, credId) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  ensureCredentialsDB();
   const tab = tabs.get(activeTabId);
   if (!tab || !tab.view || !tab.view.webContents || tab.view.webContents.isDestroyed()) {
     return { ok: false, error: 'No active tab' };
@@ -4929,6 +5090,7 @@ ipcMain.handle('set-master-password', (e, payload) => {
 ipcMain.handle('copy-credential-password', (e, credId) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
   if (isVaultCurrentlyLocked()) return { ok: false, error: 'Vault is locked' };
+  ensureCredentialsDB();
   const cleanId = String(credId || '').trim();
   const cred = credentialsDB.find(c => c.id === cleanId);
   if (!cred) return { ok: false, error: 'Credential not found' };
@@ -4941,6 +5103,7 @@ ipcMain.handle('copy-credential-password', (e, credId) => {
 ipcMain.handle('update-credential', (e, payload) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
   if (isVaultCurrentlyLocked()) return { ok: false, error: 'Vault is locked' };
+  ensureCredentialsDB();
   const cleanId = String(payload && payload.id || '').trim();
   const cred = credentialsDB.find(c => c.id === cleanId);
   if (!cred) return { ok: false, error: 'Credential not found' };
@@ -4956,6 +5119,7 @@ ipcMain.handle('update-credential', (e, payload) => {
 ipcMain.handle('get-all-credentials', (e) => {
   if (!verifyIpcSender(e)) return [];
   if (isVaultCurrentlyLocked()) return [];
+  ensureCredentialsDB();
   return credentialsDB.map(c => ({
     id: c.id,
     origin: c.origin,
@@ -4967,12 +5131,14 @@ ipcMain.handle('get-all-credentials', (e) => {
 
 ipcMain.handle('check-saved-credential', (e, origin) => {
   if (!verifyIpcSender(e)) return false;
+  ensureCredentialsDB();
   const org = String(origin || '').trim().toLowerCase();
   return credentialsDB.some(c => c.origin === org);
 });
 
 ipcMain.handle('delete-all-credentials', (e) => {
   if (!verifyIpcSender(e)) return { ok: false };
+  ensureCredentialsDB();
   credentialsDB = [];
   saveCredentialsDB();
   return { ok: true };
@@ -4984,6 +5150,7 @@ ipcMain.handle('delete-all-credentials', (e) => {
 
 ipcMain.handle('clear-completed-downloads', (e) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  ensureDownloadsDB();
   const before = downloadsDB.length;
   downloadsDB = downloadsDB.filter(d => d.state !== 'completed' && d.state !== 'cancelled' && d.state !== 'interrupted');
   atomicWriteJson(DOWNLOADS_FILE, downloadsDB);
@@ -4997,6 +5164,7 @@ ipcMain.handle('clear-completed-downloads', (e) => {
 ipcMain.handle('export-bookmarks-html', async (e) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
   if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, error: 'No window' };
+  ensureBookmarksDB();
   try {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Bookmarks',
@@ -5047,6 +5215,7 @@ ipcMain.handle('export-bookmarks-html', async (e) => {
 ipcMain.handle('import-bookmarks-html', async (e) => {
   if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
   if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, error: 'No window' };
+  ensureBookmarksDB();
   try {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
       title: 'Import Bookmarks',
@@ -5157,6 +5326,11 @@ if (!gotTheSingleInstanceLock) {
     });
   });
 }
+
+app.on('before-quit', () => {
+  flushHistorySync();
+  flushDownloadsSync();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
