@@ -1669,15 +1669,18 @@ function setupWebContentsEvents(tabObj) {
       const nextZoom = Math.min(3, (tabObj.zoomLevel || 0) + 0.5);
       tabObj.zoomLevel = nextZoom;
       if (!wc.isDestroyed()) wc.setZoomLevel(nextZoom);
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('zoom-changed', nextZoom);
     } else if (isCtrl && (key === '-' || key === '_')) {
       event.preventDefault();
       const nextZoom = Math.max(-3, (tabObj.zoomLevel || 0) - 0.5);
       tabObj.zoomLevel = nextZoom;
       if (!wc.isDestroyed()) wc.setZoomLevel(nextZoom);
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('zoom-changed', nextZoom);
     } else if (isCtrl && key === '0') {
       event.preventDefault();
       tabObj.zoomLevel = 0;
       if (!wc.isDestroyed()) wc.setZoomLevel(0);
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('zoom-changed', 0);
     } else if (input.key === 'F5') {
       event.preventDefault();
       if (input.control) {

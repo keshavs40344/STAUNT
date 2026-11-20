@@ -291,6 +291,7 @@ const secureAPI = Object.freeze({
   onShieldUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('shield-updated', (e, d) => cb(d)); },
   onPermissionRequested: (cb) => { if (typeof cb === 'function') ipcRenderer.on('permission-requested', (e, d) => cb(d)); },
   onFindResult: (cb) => { if (typeof cb === 'function') ipcRenderer.on('find-result', (e, d) => cb(d)); },
+  onZoomChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('zoom-changed', (e, d) => cb(d)); },
   onDownloadProgress: (cb) => { if (typeof cb === 'function') ipcRenderer.on('download-progress', (e, d) => cb(d)); },
   onDownloadComplete: (cb) => { if (typeof cb === 'function') ipcRenderer.on('download-complete', (e, d) => cb(d)); },
   onBookmarkStatusChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('bookmark-status-changed', (e, d) => cb(d)); },
