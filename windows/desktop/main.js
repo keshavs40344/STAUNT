@@ -516,10 +516,11 @@ const DEFAULT_GLOBAL_PERMISSIONS = {
   notifications: 'ask',
   'clipboard-read': 'ask',
   popups: 'block',
-  fullscreen: 'allow'
+  fullscreen: 'allow',
+  'pointer-lock': 'allow'
 };
 
-const VALID_PERMISSION_TYPES = ['camera', 'microphone', 'location', 'notifications', 'clipboard-read', 'popups', 'fullscreen'];
+const VALID_PERMISSION_TYPES = ['camera', 'microphone', 'location', 'notifications', 'clipboard-read', 'popups', 'fullscreen', 'pointer-lock'];
 const VALID_PERMISSION_VALUES = ['allow', 'block', 'ask', 'default'];
 
 let rawPerms = readJsonWithBak(SITE_PERMISSIONS_FILE, null);
@@ -590,6 +591,7 @@ function normalizePermissionNames(permission, details) {
   if (p === 'clipboard-read') return ['clipboard-read'];
   if (p === 'fullscreen') return ['fullscreen'];
   if (p === 'popups') return ['popups'];
+  if (p === 'pointer-lock' || p === 'pointerlock') return ['pointer-lock'];
   return [p];
 }
 
@@ -1128,7 +1130,7 @@ function createMainWindow() {
 const configuredSessions = new WeakSet();
 const activeDownloadItems = new Map();
 const sessionPermissionCache = new Map();
-const ALWAYS_DENY_PERMS = ['usb', 'bluetooth', 'serial', 'hid', 'idle-detection', 'pointer-lock', 'midisysex'];
+const ALWAYS_DENY_PERMS = ['usb', 'bluetooth', 'serial', 'hid', 'idle-detection', 'midisysex'];
 const PROMPT_REQUIRED_PERMS = ['media', 'geolocation', 'notifications', 'display-capture', 'clipboard-read', 'midi'];
 
 function onShieldStatsBroadcast(stats) {
@@ -1554,8 +1556,14 @@ function setupWebContentsEvents(tabObj) {
     const tabOrigin = normalizeSiteOrigin(currentUrl);
     const popupDecision = getEffectivePermissionForSite(tabOrigin, 'popups', tabObj.isIncognito);
 
+    function isLegitimatePopupOrAuthFlow(u) {
+      if (!u) return false;
+      if (isCriticalWhitelisted(u)) return true;
+      return /accounts\.google\.com|appleid\.apple\.com|github\.com\/(login|oauth)|login\.microsoftonline\.com|login\.live\.com|auth0\.com|okta\.com|clerk\.com|clerk\.dev|supabase\.co|facebook\.com\/(dialog|v\d|oauth)|twitter\.com\/oauth|x\.com\/oauth|linkedin\.com\/oauth|stripe\.com|razorpay\.com|paypal\.com|paytm\.com|oauth|sso|saml|\/auth\/|\/signin\/|\/login\//i.test(u);
+    }
+
     if (popupDecision === 'block') {
-      const isCritical = isCriticalWhitelisted(url) || /accounts\.google\.com|appleid\.apple\.com|github\.com\/login|oauth|stripe\.com|razorpay\.com|paypal\.com/i.test(url);
+      const isCritical = isLegitimatePopupOrAuthFlow(url);
       if (!isCritical) {
         console.warn(`[SECURITY POPUP GATE] Pop-up blocked for ${tabOrigin} -> ${url}`);
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1565,7 +1573,7 @@ function setupWebContentsEvents(tabObj) {
       }
     }
 
-    if (isCriticalWhitelisted(url) || /accounts\.google\.com|appleid\.apple\.com|github\.com\/login|oauth|stripe\.com|razorpay\.com|paypal\.com/i.test(url) || disposition === 'new-window') {
+    if (isLegitimatePopupOrAuthFlow(url) || disposition === 'new-window') {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {

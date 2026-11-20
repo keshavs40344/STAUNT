@@ -11,17 +11,25 @@ const fs = require('fs');
 
 // =============================================================================
 // 1. CRITICAL WHITELIST (NEVER INTERCEPT OR CANCEL)
-// Guaranteed 100% functionality for Auth, Payments, CAPTCHA, and CDNs
+// Guaranteed 100% functionality for Auth, Payments, CAPTCHA, CDNs, Banking & Gov
 // =============================================================================
 const CRITICAL_WHITELIST_HOSTS = [
-  // Identity & OAuth Providers
+  // Identity, SSO & OAuth Providers
   'accounts.google.com',
+  'myaccount.google.com',
   'appleid.apple.com',
   'github.com',
+  'gitlab.com',
   'login.microsoftonline.com',
   'login.live.com',
+  'account.microsoft.com',
   'auth0.com',
   'okta.com',
+  'clerk.com',
+  'clerk.dev',
+  'supabase.co',
+  'firebaseapp.com',
+  'identitytoolkit.googleapis.com',
   'idmsa.apple.com',
 
   // Anti-Bot & Human Verification (CAPTCHA / Cloudflare Turnstile)
@@ -30,8 +38,10 @@ const CRITICAL_WHITELIST_HOSTS = [
   'challenges.cloudflare.com',
   'hcaptcha.com',
   'turnstile.cloudflare.com',
+  'arkoselabs.com',
+  'funcaptcha.com',
 
-  // Payment Processors & Banking SPAs
+  // Payment Processors & Global Gateways
   'stripe.com',
   'razorpay.com',
   'paypal.com',
@@ -44,13 +54,24 @@ const CRITICAL_WHITELIST_HOSTS = [
   'checkout.razorpay.com',
   'paypalobjects.com',
 
-  // Core Open Source CDNs & Fonts
+  // Real-Time Communication & WebRTC Infrastructure
+  'meet.google.com',
+  'web.whatsapp.com',
+  'discord.com',
+  'teams.microsoft.com',
+  'zoom.us',
+  'slack.com',
+
+  // Core Open Source CDNs & Essential Assets
   'cdnjs.cloudflare.com',
   'cdn.jsdelivr.net',
+  'fastly.jsdelivr.net',
   'unpkg.com',
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'ajax.googleapis.com'
+  'ajax.googleapis.com',
+  'cdn.tailwindcss.com',
+  'gstatic.com'
 ];
 
 // =============================================================================
@@ -393,6 +414,9 @@ function enableShieldInSession(targetSession, onStatsUpdate) {
 
   targetSession.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = { ...details.responseHeaders };
+    if (currentShieldLevel === 'off' || (siteShieldOverrideChecker && siteShieldOverrideChecker(details.initiator || details.url))) {
+      return callback({ responseHeaders });
+    }
     const policy = privacyHeaderConfig.cookiePolicy || 'block-third-party';
 
     if (policy === 'block-all') {
