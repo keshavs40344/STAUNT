@@ -2729,11 +2729,35 @@
         <div class="shortcut-row"><span>Find in Page</span><span class="kbd-badge">Ctrl+F</span></div>
         <div class="shortcut-row"><span>Bookmark This Page</span><span class="kbd-badge">Ctrl+D</span></div>
         <div class="shortcut-row"><span>Toggle Favourites Bar</span><span class="kbd-badge">Ctrl+Shift+B</span></div>
+        <div class="shortcut-row"><span>Print / Save Webpage</span><span class="kbd-badge">Ctrl+P / Ctrl+S</span></div>
+        <div class="shortcut-row"><span>View Page Source</span><span class="kbd-badge">Ctrl+U</span></div>
+        <div class="shortcut-row"><span>Zoom In / Out / Reset</span><span class="kbd-badge">Ctrl++ / Ctrl+- / Ctrl+0</span></div>
         <div class="shortcut-row"><span>History / Downloads / Bookmarks</span><span class="kbd-badge">Ctrl+H / Ctrl+J / Ctrl+Shift+O</span></div>
         <div class="shortcut-row"><span>Toggle Fullscreen / DevTools</span><span class="kbd-badge">F11 / F12</span></div>
       </div>
       <div class="modal-footer">
         <button class="btn-primary-action" id="btnCloseShortcutsModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR CODE SHARING MODAL -->
+  <div class="modal-overlay" id="qrShareModal" role="dialog" aria-modal="true" aria-label="Share via QR Code">
+    <div class="modal-card" style="width: 380px; max-height: 85vh; text-align: center;">
+      <div class="modal-header">
+        <span class="modal-title">Share via QR Code</span>
+        <button class="modal-close-btn" id="btnQrShareClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" style="align-items: center; gap: 14px; padding: 20px;">
+        <div id="qrCodeContainer" style="background: #ffffff; padding: 14px; border-radius: var(--radius-md); box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: inline-flex; align-items: center; justify-content: center;">
+          <!-- SVG QR Code rendered here -->
+        </div>
+        <div id="qrShareUrl" style="font-size: 12px; color: var(--text-secondary); word-break: break-all; max-width: 100%; line-height: 1.4; user-select: text;"></div>
+        <div style="font-size: 11px; color: var(--text-tertiary);">Scan with your mobile camera to open instantly</div>
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: 10px;">
+        <button class="modal-btn" id="btnCopyQrUrl">Copy Link</button>
+        <button class="btn-primary-action" id="btnCloseQrModal">Done</button>
       </div>
     </div>
   </div>
@@ -5476,6 +5500,7 @@
             closeGroupEditModal();
             closeShortcutsModal();
             closeSitePermissionsModal();
+            closeQrShareModal();
             closeSettingsModal();
             closeFindBar();
           }
@@ -5739,6 +5764,7 @@
           closeGroupEditModal();
           closeShortcutsModal();
           closeSitePermissionsModal();
+          closeQrShareModal();
           if (threeDotMenu) threeDotMenu.classList.remove('active');
           if (favContextMenu) favContextMenu.style.display = 'none';
           if (favOverflowMenu) favOverflowMenu.style.display = 'none';
@@ -5775,8 +5801,9 @@
       const groupNameInput = document.getElementById('groupNameInput');
       const shortcutsModal = document.getElementById('shortcutsModal');
 
+      const qrShareModal = document.getElementById('qrShareModal');
       function closeAllPhase7Except(keepEl) {
-        [commandPaletteModal, tabSearchModal, readingListModal, readerModeModal, groupEditModal, shortcutsModal, sitePermissionsModal].forEach(m => {
+        [commandPaletteModal, tabSearchModal, readingListModal, readerModeModal, groupEditModal, shortcutsModal, sitePermissionsModal, qrShareModal].forEach(m => {
           if (m && m !== keepEl) m.classList.remove('active');
         });
       }
@@ -5821,7 +5848,13 @@
           { id: 'find-page', title: 'Find in Page', sub: 'Search text on current page', kbd: 'Ctrl+F', run: () => openFindBar() },
           { id: 'toggle-fullscreen', title: 'Toggle Fullscreen', sub: 'Enter or exit fullscreen mode', kbd: 'F11', run: () => { if (typeof api.toggleFullscreen === 'function') api.toggleFullscreen(); } },
           { id: 'shortcuts-ref', title: 'Keyboard Shortcuts Reference', sub: 'View all browser shortcuts', kbd: 'Ctrl+/', run: () => openShortcutsModal() },
-          { id: 'manage-passwords', title: 'Manage Passwords', sub: 'View and delete saved passwords from the vault', kbd: '', run: () => openPasswordManagerModal() }
+          { id: 'manage-passwords', title: 'Manage Passwords', sub: 'View and delete saved passwords from the vault', kbd: '', run: () => openPasswordManagerModal() },
+          { id: 'print-page', title: 'Print Page...', sub: 'Open native print dialog or print to PDF', kbd: 'Ctrl+P', run: () => { if (typeof api.printToPDF === 'function') api.printToPDF(); } },
+          { id: 'save-page', title: 'Save Page As...', sub: 'Save complete HTML webpage to disk', kbd: 'Ctrl+S', run: () => { if (typeof api.savePage === 'function') api.savePage(); } },
+          { id: 'view-source', title: 'View Page Source', sub: isWeb ? 'Inspect HTML source code in new tab' : 'Available on http/https pages', kbd: 'Ctrl+U', disabled: !isWeb, run: () => { if (activeTab && activeTab.url && /^https?:\/\//i.test(activeTab.url)) api.createTab('view-source:' + activeTab.url, { isIncognito: activeTab.isIncognito }); } },
+          { id: 'open-devtools', title: 'Open Developer Tools', sub: 'Inspect DOM elements, network and console', kbd: 'F12', run: () => { if (typeof api.toggleDevTools === 'function') api.toggleDevTools(); } },
+          { id: 'share-qr', title: 'Share via QR Code', sub: isWeb ? 'Display mobile scannable QR Code for active URL' : 'Available on http/https pages', kbd: '', disabled: !isWeb, run: () => openQrShareModal() },
+          { id: 'guest-session', title: 'Open Guest Browsing Session', sub: 'Isolated ephemeral window with zero disk storage', kbd: '', run: () => api.createTab('staunt://newtab', { isIncognito: true, isGuest: true }) }
         ];
 
         // Dynamically add all 24 verified search engines
@@ -6317,6 +6350,170 @@
       document.getElementById('btnShortcutsClose')?.addEventListener('click', closeShortcutsModal);
       document.getElementById('btnCloseShortcutsModal')?.addEventListener('click', closeShortcutsModal);
       shortcutsModal?.addEventListener('click', (e) => { if (e.target === shortcutsModal) closeShortcutsModal(); });
+
+      // --- Module G: QR Code Sharing Modal ---
+      function createQRCodeSVG(text, size = 180) {
+        const exp = new Uint8Array(512);
+        const log = new Uint8Array(256);
+        let x = 1;
+        for (let i = 0; i < 255; i++) {
+          exp[i] = x;
+          exp[i + 255] = x;
+          log[x] = i;
+          x = (x << 1) ^ (x >= 128 ? 0x11d : 0);
+        }
+        function gmul(a, b) { return (a === 0 || b === 0) ? 0 : exp[log[a] + log[b]]; }
+        function rsGenPoly(n) {
+          let p = [1];
+          for (let i = 0; i < n; i++) {
+            const next = new Array(p.length + 1).fill(0);
+            for (let j = 0; j < p.length; j++) {
+              next[j] ^= gmul(p[j], exp[i]);
+              next[j + 1] ^= p[j];
+            }
+            p = next;
+          }
+          return p;
+        }
+        function rsEncode(data, nEC) {
+          const poly = rsGenPoly(nEC);
+          const res = new Uint8Array(data.length + nEC);
+          res.set(data);
+          for (let i = 0; i < data.length; i++) {
+            const coef = res[i];
+            if (coef !== 0) {
+              for (let j = 0; j < poly.length; j++) res[i + j] ^= gmul(poly[j], coef);
+            }
+          }
+          return res.slice(data.length);
+        }
+        const VERSIONS = [
+          null,
+          { ver: 1, mod: 21, dataCap: 19, ecLen: 7 },
+          { ver: 2, mod: 25, dataCap: 34, ecLen: 10, align: [6, 18] },
+          { ver: 3, mod: 29, dataCap: 55, ecLen: 15, align: [6, 22] },
+          { ver: 4, mod: 33, dataCap: 80, ecLen: 20, align: [6, 26] },
+          { ver: 5, mod: 37, dataCap: 108, ecLen: 26, align: [6, 30] },
+          { ver: 6, mod: 41, dataCap: 136, ecLen: 18, align: [6, 34] }
+        ];
+        const strBytes = new TextEncoder().encode(text || 'https://staunt.com');
+        let vInfo = VERSIONS.slice(1).find(v => v.dataCap >= strBytes.length + 3) || VERSIONS[6];
+        const N = vInfo.mod;
+        const grid = Array.from({ length: N }, () => new Int8Array(N).fill(-1));
+        function placeFinder(r, c) {
+          for (let i = -1; i <= 7; i++) {
+            for (let j = -1; j <= 7; j++) {
+              const nr = r + i, nc = c + j;
+              if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+              if (i >= 0 && i <= 6 && j >= 0 && j <= 6) {
+                grid[nr][nc] = (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)) ? 1 : 0;
+              } else {
+                grid[nr][nc] = 0;
+              }
+            }
+          }
+        }
+        placeFinder(0, 0); placeFinder(0, N - 7); placeFinder(N - 7, 0);
+        if (vInfo.align) {
+          for (const r of vInfo.align) {
+            for (const c of vInfo.align) {
+              if (grid[r][c] !== -1) continue;
+              for (let i = -2; i <= 2; i++) {
+                for (let j = -2; j <= 2; j++) {
+                  grid[r + i][c + j] = (Math.abs(i) === 2 || Math.abs(j) === 2 || (i === 0 && j === 0)) ? 1 : 0;
+                }
+              }
+            }
+          }
+        }
+        for (let i = 8; i < N - 8; i++) {
+          if (grid[6][i] === -1) grid[6][i] = (i % 2 === 0) ? 1 : 0;
+          if (grid[i][6] === -1) grid[i][6] = (i % 2 === 0) ? 1 : 0;
+        }
+        grid[4 * vInfo.ver + 9][8] = 1;
+        const bits = [];
+        function pushBits(val, len) {
+          for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1);
+        }
+        pushBits(0b0100, 4); pushBits(strBytes.length, 8);
+        for (const b of strBytes) pushBits(b, 8);
+        pushBits(0, 4);
+        while (bits.length % 8 !== 0) bits.push(0);
+        const pad = [0xEC, 0x11];
+        let pIdx = 0;
+        while (bits.length < vInfo.dataCap * 8) { pushBits(pad[pIdx % 2], 8); pIdx++; }
+        const dataBytes = new Uint8Array(vInfo.dataCap);
+        for (let i = 0; i < dataBytes.length; i++) {
+          let byteVal = 0;
+          for (let b = 0; b < 8; b++) byteVal = (byteVal << 1) | bits[i * 8 + b];
+          dataBytes[i] = byteVal;
+        }
+        const ecBytes = rsEncode(dataBytes, vInfo.ecLen);
+        const allBits = [];
+        for (const b of dataBytes) for (let i = 7; i >= 0; i--) allBits.push((b >>> i) & 1);
+        for (const b of ecBytes) for (let i = 7; i >= 0; i--) allBits.push((b >>> i) & 1);
+        let bitIdx = 0, dir = -1, c = N - 1;
+        while (c > 0) {
+          if (c === 6) c--;
+          const rStart = (dir === -1) ? N - 1 : 0;
+          const rEnd = (dir === -1) ? -1 : N;
+          for (let r = rStart; r !== rEnd; r += dir) {
+            for (const colOffset of [0, -1]) {
+              const curCol = c + colOffset;
+              if (grid[r][curCol] === -1) {
+                const bit = bitIdx < allBits.length ? allBits[bitIdx++] : 0;
+                const mask = (r + curCol) % 2 === 0 ? 1 : 0;
+                grid[r][curCol] = bit ^ mask;
+              }
+            }
+          }
+          dir = -dir;
+          c -= 2;
+        }
+        const formatBits = [1,1,1,0,1,1,1,1,1,0,0,0,1,0,0];
+        const tlCoords = [[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+        for (let i = 0; i < 15; i++) grid[tlCoords[i][0]][tlCoords[i][1]] = formatBits[i];
+        for (let i = 0; i < 7; i++) grid[N - 1 - i][8] = formatBits[i];
+        for (let i = 0; i < 8; i++) grid[8][N - 8 + i] = formatBits[7 + i];
+        let path = '';
+        for (let r = 0; r < N; r++) {
+          for (let col = 0; col < N; col++) {
+            if (grid[r][col] === 1) path += `M${col + 2},${r + 2}h1v1h-1z `;
+          }
+        }
+        const svgDim = N + 4;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgDim} ${svgDim}" width="${size}" height="${size}" shape-rendering="crispEdges">
+          <rect width="${svgDim}" height="${svgDim}" fill="#ffffff"/>
+          <path d="${path.trim()}" fill="#0e131f"/>
+        </svg>`;
+      }
+
+      function openQrShareModal() {
+        if (!qrShareModal) return;
+        const curUrl = (activeTab && activeTab.url && /^https?:\/\//i.test(activeTab.url)) ? activeTab.url : (document.getElementById('deskOmnibox')?.value || 'https://staunt.com');
+        const container = document.getElementById('qrCodeContainer');
+        const urlDisplay = document.getElementById('qrShareUrl');
+        if (container) container.innerHTML = createQRCodeSVG(curUrl, 180);
+        if (urlDisplay) urlDisplay.textContent = curUrl;
+        closeAllPhase7Except(qrShareModal);
+        qrShareModal.classList.add('active');
+        syncModalState();
+      }
+      function closeQrShareModal() {
+        if (qrShareModal) qrShareModal.classList.remove('active');
+        syncModalState();
+      }
+      document.getElementById('btnQrShareClose')?.addEventListener('click', closeQrShareModal);
+      document.getElementById('btnCloseQrModal')?.addEventListener('click', closeQrShareModal);
+      document.getElementById('btnCopyQrUrl')?.addEventListener('click', () => {
+        const url = document.getElementById('qrShareUrl')?.textContent || '';
+        if (url) {
+          navigator.clipboard?.writeText(url).then(() => {
+            showDownloadToast('Link copied to clipboard', 2000);
+          }).catch(() => {});
+        }
+      });
+      qrShareModal?.addEventListener('click', (e) => { if (e.target === qrShareModal) closeQrShareModal(); });
 
       // ========================================================================
       // PHASE 8 CONTROLLER: SITE PERMISSIONS & PRIVACY CONTROL CENTER

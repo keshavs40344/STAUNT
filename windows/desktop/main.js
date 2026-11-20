@@ -1685,6 +1685,9 @@ function setupWebContentsEvents(tabObj) {
       } else {
         handleReload();
       }
+    } else if (input.key === 'F12' || (isCtrl && input.shift && !input.alt && key === 'i')) {
+      event.preventDefault();
+      if (!wc.isDestroyed()) wc.toggleDevTools();
     } else if (input.key === 'F11') {
       event.preventDefault();
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -2002,7 +2005,29 @@ function setupWebContentsEvents(tabObj) {
         { type: 'separator' }
       ] : []),
       ...(params.srcURL && params.mediaType === 'image' && isSafeHttpUrl(params.srcURL)
-        ? [{ label: 'Save Image As...', click: () => { wc.downloadURL(params.srcURL); } }, { type: 'separator' }]
+        ? [
+            { label: 'Open Image in New Tab', click: () => { createTab(params.srcURL, { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito }); } },
+            { label: 'Save Image As...', click: () => { wc.downloadURL(params.srcURL); } },
+            { label: 'Copy Image Address', click: () => { clipboard.writeText(params.srcURL); } },
+            { type: 'separator' }
+          ]
+        : []),
+      ...(params.mediaType === 'video'
+        ? [
+            {
+              label: 'Picture in Picture',
+              click: () => {
+                wc.executeJavaScript(`(() => {
+                  const el = document.elementFromPoint(${params.x}, ${params.y}) || document.querySelector('video');
+                  if (el && el.requestPictureInPicture) {
+                    if (document.pictureInPictureElement) document.exitPictureInPicture();
+                    else el.requestPictureInPicture();
+                  }
+                })()`).catch(() => {});
+              }
+            },
+            { type: 'separator' }
+          ]
         : []),
       ...(selectedText ? [
         { label: `Search Staunt for "${selectedText.slice(0, 28)}${selectedText.length > 28 ? '...' : ''}"`, click: () => createTab(nativeSearchClient.buildSearchUrl(selectedText), { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito }) },
