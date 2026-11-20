@@ -1,0 +1,56 @@
+{
+  "sky_birds.jpg": {
+    "theme": "Living Sky",
+    "description": "Golden sunrise over clouds with birds in flight",
+    "file": "sky_birds.jpg",
+    "width": 1024,
+    "height": 576,
+    "format": "JPEG",
+    "size_kb": 282.5
+  },
+  "mountain_escape.jpg": {
+    "theme": "Mountain Escape",
+    "description": "Alpine mountain peaks over sunrise cloud inversions",
+    "file": "mountain_escape.jpg",
+    "width": 1024,
+    "height": 576,
+    "format": "JPEG",
+    "size_kb": 355.4
+  },
+  "ocean_depths.jpg": {
+    "theme": "Ocean Depths",
+    "description": "Underwater coral seascape with sunbeams and light rays",
+    "file": "ocean_depths.jpg",
+    "width": 1024,
+    "height": 576,
+    "format": "JPEG",
+    "size_kb": 418.4
+  },
+  "cosmos.jpg": {
+    "theme": "Living Cosmos",
+    "description": "Milky Way galaxy over alpine lake reflections",
+    "file": "cosmos.jpg",
+    "width": 1024,
+    "height": 576,
+    "format": "JPEG",
+    "size_kb": 384.4
+  },
+  "ambient_flow.jpg": {
+    "theme": "Ambient Flow",
+    "description": "Sovereign deep navy and cyan sculpted silk waves",
+    "file": "ambient_flow.jpg",
+    "width": 1024,
+    "height": 576,
+    "format": "JPEG",
+    "size_kb": 250.9
+  },
+  "aurora.jpg": {
+    "theme": "Aurora",
+    "description": "Northern lights green and violet curtains over snowy mountains and reflective lake",
+    "file": "aurora.jpg",
+    "width": 1024,
+    "height": 575,
+    "format": "JPEG",
+    "size_kb": 344.6
+  }
+}

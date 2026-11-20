@@ -10,8 +10,11 @@ const {
   initStauntShieldEngine,
   enableShieldInSession,
   attachShieldToWebContents,
+  setShieldLevel,
   isCriticalWhitelisted
 } = require('./src/adblocker-core');
+const { pathToFileURL, fileURLToPath } = require('url');
+const logger = console;
 const NativeSearchClient = require('./src/search_client');
 const nativeSearchClient = new NativeSearchClient();
 
@@ -241,10 +244,56 @@ let secondaryTabId = null;
 let nextTabId = 1;
 let closedTabsStack = [];
 
-// Apple Safari Native 44px Topbar Geometry
+// Browser Topbar, Favourites & Find Bar Geometry
 let isSplitViewActive = false;
 let splitRatio = 0.5;
-const TOOLBAR_HEIGHT = 44; // Fixed native 44px Apple topbar
+let isFindBarOpen = false;
+const TOPBAR_HEIGHT = 44; // Fixed native 44px topbar
+const FAVOURITES_BAR_HEIGHT = 30; // Dedicated 30px favourites bar
+const FIND_BAR_HEIGHT = 40; // Docked Find in Page bar
+function getChromeHeight() {
+  return TOPBAR_HEIGHT
+    + (settingsDB.showFavouritesBar !== false ? FAVOURITES_BAR_HEIGHT : 0)
+    + (isFindBarOpen ? FIND_BAR_HEIGHT : 0);
+}
+
+const NEWTAB_PAGE_FILE = path.resolve(__dirname, 'src', 'newtab.html');
+const ERROR_PAGE_FILE = path.resolve(__dirname, 'src', 'error.html');
+
+function isLocalPageUrl(urlStr, targetFilePath) {
+  if (!urlStr || typeof urlStr !== 'string' || !urlStr.startsWith('file:')) return false;
+  try {
+    const resolved = path.resolve(fileURLToPath(urlStr));
+    return resolved.toLowerCase() === targetFilePath.toLowerCase();
+  } catch (_) {
+    return false;
+  }
+}
+
+function canTabGoBack(wc) {
+  if (!wc || wc.isDestroyed()) return false;
+  if (wc.navigationHistory && typeof wc.navigationHistory.canGoBack === 'function') {
+    return wc.navigationHistory.canGoBack();
+  }
+  return wc.canGoBack();
+}
+
+function canTabGoForward(wc) {
+  if (!wc || wc.isDestroyed()) return false;
+  if (wc.navigationHistory && typeof wc.navigationHistory.canGoForward === 'function') {
+    return wc.navigationHistory.canGoForward();
+  }
+  return wc.canGoForward();
+}
+
+function isSafeHttpUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+}
 
 // =============================================================================
 // LOCAL VAULT STORAGE (History, Bookmarks, Downloads, Settings)
@@ -259,12 +308,14 @@ let bookmarksDB = [];
 let downloadsDB = [];
 const DEFAULT_SETTINGS = {
   searchEngine: 'staunt',
+  customSearchUrl: '',
   searchUrl: process.env.STAUNT_SEARCH_URL || 'https://staunt.vercel.app',
   homeUrl: 'staunt://newtab',
   shieldLevel: 'standard',
   hardwareAcceleration: true,
   restoreTabsOnStartup: false,
-  downloadPath: ''
+  downloadPath: '',
+  showFavouritesBar: true
 };
 let settingsDB = { ...DEFAULT_SETTINGS };
 
@@ -281,12 +332,31 @@ if (settingsDB.searchUrl && (
 )) {
   settingsDB.searchUrl = 'https://staunt.vercel.app';
 }
+nativeSearchClient.setSearchEngine(settingsDB.searchEngine || 'staunt', settingsDB.customSearchUrl || '');
+setShieldLevel(settingsDB.shieldLevel || 'standard');
 
-function recordHistory(url, title) {
+// Normalize any orphaned in-progress downloads from an unclean previous exit
+if (Array.isArray(downloadsDB)) {
+  let changed = false;
+  downloadsDB.forEach((d) => {
+    if (d && (d.state === 'progressing' || d.state === 'paused')) {
+      d.state = 'interrupted';
+      changed = true;
+    }
+  });
+  if (changed) atomicWriteJson(DOWNLOADS_FILE, downloadsDB.slice(0, 100));
+}
+
+function recordHistory(url, title, tabObj = null) {
+  // Privacy Guarantee: NEVER persist Incognito tab browsing into history vault
+  if (tabObj && tabObj.isIncognito) return;
   if (!url || typeof url !== 'string') return;
   const cleanUrl = url.trim().slice(0, 2048);
   if (
+    isLocalPageUrl(cleanUrl, NEWTAB_PAGE_FILE) ||
+    isLocalPageUrl(cleanUrl, ERROR_PAGE_FILE) ||
     cleanUrl.includes('newtab.html') ||
+    cleanUrl.includes('error.html') ||
     cleanUrl === 'about:blank' ||
     cleanUrl.startsWith('about:') ||
     cleanUrl.startsWith('staunt://') ||
@@ -294,17 +364,30 @@ function recordHistory(url, title) {
     cleanUrl.startsWith('javascript:') ||
     cleanUrl.startsWith('file:')
   ) return;
-  
+
+  const cleanTitle = (title || cleanUrl).slice(0, 256);
+  const now = Date.now();
+
+  // Avoid triplicating history rows during a single page load (did-navigate -> page-title-updated -> did-finish-load)
+  if (historyDB.length > 0 && historyDB[0].url === cleanUrl && (now - (historyDB[0].timestamp || 0)) < 15000) {
+    if (cleanTitle && cleanTitle !== cleanUrl) {
+      historyDB[0].title = cleanTitle;
+    }
+    historyDB[0].timestamp = now;
+    atomicWriteJson(HISTORY_FILE, historyDB.slice(0, 1000));
+    return;
+  }
+
   const entry = {
-    id: Date.now().toString(36) + Math.random().toString(36).substr(2, 6),
+    id: now.toString(36) + Math.random().toString(36).substr(2, 6),
     url: cleanUrl,
-    title: (title || cleanUrl).slice(0, 256),
-    timestamp: Date.now()
+    title: cleanTitle,
+    timestamp: now
   };
-  
+
   historyDB.unshift(entry);
   if (historyDB.length > 5000) historyDB.pop();
-  
+
   atomicWriteJson(HISTORY_FILE, historyDB.slice(0, 1000));
 }
 
@@ -342,6 +425,9 @@ function recordDownload(entry) {
 }
 
 const SESSION_FILE = path.join(USER_DATA_PATH, 'staunt_session_tabs.json');
+const READING_LIST_FILE = path.join(USER_DATA_PATH, 'staunt_reading_list.json');
+let readingListDB = readJsonWithBak(READING_LIST_FILE, []);
+if (!Array.isArray(readingListDB)) readingListDB = [];
 
 function saveSessionTabs() {
   if (tabs.size === 0) return;
@@ -352,7 +438,9 @@ function saveSessionTabs() {
         url: tab.url,
         title: tab.title,
         isPinned: tab.isPinned,
-        workspaceId: tab.workspaceId
+        group: tab.group || null,
+        workspaceId: tab.workspaceId,
+        isActive: id === activeTabId
       });
     }
   }
@@ -363,11 +451,17 @@ function restoreSessionTabs() {
   try {
     const data = readJsonWithBak(SESSION_FILE, null);
     if (Array.isArray(data) && data.length > 0) {
+      let activeRestoredId = null;
       for (const item of data) {
-        createTab(item.url || 'staunt://newtab', {
+        const createdId = createTab(item.url || 'staunt://newtab', {
           isPinned: Boolean(item.isPinned),
+          group: item.group || null,
           workspaceId: item.workspaceId
         });
+        if (item.isActive) activeRestoredId = createdId;
+      }
+      if (activeRestoredId !== null && tabs.has(activeRestoredId)) {
+        switchTab(activeRestoredId);
       }
       return true;
     }
@@ -413,7 +507,8 @@ function isUrlBookmarked(url) {
     clean.startsWith('file:') ||
     clean.startsWith('javascript:')
   ) return false;
-  return bookmarksDB.some(b => b.url === clean);
+  const normTarget = normalizeBookmarkUrl(clean);
+  return bookmarksDB.some(b => normalizeBookmarkUrl(b.url) === normTarget);
 }
 
 function toggleBookmarkCurrentPage() {
@@ -423,12 +518,14 @@ function toggleBookmarkCurrentPage() {
   if (!currentUrl || currentUrl.startsWith('staunt://') || currentUrl.includes('newtab.html') || currentUrl === 'about:blank') {
     return { bookmarked: false, url: currentUrl };
   }
-  const existingIdx = bookmarksDB.findIndex(b => b.url === currentUrl);
+  const normTarget = normalizeBookmarkUrl(currentUrl);
+  const existingIdx = bookmarksDB.findIndex(b => normalizeBookmarkUrl(b.url) === normTarget);
   if (existingIdx !== -1) {
     bookmarksDB.splice(existingIdx, 1);
     atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('bookmark-status-changed', { url: currentUrl, bookmarked: false });
+      mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
     }
     return { bookmarked: false, url: currentUrl };
   } else {
@@ -443,6 +540,7 @@ function toggleBookmarkCurrentPage() {
     atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('bookmark-status-changed', { url: currentUrl, bookmarked: true, bookmark: newItem });
+      mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
     }
     return { bookmarked: true, url: currentUrl, bookmark: newItem };
   }
@@ -452,6 +550,9 @@ function deleteBookmark(id) {
   const initLen = bookmarksDB.length;
   bookmarksDB = bookmarksDB.filter(b => b.id !== id);
   atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
+  }
   return { success: bookmarksDB.length < initLen };
 }
 
@@ -460,6 +561,13 @@ function deleteHistoryItem(id) {
   historyDB = historyDB.filter(h => h.id !== id);
   atomicWriteJson(HISTORY_FILE, historyDB);
   return { success: historyDB.length < initLen };
+}
+
+function deleteDownloadItem(id) {
+  const initLen = downloadsDB.length;
+  downloadsDB = downloadsDB.filter(d => d.id !== id);
+  atomicWriteJson(DOWNLOADS_FILE, downloadsDB);
+  return { success: downloadsDB.length < initLen };
 }
 
 function clearDownloads() {
@@ -487,14 +595,19 @@ function resetZoom() {
   }
 }
 
-function bookmarkCurrentPage() {
-  const tab = tabs.get(activeTabId);
-  if (tab) {
-    const item = { title: tab.title, url: tab.url, favicon: tab.favicon };
-    bookmarksDB.push({ id: Date.now().toString(36), ...item });
-    atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('bookmark-added', item);
+function normalizeBookmarkUrl(u) {
+  if (!u || typeof u !== 'string') return '';
+  try {
+    const parsed = new URL(u.trim());
+    const p = parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/+$/, '');
+    return (parsed.protocol + '//' + parsed.hostname.toLowerCase() + (parsed.port ? ':' + parsed.port : '') + p + parsed.search + parsed.hash).toLowerCase();
+  } catch (_) {
+    return u.trim().toLowerCase().replace(/\/+$/, '');
   }
+}
+
+function bookmarkCurrentPage() {
+  return toggleBookmarkCurrentPage();
 }
 
 function saveCurrentPage() {
@@ -519,8 +632,21 @@ function saveCurrentPage() {
     if (result && result.filePath) {
       tab.view.webContents.savePage(result.filePath, 'HTMLComplete')
         .then(() => {
+          let fileSize = 0;
+          try { fileSize = fs.statSync(result.filePath).size; } catch (_) {}
+          recordDownload({
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+            fileName: path.basename(result.filePath),
+            filePath: result.filePath,
+            totalBytes: fileSize,
+            receivedBytes: fileSize,
+            state: 'completed',
+            url: currentUrl,
+            mimeType: 'text/html',
+            timestamp: Date.now()
+          });
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('download-complete', { fileName: path.basename(result.filePath) });
+            mainWindow.webContents.send('download-complete', { fileName: path.basename(result.filePath), state: 'completed' });
           }
         })
         .catch(err => console.error('[SAVE PAGE ERROR]', err));
@@ -655,6 +781,7 @@ function createMainWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    ensureOmniboxPopupView();
     // Instantiate and attach initial WebContentsView immediately so viewport is never 0x0
     if (tabs.size === 0) {
       if (settingsDB.restoreTabsOnStartup && restoreSessionTabs()) {
@@ -667,134 +794,10 @@ function createMainWindow() {
     }
   });
 
-  // Global Session User-Agent & Network Filter Configuration
-  session.defaultSession.setUserAgent(OFFICIAL_CHROME_WINDOWS_UA);
-
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const responseHeaders = { ...details.responseHeaders };
-    
-    if (details.url.startsWith('file://') || details.url.includes('newtab.html')) {
-      responseHeaders['Content-Security-Policy'] = [
-        "default-src 'self' file: data: https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: file:; object-src 'none'; frame-ancestors 'none';"
-      ];
-    }
-    
-    responseHeaders['X-Content-Type-Options'] = ['nosniff'];
-    callback({ responseHeaders });
-  });
-
-  // Initialize Shield Engine
+  configureSessionSecurity(session.defaultSession, false);
   initStauntShieldEngine(USER_DATA_PATH).then(() => {
-    enableShieldInSession(session.defaultSession, (stats) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('shield-updated', stats);
-      }
-    });
+    enableShieldInSession(session.defaultSession, onShieldStatsBroadcast);
   }).catch((e) => console.warn('[SHIELD INIT WARNING]', e));
-
-  // Granular Hardware API Gate
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    const permLower = permission.toLowerCase();
-    if (['usb', 'bluetooth', 'serial', 'hid', 'idle-detection', 'pointer-lock'].includes(permLower)) {
-      console.warn(`[SECURITY HARDWARE GATE] Denied raw hardware API: ${permission}`);
-      return callback(false);
-    }
-    
-    const url = details.requestingUrl || webContents.getURL();
-    console.log(`[PERMISSION GATE] Authorized request: ${permission} from ${url}`);
-
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('permission-requested', {
-        permission: permission,
-        url: url
-      });
-    }
-    callback(true);
-  });
-
-  // Native Download Manager with Persistent Vault Tracking
-  session.defaultSession.on('will-download', (event, item, webContents) => {
-    const downloadId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    const totalBytes = item.getTotalBytes();
-    let fileName = item.getFilename();
-    let saveDir = app.getPath('downloads');
-    if (typeof settingsDB.downloadPath === 'string' && settingsDB.downloadPath.trim()) {
-      const candidateDir = path.normalize(settingsDB.downloadPath.trim());
-      try {
-        if (fs.existsSync(candidateDir) && fs.statSync(candidateDir).isDirectory()) {
-          saveDir = candidateDir;
-        } else {
-          // If custom directory no longer exists, reset and fallback cleanly
-          settingsDB.downloadPath = '';
-          atomicWriteJson(SETTINGS_FILE, settingsDB);
-        }
-      } catch (_) {
-        saveDir = app.getPath('downloads');
-      }
-    }
-    let targetPath = path.join(saveDir, fileName);
-
-    if (fs.existsSync(targetPath)) {
-      const ext = path.extname(fileName);
-      const base = path.basename(fileName, ext);
-      let counter = 1;
-      while (fs.existsSync(path.join(saveDir, `${base} (${counter})${ext}`))) {
-        counter++;
-      }
-      fileName = `${base} (${counter})${ext}`;
-      targetPath = path.join(saveDir, fileName);
-    }
-    item.setSavePath(targetPath);
-
-    const downloadEntry = {
-      id: downloadId,
-      fileName: fileName,
-      filePath: targetPath,
-      totalBytes: totalBytes,
-      receivedBytes: 0,
-      state: 'progressing',
-      url: item.getURL() || '',
-      mimeType: item.getMimeType() || '',
-      timestamp: Date.now()
-    };
-    recordDownload(downloadEntry);
-
-    item.on('updated', (e, state) => {
-      const received = item.getReceivedBytes();
-      const percent = totalBytes > 0 ? Math.floor((received / totalBytes) * 100) : 0;
-      downloadEntry.receivedBytes = received;
-      downloadEntry.state = state;
-      recordDownload(downloadEntry);
-
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('download-progress', {
-          id: downloadId,
-          fileName: fileName,
-          filePath: targetPath,
-          percent: percent,
-          receivedBytes: received,
-          totalBytes: totalBytes,
-          state: state
-        });
-      }
-    });
-
-    item.once('done', (e, state) => {
-      downloadEntry.state = state;
-      downloadEntry.receivedBytes = item.getReceivedBytes();
-      recordDownload(downloadEntry);
-
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('download-complete', {
-          id: downloadId,
-          fileName: fileName,
-          filePath: targetPath,
-          state: state,
-          totalBytes: totalBytes
-        });
-      }
-    });
-  });
 
   // Dynamic Window Resize Observers (Immediate Bounds Recalculation & Window State Debounce)
   function broadcastWindowState(stateName) {
@@ -814,11 +817,35 @@ function createMainWindow() {
     }
   }
 
+  // Context menu for Chrome editable controls (Omnibox, Find input, Modals)
+  mainWindow.webContents.on('context-menu', (_e, params) => {
+    if (params.isEditable || params.selectionText) {
+      const chromeMenu = Menu.buildFromTemplate([
+        ...(params.isEditable ? [
+          { role: 'undo', enabled: params.editFlags.canUndo },
+          { role: 'redo', enabled: params.editFlags.canRedo },
+          { type: 'separator' },
+          { role: 'cut', enabled: params.editFlags.canCut }
+        ] : []),
+        { role: 'copy', enabled: params.editFlags.canCopy },
+        ...(params.isEditable ? [{ role: 'paste', enabled: params.editFlags.canPaste }] : []),
+        { type: 'separator' },
+        { role: 'selectAll', enabled: params.editFlags.canSelectAll }
+      ]);
+      chromeMenu.popup({ window: mainWindow });
+    }
+  });
+
+  mainWindow.on('blur', () => {
+    hideOmniboxPopup();
+  });
   mainWindow.on('resize', () => {
+    hideOmniboxPopup();
     updateLayoutBounds();
     scheduleSaveWindowState();
   });
   mainWindow.on('move', () => {
+    hideOmniboxPopup();
     updateLayoutBounds();
     scheduleSaveWindowState();
   });
@@ -880,6 +907,199 @@ function createMainWindow() {
 }
 
 // =============================================================================
+// SESSION SECURITY, PERMISSIONS, SHIELD & DOWNLOAD MANAGER (Single-Attach WeakSet)
+// =============================================================================
+const configuredSessions = new WeakSet();
+const activeDownloadItems = new Map();
+const sessionPermissionCache = new Map();
+const ALWAYS_DENY_PERMS = ['usb', 'bluetooth', 'serial', 'hid', 'idle-detection', 'pointer-lock', 'midisysex'];
+const PROMPT_REQUIRED_PERMS = ['media', 'geolocation', 'notifications', 'display-capture', 'clipboard-read', 'midi'];
+
+function onShieldStatsBroadcast(stats) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('shield-updated', stats);
+  }
+}
+
+function configureSessionSecurity(ses, isIncognito = false) {
+  if (!ses || configuredSessions.has(ses)) return;
+  configuredSessions.add(ses);
+
+  ses.setUserAgent(OFFICIAL_CHROME_WINDOWS_UA);
+
+  ses.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    if (details.url.startsWith('file://') || details.url.includes('newtab.html')) {
+      responseHeaders['Content-Security-Policy'] = [
+        "default-src 'self' file: data: https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http://127.0.0.1:* http://localhost:* file:; object-src 'none'; frame-ancestors 'none';"
+      ];
+    }
+    responseHeaders['X-Content-Type-Options'] = ['nosniff'];
+    callback({ responseHeaders });
+  });
+
+  enableShieldInSession(ses, onShieldStatsBroadcast);
+
+  ses.setPermissionRequestHandler(async (webContents, permission, callback, details) => {
+    const permLower = String(permission || '').toLowerCase();
+    const url = (details && details.requestingUrl) || (webContents && !webContents.isDestroyed() ? webContents.getURL() : '');
+
+    if (ALWAYS_DENY_PERMS.includes(permLower)) {
+      console.warn(`[SECURITY HARDWARE GATE] Denied raw hardware API: ${permission}`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('permission-requested', { permission, url, granted: false, reason: 'hardware-blocked' });
+      }
+      return callback(false);
+    }
+
+    let origin = '';
+    let isSecureOrigin = false;
+    try {
+      const parsed = new URL(url);
+      origin = parsed.origin;
+      isSecureOrigin = parsed.protocol === 'https:' || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1' || parsed.hostname === '[::1]';
+    } catch (_) {}
+
+    if (PROMPT_REQUIRED_PERMS.includes(permLower)) {
+      if (!isSecureOrigin) {
+        console.warn(`[PERMISSION GATE] Denied ${permission} for insecure origin: ${url}`);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('permission-requested', { permission, url, granted: false, reason: 'insecure-origin' });
+        }
+        return callback(false);
+      }
+
+      const cacheKey = `${isIncognito ? 'incog:' : ''}${origin}|${permLower}`;
+      if (!isIncognito && sessionPermissionCache.has(cacheKey)) {
+        return callback(sessionPermissionCache.get(cacheKey));
+      }
+
+      if (!mainWindow || mainWindow.isDestroyed()) return callback(false);
+
+      try {
+        const res = await dialog.showMessageBox(mainWindow, {
+          type: 'question',
+          buttons: ['Block', 'Allow'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Site Permission Request',
+          message: `${origin || url} wants access to ${permission}`,
+          detail: 'Only allow permissions on sites you trust.'
+        });
+        const granted = res && res.response === 1;
+        if (!isIncognito) sessionPermissionCache.set(cacheKey, granted);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('permission-requested', { permission, url, granted, reason: granted ? 'user-allowed' : 'user-denied' });
+        }
+        return callback(granted);
+      } catch (_) {
+        return callback(false);
+      }
+    }
+
+    const allowBenign = isSecureOrigin || isLocalPageUrl(url, NEWTAB_PAGE_FILE) || url.startsWith('http://');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('permission-requested', { permission, url, granted: allowBenign });
+    }
+    return callback(allowBenign);
+  });
+
+  ses.on('will-download', (_event, item) => {
+    const downloadId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    const totalBytes = item.getTotalBytes();
+    let fileName = item.getFilename();
+    let saveDir = app.getPath('downloads');
+    if (typeof settingsDB.downloadPath === 'string' && settingsDB.downloadPath.trim()) {
+      const candidateDir = path.normalize(settingsDB.downloadPath.trim());
+      try {
+        if (fs.existsSync(candidateDir) && fs.statSync(candidateDir).isDirectory()) {
+          saveDir = candidateDir;
+        } else {
+          settingsDB.downloadPath = '';
+          atomicWriteJson(SETTINGS_FILE, settingsDB);
+        }
+      } catch (_) {
+        saveDir = app.getPath('downloads');
+      }
+    }
+    let targetPath = path.join(saveDir, fileName);
+
+    if (fs.existsSync(targetPath)) {
+      const ext = path.extname(fileName);
+      const base = path.basename(fileName, ext);
+      let counter = 1;
+      while (fs.existsSync(path.join(saveDir, `${base} (${counter})${ext}`))) {
+        counter++;
+      }
+      fileName = `${base} (${counter})${ext}`;
+      targetPath = path.join(saveDir, fileName);
+    }
+    item.setSavePath(targetPath);
+    activeDownloadItems.set(downloadId, item);
+
+    const downloadEntry = {
+      id: downloadId,
+      fileName: fileName,
+      filePath: targetPath,
+      totalBytes: totalBytes,
+      receivedBytes: 0,
+      state: 'progressing',
+      canResume: false,
+      url: item.getURL() || '',
+      mimeType: item.getMimeType() || '',
+      timestamp: Date.now()
+    };
+    recordDownload(downloadEntry);
+
+    item.on('updated', (_e, state) => {
+      const received = item.getReceivedBytes();
+      const total = item.getTotalBytes() || totalBytes;
+      const isPaused = item.isPaused();
+      const effectiveState = isPaused ? 'paused' : state;
+      const percent = total > 0 ? Math.floor((received / total) * 100) : 0;
+      downloadEntry.totalBytes = total;
+      downloadEntry.receivedBytes = received;
+      downloadEntry.state = effectiveState;
+      downloadEntry.canResume = item.canResume();
+      recordDownload(downloadEntry);
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('download-progress', {
+          id: downloadId,
+          fileName: fileName,
+          filePath: targetPath,
+          percent: percent,
+          receivedBytes: received,
+          totalBytes: total,
+          state: effectiveState,
+          canResume: downloadEntry.canResume
+        });
+      }
+    });
+
+    item.once('done', (_e, state) => {
+      activeDownloadItems.delete(downloadId);
+      downloadEntry.totalBytes = item.getTotalBytes() || downloadEntry.totalBytes;
+      downloadEntry.state = state;
+      downloadEntry.receivedBytes = item.getReceivedBytes();
+      downloadEntry.canResume = false;
+      recordDownload(downloadEntry);
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('download-complete', {
+          id: downloadId,
+          fileName: fileName,
+          filePath: targetPath,
+          state: state,
+          totalBytes: downloadEntry.totalBytes,
+          receivedBytes: downloadEntry.receivedBytes
+        });
+      }
+    });
+  });
+}
+
+// =============================================================================
 // PRECISION VIEW BOUNDS MANAGER (x: 0, y: 44, width: w, height: h - 44)
 // =============================================================================
 let isModalOpen = false;
@@ -901,10 +1121,11 @@ function updateLayoutBounds() {
   }
 
   const bounds = mainWindow.getContentBounds();
+  const chromeHeight = getChromeHeight();
   const availableWidth = Math.max(bounds.width, 100);
-  const availableHeight = Math.max(bounds.height - TOOLBAR_HEIGHT, 100);
+  const availableHeight = Math.max(bounds.height - chromeHeight, 100);
   const startX = 0;
-  const startY = TOOLBAR_HEIGHT;
+  const startY = chromeHeight;
 
   if (!isSplitViewActive || !secondaryTab) {
     if (activeTab && activeTab.view && activeTab.view.setBounds) {
@@ -937,6 +1158,11 @@ function updateLayoutBounds() {
       });
     }
   }
+
+  // Keep omnibox popup above active WebContentsView when visible
+  if (omniboxPopupView && isOmniboxPopupVisible && mainWindow.contentView && mainWindow.contentView.addChildView) {
+    mainWindow.contentView.addChildView(omniboxPopupView);
+  }
 }
 
 // =============================================================================
@@ -950,7 +1176,7 @@ function createTab(initialUrl = 'staunt://newtab', options = {}) {
     ? session.fromPartition(`incognito-${Date.now()}-${tabId}`, { cache: false }) 
     : session.defaultSession;
 
-  tabSession.setUserAgent(OFFICIAL_CHROME_WINDOWS_UA);
+  configureSessionSecurity(tabSession, isIncognito);
 
   const webPrefs = {
     sandbox: true,
@@ -982,13 +1208,18 @@ function createTab(initialUrl = 'staunt://newtab', options = {}) {
   const tabObj = {
     id: tabId,
     view: view,
+    session: tabSession,
     url: initialUrl,
     title: initialUrl === 'staunt://newtab' ? 'Favorites' : initialUrl,
     favicon: '',
     workspaceId: options.workspaceId || 'personal',
     isPinned: !!options.isPinned,
+    group: options.group || null,
     isIncognito: isIncognito,
     isHibernated: false,
+    isLoading: false,
+    isError: false,
+    failedUrl: null,
     lastActiveTime: Date.now(),
     isAudioPlaying: false,
     isMuted: false,
@@ -1015,16 +1246,18 @@ function setupWebContentsEvents(tabObj) {
   const wc = tabObj.view.webContents;
   wc.setUserAgent(OFFICIAL_CHROME_WINDOWS_UA);
 
-  // Popup & OAuth Handler
+  // Popup & OAuth Handler (strictly enforce http/https URLs)
   wc.setWindowOpenHandler(({ url, disposition }) => {
-    console.log('[POPUP HANDLER] Intercepted window.open:', url);
-    
+    if (!isSafeHttpUrl(url)) {
+      console.warn('[SECURITY] Blocked non-HTTP(S) window.open:', url);
+      return { action: 'deny' };
+    }
     if (isHomographOrDeceptive(url)) {
       console.warn('[SECURITY] Blocked deceptive popup:', url);
       return { action: 'deny' };
     }
 
-    if (isCriticalWhitelisted(url) || /accounts\.google\.com|appleid\.apple\.com|github\.com\/login|auth|oauth|login|signin|stripe\.com|razorpay\.com|paypal\.com/i.test(url) || disposition === 'new-window') {
+    if (isCriticalWhitelisted(url) || /accounts\.google\.com|appleid\.apple\.com|github\.com\/login|oauth|stripe\.com|razorpay\.com|paypal\.com/i.test(url) || disposition === 'new-window') {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
@@ -1044,13 +1277,13 @@ function setupWebContentsEvents(tabObj) {
       };
     }
 
-    createTab(url, { workspaceId: tabObj.workspaceId });
+    createTab(url, { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito });
     return { action: 'deny' };
   });
 
   // Navigation Guard & Protocol Armor
   const DANGEROUS_SCHEMES = ['file:', 'javascript:', 'data:', 'vbscript:', 'chrome:', 'ms-appx:'];
-  
+
   wc.on('will-navigate', (event, navigationUrl) => {
     try {
       if (navigationUrl.startsWith('staunt://auth-callback')) {
@@ -1082,7 +1315,8 @@ function setupWebContentsEvents(tabObj) {
         shell.openExternal(navigationUrl).catch(() => {});
         return;
       }
-      if (DANGEROUS_SCHEMES.includes(parsed.protocol) && !navigationUrl.includes('newtab.html')) {
+      const isAllowedLocal = isLocalPageUrl(navigationUrl, NEWTAB_PAGE_FILE) || isLocalPageUrl(navigationUrl, ERROR_PAGE_FILE);
+      if (DANGEROUS_SCHEMES.includes(parsed.protocol) && !isAllowedLocal) {
         console.warn(`[SECURITY INTERCEPT] Blocked will-navigate to dangerous protocol: ${navigationUrl}`);
         event.preventDefault();
         return;
@@ -1092,8 +1326,108 @@ function setupWebContentsEvents(tabObj) {
         event.preventDefault();
         return;
       }
-    } catch(e) {
+    } catch (e) {
       console.warn(`[NAVIGATION] URL parse notice for ${navigationUrl}:`, e.message);
+    }
+  });
+
+  // Keyboard shortcuts pass-through when focus is inside WebContentsView
+  wc.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    const isCtrl = Boolean(input.control || input.meta);
+    const key = String(input.key || '').toLowerCase();
+
+    if (isCtrl && !input.shift && !input.alt && (key === 'l' || key === 'k' || key === 'e')) {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('focus-omnibox');
+      }
+    } else if (isCtrl && !input.shift && !input.alt && key === 'f') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('toggle-find-bar');
+      }
+    } else if (isCtrl && !input.shift && !input.alt && key === 'r') {
+      event.preventDefault();
+      handleReload();
+    } else if (isCtrl && input.shift && !input.alt && key === 'r') {
+      event.preventDefault();
+      if (!wc.isDestroyed()) wc.reloadIgnoringCache();
+    } else if (isCtrl && key === 'tab') {
+      event.preventDefault();
+      cycleTab(input.shift ? -1 : 1);
+    } else if (input.alt && !isCtrl && input.key === 'ArrowLeft') {
+      event.preventDefault();
+      handleBack();
+    } else if (input.alt && !isCtrl && input.key === 'ArrowRight') {
+      event.preventDefault();
+      handleForward();
+    } else if (input.alt && !isCtrl && input.key === 'Home') {
+      event.preventDefault();
+      handleHome();
+    } else if (isCtrl && !input.shift && !input.alt && key === 'h') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('open-history-modal');
+      }
+    } else if (isCtrl && !input.shift && !input.alt && key === 'j') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('open-downloads-modal');
+      }
+    } else if (isCtrl && input.shift && !input.alt && key === 'o') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('open-bookmarks-modal');
+      }
+    } else if (isCtrl && input.shift && !input.alt && key === 'b') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('chrome-shortcut', 'toggle-favourites-bar');
+      }
+    } else if (isCtrl && input.shift && !input.alt && key === 'p') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('chrome-shortcut', 'open-command-palette');
+      }
+    } else if (isCtrl && input.shift && !input.alt && key === 'a') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('chrome-shortcut', 'open-tab-search');
+      }
+    } else if (isCtrl && input.shift && !input.alt && key === 'l') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('chrome-shortcut', 'open-reading-list');
+      }
+    } else if (!isCtrl && !input.shift && input.alt && key === 'r') {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('chrome-shortcut', 'toggle-reader-mode');
+      }
+    } else if (isCtrl && !input.alt && (key === '/' || key === '?')) {
+      event.preventDefault();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.focus();
+        mainWindow.webContents.send('chrome-shortcut', 'open-shortcuts-modal');
+      }
+    } else if (input.key === 'Escape') {
+      if (isFindBarOpen && mainWindow && !mainWindow.isDestroyed()) {
+        event.preventDefault();
+        mainWindow.webContents.send('chrome-shortcut', 'close-find-bar');
+      } else if (tabObj.isLoading) {
+        event.preventDefault();
+        handleStop();
+      }
     }
   });
 
@@ -1109,17 +1443,30 @@ function setupWebContentsEvents(tabObj) {
     }
   });
 
+  // Find In Page Result Listener (wires match ordinal & count back to renderer)
+  wc.on('found-in-page', (_event, result) => {
+    if (tabObj.id === activeTabId && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('find-result', {
+        requestId: result.requestId,
+        activeMatchOrdinal: result.activeMatchOrdinal,
+        matches: result.matches,
+        finalUpdate: result.finalUpdate
+      });
+    }
+  });
+
   // Navigation & URL Synchronization Handlers
   wc.on('page-title-updated', (e, title) => {
+    if (isLocalPageUrl(wc.getURL(), ERROR_PAGE_FILE)) return;
     tabObj.title = title;
     tabObj.lastActiveTime = Date.now();
-    recordHistory(tabObj.url, title);
+    recordHistory(tabObj.url, title, tabObj);
     notifyTabUpdated(tabObj);
     broadcastUrlSync(tabObj);
   });
 
   wc.on('page-favicon-updated', (e, favicons) => {
-    if (favicons && favicons.length > 0) {
+    if (favicons && favicons.length > 0 && !isLocalPageUrl(wc.getURL(), ERROR_PAGE_FILE)) {
       tabObj.favicon = favicons[0];
       notifyTabUpdated(tabObj);
     }
@@ -1128,105 +1475,112 @@ function setupWebContentsEvents(tabObj) {
   wc.on('did-start-loading', () => {
     tabObj.isLoading = true;
     notifyTabUpdated(tabObj);
+    broadcastUrlSync(tabObj);
   });
 
   wc.on('did-stop-loading', () => {
     tabObj.isLoading = false;
-    tabObj.canGoBack = wc.canGoBack();
-    tabObj.canGoForward = wc.canGoForward();
+    tabObj.canGoBack = canTabGoBack(wc);
+    tabObj.canGoForward = canTabGoForward(wc);
     notifyTabUpdated(tabObj);
+    broadcastUrlSync(tabObj);
   });
 
-  wc.on('did-start-navigation', (e, url, isInPlace, isMainFrame) => {
-    if (isMainFrame) {
+  wc.on('did-start-navigation', (e, url, _isInPlace, isMainFrame) => {
+    if (!isMainFrame) return;
+    if (isLocalPageUrl(url, ERROR_PAGE_FILE)) {
+      tabObj.isError = true;
+    } else {
+      tabObj.isError = false;
+      tabObj.failedUrl = null;
       tabObj.url = url;
-      tabObj.lastActiveTime = Date.now();
-      tabObj.canGoBack = wc.canGoBack();
-      tabObj.canGoForward = wc.canGoForward();
+    }
+    tabObj.lastActiveTime = Date.now();
+    tabObj.canGoBack = canTabGoBack(wc);
+    tabObj.canGoForward = canTabGoForward(wc);
+    notifyTabUpdated(tabObj);
+    broadcastUrlSync(tabObj);
+  });
+
+  wc.on('did-navigate', (e, url) => {
+    if (isLocalPageUrl(url, ERROR_PAGE_FILE)) {
+      tabObj.isError = true;
+    } else {
+      tabObj.isError = false;
+      tabObj.failedUrl = null;
+      tabObj.url = url;
+      recordHistory(tabObj.url, tabObj.title, tabObj);
+    }
+    tabObj.canGoBack = canTabGoBack(wc);
+    tabObj.canGoForward = canTabGoForward(wc);
+    notifyTabUpdated(tabObj);
+    broadcastUrlSync(tabObj);
+  });
+
+  wc.on('did-navigate-in-page', (_e, url, isMainFrame) => {
+    if (!isMainFrame) return;
+    if (!isLocalPageUrl(url, ERROR_PAGE_FILE)) {
+      tabObj.url = url;
+      tabObj.canGoBack = canTabGoBack(wc);
+      tabObj.canGoForward = canTabGoForward(wc);
       notifyTabUpdated(tabObj);
       broadcastUrlSync(tabObj);
     }
   });
 
-  wc.on('did-navigate', (e, url) => {
-    tabObj.url = url;
-    tabObj.canGoBack = wc.canGoBack();
-    tabObj.canGoForward = wc.canGoForward();
-    recordHistory(tabObj.url, tabObj.title);
-    notifyTabUpdated(tabObj);
-    broadcastUrlSync(tabObj);
-  });
-
   wc.on('did-finish-load', () => {
     tabObj.isLoading = false;
-    tabObj.url = wc.getURL();
-    tabObj.canGoBack = wc.canGoBack();
-    tabObj.canGoForward = wc.canGoForward();
-    recordHistory(tabObj.url, tabObj.title);
+    const loadedUrl = wc.getURL();
+    if (isLocalPageUrl(loadedUrl, ERROR_PAGE_FILE)) {
+      tabObj.isError = true;
+    } else {
+      tabObj.isError = false;
+      tabObj.failedUrl = null;
+      tabObj.url = loadedUrl;
+      recordHistory(tabObj.url, tabObj.title, tabObj);
+    }
+    tabObj.canGoBack = canTabGoBack(wc);
+    tabObj.canGoForward = canTabGoForward(wc);
     notifyTabUpdated(tabObj);
     broadcastUrlSync(tabObj);
   });
 
-  // Actionable Network Error Recovery Card (Zero Blank Screen)
+  // Actionable Network Error Recovery Card (Zero Data-URI Leakage)
   wc.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (!isMainFrame) return;
     tabObj.isLoading = false;
-    notifyTabUpdated(tabObj);
-    if (errorCode === -3 || !isMainFrame) return; // Ignore intentional user aborts/redirects
+    if (errorCode === -3) {
+      // Intentional stop / superseded navigation
+      tabObj.canGoBack = canTabGoBack(wc);
+      tabObj.canGoForward = canTabGoForward(wc);
+      notifyTabUpdated(tabObj);
+      broadcastUrlSync(tabObj);
+      return;
+    }
     console.warn(`[NAVIGATION ERROR] Code: ${errorCode} (${errorDescription}) for ${validatedURL}`);
-    
-    // Check if this was a search request failure
+
     const searchQuery = nativeSearchClient.extractSearchQuery(validatedURL);
-    const isSearchFailure = Boolean(searchQuery);
+    const kind = errorCode === -20
+      ? 'shield'
+      : (String(errorDescription || '').includes('ERR_CERT') ? 'cert' : (searchQuery ? 'search' : 'network'));
 
-    const titleText = isSearchFailure ? 'Search service unavailable' : "This site can't be reached";
-    const descText = isSearchFailure 
-      ? 'Unable to reach STAUNT Search. Please check your internet connection and try again.' 
-      : 'The server could not be reached, or the connection timed out.';
-    const queryDisplay = isSearchFailure 
-      ? `<div style="margin-bottom:12px;font-size:14px;color:#60a5fa;background:rgba(96,165,250,0.1);padding:6px 12px;border-radius:6px;display:inline-block;">Query: &ldquo;${escapeHtml(searchQuery)}&rdquo;</div>` 
-      : '';
+    tabObj.isError = true;
+    tabObj.failedUrl = validatedURL || tabObj.url;
+    tabObj.url = tabObj.failedUrl;
+    tabObj.title = kind === 'shield' ? 'Blocked by Shield' : 'Page Unavailable';
+    notifyTabUpdated(tabObj);
+    broadcastUrlSync(tabObj);
 
-    const safeFailedUrl = escapeHtml(validatedURL);
-    const safeSearchUrl = escapeHtml(STAUNT_SEARCH_URL);
-    const safeSearchQuery = encodeURIComponent(validatedURL);
-    const errorHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Connection Error • Staunt Browser</title>
-        <style>
-          body { margin: 0; background: #0c0e14; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
-          .card { text-align: center; max-width: 480px; padding: 32px; }
-          .icon { font-size: 48px; margin-bottom: 16px; }
-          h1 { font-size: 20px; margin: 0 0 10px; font-weight: 700; }
-          p { color: #94a3b8; font-size: 13px; line-height: 1.5; margin: 0 0 20px; }
-          .code { font-family: monospace; font-size: 11px; background: rgba(255,255,255,0.06); padding: 6px 12px; border-radius: 6px; margin-bottom: 24px; color: #cbd5e1; }
-          .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-          button { background: #3b82f6; color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-          button:hover { background: #2563eb; }
-          button.sec { background: rgba(255,255,255,0.08); color: #cbd5e1; }
-          button.sec:hover { background: rgba(255,255,255,0.14); }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="icon">${isSearchFailure ? '🔍' : '🌐'}</div>
-          <h1>${escapeHtml(titleText)}</h1>
-          ${queryDisplay}
-          <p>${escapeHtml(descText)}</p>
-          <div class="code">${escapeHtml(errorDescription)} (${errorCode})</div>
-          <div class="btn-group">
-            <button onclick="window.location.href='${safeFailedUrl}'">🔄 Retry</button>
-            <button class="sec" onclick="window.history.back()">⬅ Go Back</button>
-            ${!isSearchFailure ? `<button class="sec" onclick="window.location.href='${safeSearchUrl}/?q=${safeSearchQuery}'">🔍 Search on STAUNT</button>` : ''}
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-    // Load error page with validatedURL as the base URL so Retry navigates correctly
-    wc.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
+    const errParams = new URLSearchParams({
+      url: tabObj.failedUrl || '',
+      code: String(errorCode),
+      desc: String(errorDescription || 'ERR_FAILED'),
+      kind: kind,
+      q: searchQuery || '',
+      searchBase: STAUNT_SEARCH_URL
+    });
+    const errorFileUrl = pathToFileURL(ERROR_PAGE_FILE).href + '?' + errParams.toString();
+    wc.loadURL(errorFileUrl).catch(() => {});
   });
 
   // Audio Indicators
@@ -1244,23 +1598,53 @@ function setupWebContentsEvents(tabObj) {
   attachShieldToWebContents(wc);
 
   wc.on('context-menu', (event, params) => {
+    const selectedText = (params.selectionText || '').trim();
+    const safeLink = params.linkURL && isSafeHttpUrl(params.linkURL) ? params.linkURL : null;
     const contextMenu = Menu.buildFromTemplate([
-      { label: 'Back', enabled: wc.canGoBack(), click: () => wc.goBack() },
-      { label: 'Forward', enabled: wc.canGoForward(), click: () => wc.goForward() },
-      { label: 'Reload', click: () => wc.reload() },
+      { label: 'Back', enabled: canTabGoBack(wc), click: () => wc.goBack() },
+      { label: 'Forward', enabled: canTabGoForward(wc), click: () => wc.goForward() },
+      { label: 'Reload', click: () => handleReload() },
       { type: 'separator' },
-      ...(params.linkURL ? [{ label: 'Open Link in New Tab', click: () => createTab(params.linkURL, { workspaceId: tabObj.workspaceId }) }] : []),
-      ...(params.linkURL ? [{ label: 'Copy Link Address', click: () => { clipboard.writeText(params.linkURL); } }] : []),
-      ...(params.srcURL && params.mediaType === 'image' ? [{ label: 'Save Image As...', click: () => { wc.downloadURL(params.srcURL); } }] : []),
-      { type: 'separator' },
+      ...(safeLink ? [
+        { label: 'Open Link in New Tab', click: () => createTab(safeLink, { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito }) },
+        { label: 'Open Link in Incognito Tab', click: () => createTab(safeLink, { workspaceId: tabObj.workspaceId, isIncognito: true }) },
+        { label: 'Copy Link Address', click: () => { clipboard.writeText(safeLink); } },
+        { type: 'separator' }
+      ] : []),
+      ...(params.srcURL && params.mediaType === 'image' && isSafeHttpUrl(params.srcURL)
+        ? [{ label: 'Save Image As...', click: () => { wc.downloadURL(params.srcURL); } }, { type: 'separator' }]
+        : []),
+      ...(selectedText ? [
+        { label: `Search Staunt for "${selectedText.slice(0, 28)}${selectedText.length > 28 ? '...' : ''}"`, click: () => createTab(nativeSearchClient.buildSearchUrl(selectedText), { workspaceId: tabObj.workspaceId, isIncognito: tabObj.isIncognito }) },
+        { type: 'separator' }
+      ] : []),
+      ...(params.isEditable ? [{ label: 'Cut', enabled: params.editFlags.canCut, click: () => wc.cut() }] : []),
       { label: 'Copy', enabled: params.editFlags.canCopy, click: () => wc.copy() },
-      { label: 'Paste', enabled: params.editFlags.canPaste, click: () => wc.paste() },
-      { label: 'Select All', click: () => wc.selectAll() },
+      ...(params.isEditable ? [{ label: 'Paste', enabled: params.editFlags.canPaste, click: () => wc.paste() }] : []),
+      { label: 'Select All', enabled: params.editFlags.canSelectAll !== false, click: () => wc.selectAll() },
       { type: 'separator' },
       { label: 'Inspect Element', click: () => { wc.inspectElement(params.x, params.y); } }
     ].filter(Boolean));
-    contextMenu.popup();
+    const viewX = (isSplitViewActive && tabObj.id === secondaryTabId && mainWindow && !mainWindow.isDestroyed())
+      ? Math.floor(mainWindow.getContentBounds().width * splitRatio)
+      : 0;
+    contextMenu.popup(buildClampedPopupOpts({ x: (params.x || 0) + viewX, y: (params.y || 0) + getChromeHeight() }, 250));
   });
+}
+
+function getSecurityState(tabObj) {
+  if (!tabObj) return 'internal';
+  if (tabObj.isError) return 'error';
+  const u = tabObj.url || '';
+  if (!u || u === 'staunt://newtab' || u.startsWith('staunt://') || isLocalPageUrl(u, NEWTAB_PAGE_FILE) || u === 'about:blank') {
+    return 'internal';
+  }
+  try {
+    const parsed = new URL(u);
+    if (parsed.protocol === 'https:') return 'secure';
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1' || parsed.hostname === '[::1]') return 'local';
+  } catch (_) {}
+  return 'insecure';
 }
 
 function broadcastUrlSync(tabObj) {
@@ -1270,7 +1654,10 @@ function broadcastUrlSync(tabObj) {
       title: tabObj.title,
       canGoBack: tabObj.canGoBack,
       canGoForward: tabObj.canGoForward,
-      isBookmarked: isUrlBookmarked(tabObj.url)
+      isBookmarked: isUrlBookmarked(tabObj.url),
+      isLoading: Boolean(tabObj.isLoading),
+      isError: Boolean(tabObj.isError),
+      securityState: getSecurityState(tabObj)
     });
   }
 }
@@ -1289,6 +1676,7 @@ function serializeTab(tab) {
     favicon: tab.favicon,
     workspaceId: tab.workspaceId,
     isPinned: tab.isPinned,
+    group: tab.group || null,
     isIncognito: tab.isIncognito,
     isHibernated: tab.isHibernated,
     isAudioPlaying: tab.isAudioPlaying,
@@ -1351,9 +1739,12 @@ function detachTabView(tabObj) {
 
 function closeTab(tabId) {
   if (!tabs.has(tabId)) return;
+  const allIdsBefore = Array.from(tabs.keys());
+  const closedIndex = allIdsBefore.indexOf(tabId);
   const tab = tabs.get(tabId);
 
   if (
+    !tab.isIncognito &&
     tab.url &&
     !tab.url.includes('newtab.html') &&
     tab.url !== 'staunt://newtab' &&
@@ -1380,7 +1771,11 @@ function closeTab(tabId) {
         tab.view.webContents.destroy();
       }
     }
-  } catch(e) {}
+    if (tab.isIncognito && tab.session) {
+      tab.session.clearStorageData().catch(() => {});
+      tab.session.clearCache().catch(() => {});
+    }
+  } catch (e) {}
 
   tab.view = null;
   tabs.delete(tabId);
@@ -1397,7 +1792,8 @@ function closeTab(tabId) {
   if (activeTabId === tabId) {
     if (tabs.size > 0) {
       const remaining = Array.from(tabs.keys());
-      switchTab(remaining[remaining.length - 1]);
+      const nextIdx = Math.min(Math.max(0, closedIndex), remaining.length - 1);
+      switchTab(remaining[nextIdx]);
     } else {
       createTab('staunt://newtab');
     }
@@ -1486,6 +1882,7 @@ setInterval(() => {
 
 function wakeHibernatedTab(tab) {
   console.log(`[RAM HIBERNATION] Waking tab ${tab.id}: ${tab.url}`);
+  const tabSes = tab.session || (tab.isIncognito ? session.fromPartition(`incognito-${Date.now()}-${tab.id}`, { cache: false }) : session.defaultSession);
   const webPrefs = {
     sandbox: true,
     contextIsolation: true,
@@ -1495,7 +1892,7 @@ function wakeHibernatedTab(tab) {
     enableRemoteModule: false,
     webSecurity: true,
     allowRunningInsecureContent: false,
-    session: session.defaultSession,
+    session: tabSes,
     plugins: true,
     enableWebSQL: false,
     webviewTag: false
@@ -1505,6 +1902,9 @@ function wakeHibernatedTab(tab) {
     tab.view = new WebContentsView({ webPreferences: webPrefs });
   } else {
     tab.view = new BrowserView({ webPreferences: webPrefs });
+  }
+  if (tab.view.setBackgroundColor) {
+    tab.view.setBackgroundColor('#090a0f');
   }
 
   tab.isHibernated = false;
@@ -1563,21 +1963,36 @@ const STAUNT_SEARCH_URL = (
 const isLocalhost = (str) => nativeSearchClient.classifyInput(str).type === 'DOMAIN' || /^localhost/i.test(str);
 const isDomain = (str) => nativeSearchClient.classifyInput(str).type === 'DOMAIN';
 
+function getNewTabUrl() {
+  const params = new URLSearchParams();
+  if (settingsDB.searchEngine) params.set('engine', settingsDB.searchEngine);
+  if (settingsDB.customSearchUrl) params.set('customUrl', settingsDB.customSearchUrl);
+  const qs = params.toString() ? ('?' + params.toString()) : '';
+  return pathToFileURL(NEWTAB_PAGE_FILE).href + qs;
+}
+
 function formatUrlOrSearch(input) {
   const trimmed = (input || '').trim().slice(0, 2048);
-
-  if (/^javascript:/i.test(trimmed) || /^data:text\/html/i.test(trimmed) || /^vbscript:/i.test(trimmed)) {
-    console.warn('[SECURITY INTERCEPT] Suspicious URI dropped');
-    return 'file://' + path.join(__dirname, 'src', 'newtab.html').replace(/\\/g, '/');
-  }
-
-  const newTabUrl = 'file://' + path.join(__dirname, 'src', 'newtab.html').replace(/\\/g, '/');
+  const newTabUrl = getNewTabUrl();
 
   if (!trimmed || trimmed === 'staunt://newtab' || trimmed === 'about:newtab' || trimmed === 'about:blank') {
     return newTabUrl;
   }
 
-  const classification = nativeSearchClient.classifyInput(trimmed);
+  if (/^(javascript|vbscript):/i.test(trimmed) || /^data:\s*text\/html/i.test(trimmed) || trimmed.startsWith('file:')) {
+    if (isLocalPageUrl(trimmed, NEWTAB_PAGE_FILE)) return newTabUrl;
+    console.warn('[SECURITY INTERCEPT] Blocked unsafe/local file URI:', trimmed);
+    return newTabUrl;
+  }
+
+  const classification = nativeSearchClient.classifyInput(
+    trimmed,
+    settingsDB.searchEngine || 'staunt',
+    settingsDB.customSearchUrl || ''
+  );
+  if (!classification.url || classification.type === 'BLOCKED' || classification.type === 'INVALID_URL') {
+    return newTabUrl;
+  }
   return classification.url;
 }
 
@@ -1622,22 +2037,37 @@ ipcMain.on('go-home', (e) => { if (verifyIpcSender(e)) handleHome(); });
 // 2. Navigation Actions (Back / Forward / Reload)
 function handleBack() {
   const tab = tabs.get(activeTabId);
-  if (tab && tab.view && tab.view.webContents && tab.view.webContents.canGoBack()) {
-    tab.view.webContents.goBack();
+  if (tab && tab.view && tab.view.webContents && canTabGoBack(tab.view.webContents)) {
+    if (tab.view.webContents.navigationHistory && typeof tab.view.webContents.navigationHistory.goBack === 'function') {
+      tab.view.webContents.navigationHistory.goBack();
+    } else {
+      tab.view.webContents.goBack();
+    }
   }
 }
 
 function handleForward() {
   const tab = tabs.get(activeTabId);
-  if (tab && tab.view && tab.view.webContents && tab.view.webContents.canGoForward()) {
-    tab.view.webContents.goForward();
+  if (tab && tab.view && tab.view.webContents && canTabGoForward(tab.view.webContents)) {
+    if (tab.view.webContents.navigationHistory && typeof tab.view.webContents.navigationHistory.goForward === 'function') {
+      tab.view.webContents.navigationHistory.goForward();
+    } else {
+      tab.view.webContents.goForward();
+    }
   }
 }
 
 function handleReload() {
   const tab = tabs.get(activeTabId);
   if (tab && tab.view && tab.view.webContents) {
-    tab.view.webContents.reload();
+    if (tab.isError && tab.failedUrl && isSafeHttpUrl(tab.failedUrl)) {
+      const target = tab.failedUrl;
+      tab.isError = false;
+      tab.failedUrl = null;
+      tab.view.webContents.loadURL(target).catch(() => {});
+    } else {
+      tab.view.webContents.reload();
+    }
   }
 }
 
@@ -1756,9 +2186,29 @@ ipcMain.on('toggle-mute-tab', (e, tabId) => {
 
 ipcMain.on('clear-browser-cache', (e) => {
   if (!verifyIpcSender(e)) return;
-  session.defaultSession.clearCache();
-  session.defaultSession.clearStorageData();
+  session.defaultSession.clearCache().catch(() => {});
+  session.defaultSession.clearStorageData({ storages: ['cookies', 'filesystem', 'indexdb', 'websql', 'cachestorage', 'serviceworkers'] }).catch(() => {});
   console.log('[CACHE] Cleared cache & storage');
+});
+
+ipcMain.handle('clear-browser-cache-async', async (e) => {
+  if (!verifyIpcSender(e)) return { success: false };
+  await Promise.allSettled([
+    session.defaultSession.clearCache(),
+    session.defaultSession.clearStorageData({ storages: ['cookies', 'filesystem', 'indexdb', 'websql', 'cachestorage', 'serviceworkers'] })
+  ]);
+  return { success: true };
+});
+
+ipcMain.handle('get-runtime-stats', (e) => {
+  if (!verifyIpcSender(e)) return null;
+  const mem = process.memoryUsage();
+  return {
+    tabCount: tabs.size,
+    rssMB: Math.round((mem.rss / (1024 * 1024)) * 10) / 10,
+    heapUsedMB: Math.round((mem.heapUsed / (1024 * 1024)) * 10) / 10,
+    appMetricsCount: app.getAppMetrics().length
+  };
 });
 
 ipcMain.on('set-zoom', (e, level) => {
@@ -1791,28 +2241,39 @@ ipcMain.on('print-to-pdf', async (e) => {
   }
 });
 
-ipcMain.on('find-in-page', (e, text, forward = true) => {
+ipcMain.on('find-in-page', (e, text, forward = true, findNext = false) => {
   if (!verifyIpcSender(e)) return;
   if (typeof text !== 'string') return;
   const cleanText = text.slice(0, 256);
   const tab = tabs.get(activeTabId);
-  if (tab && tab.view && tab.view.webContents && cleanText) {
-    tab.view.webContents.findInPage(cleanText, { forward: Boolean(forward), findNext: false });
+  if (tab && tab.view && tab.view.webContents && !tab.view.webContents.isDestroyed() && cleanText) {
+    if (!findNext || tab.lastFindQuery !== cleanText) {
+      tab.view.webContents.stopFindInPage('keepSelection');
+    }
+    tab.lastFindQuery = cleanText;
+    tab.view.webContents.findInPage(cleanText, { forward: Boolean(forward), findNext: true });
   }
 });
 
 ipcMain.on('stop-find-in-page', (e) => {
   if (!verifyIpcSender(e)) return;
   const tab = tabs.get(activeTabId);
-  if (tab && tab.view && tab.view.webContents) {
+  if (tab && tab.view && tab.view.webContents && !tab.view.webContents.isDestroyed()) {
+    tab.lastFindQuery = null;
     tab.view.webContents.stopFindInPage('clearSelection');
     tab.view.webContents.focus();
   }
 });
 
+ipcMain.on('set-find-bar-open', (e, open) => {
+  if (!verifyIpcSender(e)) return;
+  isFindBarOpen = Boolean(open);
+  updateLayoutBounds();
+});
+
 ipcMain.handle('get-history', (e) => {
   if (!verifyIpcSender(e)) return [];
-  return historyDB.slice(0, 50);
+  return historyDB.slice(0, 500);
 });
 
 ipcMain.handle('get-bookmarks', (e) => {
@@ -1823,13 +2284,87 @@ ipcMain.handle('get-bookmarks', (e) => {
 ipcMain.on('add-bookmark', (e, item) => {
   if (!verifyIpcSender(e)) return;
   if (item && typeof item === 'object') {
-    bookmarksDB.push({
-      id: Date.now().toString(36),
-      title: typeof item.title === 'string' ? item.title.slice(0, 256) : 'Untitled',
-      url: typeof item.url === 'string' ? item.url.slice(0, 2048) : '',
-      favicon: typeof item.favicon === 'string' ? item.favicon.slice(0, 2048) : ''
-    });
+    const cleanUrl = typeof item.url === 'string' ? item.url.trim().slice(0, 2048) : '';
+    const cleanTitle = typeof item.title === 'string' && item.title.trim() ? item.title.trim().slice(0, 256) : 'Untitled';
+    const cleanFavicon = typeof item.favicon === 'string' ? item.favicon.trim().slice(0, 2048) : '';
+    if (!cleanUrl) return;
+
+    const normNew = normalizeBookmarkUrl(cleanUrl);
+    const existing = bookmarksDB.find(b => normalizeBookmarkUrl(b.url) === normNew);
+    if (existing) {
+      existing.title = cleanTitle;
+      if (cleanFavicon) existing.favicon = cleanFavicon;
+      atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
+        mainWindow.webContents.send('toast-message', 'Updated existing favourite');
+      }
+      return;
+    }
+
+    const newItem = {
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+      title: cleanTitle,
+      url: cleanUrl,
+      favicon: cleanFavicon,
+      createdAt: Date.now()
+    };
+    bookmarksDB.push(newItem);
     atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
+    }
+  }
+});
+
+ipcMain.on('set-tab-group', (e, tabId, group) => {
+  if (!verifyIpcSender(e)) return;
+  const tab = tabs.get(tabId);
+  if (!tab) return;
+  tab.group = (group && group.color)
+    ? { name: String(group.name || 'Group').slice(0, 40), color: String(group.color).slice(0, 32), collapsed: Boolean(group.collapsed) }
+    : null;
+  notifyTabUpdated(tab);
+});
+
+ipcMain.on('rename-tab-group', (e, oldName, newName, newColor) => {
+  if (!verifyIpcSender(e) || typeof oldName !== 'string') return;
+  const cleanNew = typeof newName === 'string' && newName.trim() ? newName.trim().slice(0, 40) : oldName;
+  const cleanColor = typeof newColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(newColor.trim()) ? newColor.trim() : null;
+  for (const tab of tabs.values()) {
+    if (tab.group && tab.group.name === oldName) {
+      tab.group.name = cleanNew;
+      if (cleanColor) tab.group.color = cleanColor;
+      notifyTabUpdated(tab);
+    }
+  }
+});
+
+ipcMain.on('toggle-collapse-tab-group', (e, groupName) => {
+  if (!verifyIpcSender(e) || typeof groupName !== 'string') return;
+  const groupTabs = Array.from(tabs.values()).filter(t => t.group && t.group.name === groupName);
+  if (groupTabs.length === 0) return;
+  const nextCollapsed = !groupTabs.every(t => t.group.collapsed);
+  for (const tab of groupTabs) {
+    tab.group.collapsed = nextCollapsed;
+    notifyTabUpdated(tab);
+  }
+  if (nextCollapsed) {
+    const active = tabs.get(activeTabId);
+    if (active && active.group && active.group.name === groupName) {
+      const visibleFallback = Array.from(tabs.values()).find(t => !t.group || !t.group.collapsed);
+      if (visibleFallback) switchTab(visibleFallback.id);
+    }
+  }
+});
+
+ipcMain.on('close-tab-group', (e, groupName) => {
+  if (!verifyIpcSender(e) || typeof groupName !== 'string') return;
+  const toClose = Array.from(tabs.values())
+    .filter(t => !t.isPinned && t.group && t.group.name === groupName)
+    .map(t => t.id);
+  for (const id of toClose) {
+    closeTab(id);
   }
 });
 
@@ -1860,7 +2395,17 @@ ipcMain.on('close-tabs-to-right', (e, tabId) => {
   closeTabsToRight(targetId);
 });
 
-ipcMain.on('show-tab-context-menu', (e, tabId) => {
+function buildClampedPopupOpts(pos, minW = 240) {
+  const opts = { window: mainWindow };
+  if (pos && typeof pos.x === 'number' && typeof pos.y === 'number' && mainWindow && !mainWindow.isDestroyed()) {
+    const cb = mainWindow.getContentBounds();
+    opts.x = Math.max(4, Math.min(Math.round(pos.x), Math.max(4, cb.width - minW)));
+    opts.y = Math.max(4, Math.min(Math.round(pos.y), Math.max(4, cb.height - 40)));
+  }
+  return opts;
+}
+
+ipcMain.on('show-tab-context-menu', (e, tabId, pos) => {
   if (!verifyIpcSender(e)) return;
   const targetId = typeof tabId === 'number' ? tabId : activeTabId;
   const tab = tabs.get(targetId);
@@ -1880,6 +2425,64 @@ ipcMain.on('show-tab-context-menu', (e, tabId) => {
     {
       label: tab.isPinned ? 'Unpin Tab' : 'Pin Tab',
       click: () => setTabPinned(targetId, !tab.isPinned)
+    },
+    {
+      label: 'Tab Group',
+      submenu: [
+        {
+          label: 'New Custom Group...',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('open-group-editor', { tabId: targetId, mode: 'create' });
+            }
+          }
+        },
+        {
+          label: 'Rename / Recolor Group...',
+          enabled: Boolean(tab.group),
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed() && tab.group) {
+              mainWindow.webContents.send('open-group-editor', {
+                tabId: targetId,
+                mode: 'edit',
+                name: tab.group.name,
+                color: tab.group.color
+              });
+            }
+          }
+        },
+        {
+          label: (tab.group && tab.group.collapsed) ? 'Expand Group' : 'Collapse Group',
+          enabled: Boolean(tab.group),
+          click: () => {
+            if (!tab.group) return;
+            const gName = tab.group.name;
+            const groupTabs = Array.from(tabs.values()).filter(t => t.group && t.group.name === gName);
+            const nextCollapsed = !groupTabs.every(t => t.group.collapsed);
+            for (const gt of groupTabs) {
+              gt.group.collapsed = nextCollapsed;
+              notifyTabUpdated(gt);
+            }
+          }
+        },
+        { type: 'separator' },
+        { label: 'Work (Gold)', click: () => { tab.group = { name: 'Work', color: '#d4a359', collapsed: false }; notifyTabUpdated(tab); } },
+        { label: 'Research (Blue)', click: () => { tab.group = { name: 'Research', color: '#38bdf8', collapsed: false }; notifyTabUpdated(tab); } },
+        { label: 'Reading (Emerald)', click: () => { tab.group = { name: 'Reading', color: '#10b981', collapsed: false }; notifyTabUpdated(tab); } },
+        { label: 'Personal (Rose)', click: () => { tab.group = { name: 'Personal', color: '#f43f5e', collapsed: false }; notifyTabUpdated(tab); } },
+        { type: 'separator' },
+        { label: 'Remove from Group', enabled: Boolean(tab.group), click: () => { tab.group = null; notifyTabUpdated(tab); } },
+        {
+          label: 'Close Group',
+          enabled: Boolean(tab.group),
+          click: () => {
+            if (!tab.group) return;
+            const gName = tab.group.name;
+            const toClose = Array.from(tabs.values()).filter(t => !t.isPinned && t.group && t.group.name === gName).map(t => t.id);
+            for (const id of toClose) closeTab(id);
+          }
+        }
+      ]
     },
     {
       label: tab.isMuted ? 'Unmute Tab' : 'Mute Tab',
@@ -1902,15 +2505,21 @@ ipcMain.on('show-tab-context-menu', (e, tabId) => {
     },
     {
       label: 'Close Tabs to the Right',
+      enabled: (() => {
+        const ids = Array.from(tabs.keys());
+        const idx = ids.indexOf(targetId);
+        return idx !== -1 && idx < ids.length - 1;
+      })(),
       click: () => closeTabsToRight(targetId)
     }
   ]);
-  contextMenu.popup({ window: mainWindow });
+  contextMenu.popup(buildClampedPopupOpts(pos, 240));
 });
 
 ipcMain.on('set-modal-open', (e, open) => {
   if (!verifyIpcSender(e)) return;
   isModalOpen = Boolean(open);
+  if (isModalOpen) hideOmniboxPopup();
   updateLayoutBounds();
 });
 
@@ -2014,7 +2623,7 @@ ipcMain.on('show-more-menu', (e, pos) => {
       click: () => {
         const tab = tabs.get(activeTabId);
         if (tab && tab.view && tab.view.webContents) {
-          tab.view.webContents.printToPDF({}).then(({ data }) => {
+          tab.view.webContents.printToPDF({}).then((data) => {
             dialog.showSaveDialog(mainWindow, {
               title: 'Save PDF',
               defaultPath: 'webpage.pdf',
@@ -2038,6 +2647,51 @@ ipcMain.on('show-more-menu', (e, pos) => {
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('toggle-find-bar');
+        }
+      }
+    },
+    {
+      label: 'Command Palette...',
+      accelerator: 'CmdOrCtrl+Shift+P',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('chrome-shortcut', 'open-command-palette');
+        }
+      }
+    },
+    {
+      label: 'Search Tabs...',
+      accelerator: 'CmdOrCtrl+Shift+A',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('chrome-shortcut', 'open-tab-search');
+        }
+      }
+    },
+    {
+      label: 'Reading List',
+      accelerator: 'CmdOrCtrl+Shift+L',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('chrome-shortcut', 'open-reading-list');
+        }
+      }
+    },
+    {
+      label: 'Toggle Reader Mode',
+      accelerator: 'Alt+R',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('chrome-shortcut', 'toggle-reader-mode');
+        }
+      }
+    },
+    {
+      label: 'Keyboard Shortcuts',
+      accelerator: 'CmdOrCtrl+/',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('chrome-shortcut', 'open-shortcuts-modal');
         }
       }
     },
@@ -2090,12 +2744,7 @@ ipcMain.on('show-more-menu', (e, pos) => {
     }
   ]);
 
-  const popupOpts = { window: mainWindow };
-  if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-    popupOpts.x = Math.round(pos.x);
-    popupOpts.y = Math.round(pos.y);
-  }
-  moreMenu.popup(popupOpts);
+  moreMenu.popup(buildClampedPopupOpts(pos, 260));
 });
 
 // 5. Downloads & Vault Handlers
@@ -2110,6 +2759,8 @@ ipcMain.on('open-download', (e, itemPath) => {
     const cleanPath = path.normalize(itemPath.trim());
     if (fs.existsSync(cleanPath)) {
       shell.openPath(cleanPath);
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('toast-message', 'Downloaded file not found on disk');
     }
   }
 });
@@ -2120,8 +2771,128 @@ ipcMain.on('show-in-folder', (e, itemPath) => {
     const cleanPath = path.normalize(itemPath.trim());
     if (fs.existsSync(cleanPath)) {
       shell.showItemInFolder(cleanPath);
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('toast-message', 'File location no longer exists on disk');
     }
   }
+});
+
+ipcMain.handle('open-download-checked', async (e, itemPath) => {
+  if (!verifyIpcSender(e) || typeof itemPath !== 'string' || !itemPath.trim()) return { success: false, error: 'Invalid file path' };
+  const cleanPath = path.normalize(itemPath.trim());
+  if (!fs.existsSync(cleanPath)) return { success: false, error: 'File was moved or deleted' };
+  const errStr = await shell.openPath(cleanPath);
+  return errStr ? { success: false, error: errStr } : { success: true };
+});
+
+ipcMain.handle('show-in-folder-checked', (e, itemPath) => {
+  if (!verifyIpcSender(e) || typeof itemPath !== 'string' || !itemPath.trim()) return { success: false, error: 'Invalid file path' };
+  const cleanPath = path.normalize(itemPath.trim());
+  if (!fs.existsSync(cleanPath)) return { success: false, error: 'File was moved or deleted' };
+  shell.showItemInFolder(cleanPath);
+  return { success: true };
+});
+
+ipcMain.handle('pause-download', async (e, id) => {
+  if (!verifyIpcSender(e)) return { success: false };
+  const item = activeDownloadItems.get(id);
+  if (!item) return { success: false, error: 'Download no longer active' };
+  if (!item.isPaused()) item.pause();
+  await new Promise(resolve => setTimeout(resolve, 45));
+  const entry = downloadsDB.find(d => d.id === id);
+  if (entry && activeDownloadItems.has(id)) {
+    entry.state = item.isPaused() ? 'paused' : entry.state;
+    entry.receivedBytes = item.getReceivedBytes();
+    entry.totalBytes = item.getTotalBytes() || entry.totalBytes;
+    entry.canResume = item.canResume();
+    atomicWriteJson(DOWNLOADS_FILE, downloadsDB.slice(0, 100));
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const pct = entry.totalBytes > 0 ? Math.floor((entry.receivedBytes / entry.totalBytes) * 100) : 0;
+      mainWindow.webContents.send('download-progress', {
+        id: entry.id,
+        fileName: entry.fileName,
+        filePath: entry.filePath,
+        percent: pct,
+        receivedBytes: entry.receivedBytes,
+        totalBytes: entry.totalBytes,
+        state: entry.state,
+        canResume: entry.canResume
+      });
+    }
+  }
+  return { success: true, canResume: item ? item.canResume() : false };
+});
+
+ipcMain.handle('resume-download', async (e, id) => {
+  if (!verifyIpcSender(e)) return { success: false };
+  const item = activeDownloadItems.get(id);
+  if (!item || !item.canResume()) return { success: false, error: 'Download cannot be resumed' };
+  item.resume();
+  await new Promise(resolve => setTimeout(resolve, 45));
+  const entry = downloadsDB.find(d => d.id === id);
+  if (entry && activeDownloadItems.has(id)) {
+    entry.state = item.isPaused() ? 'paused' : 'progressing';
+    entry.canResume = item.canResume();
+    atomicWriteJson(DOWNLOADS_FILE, downloadsDB.slice(0, 100));
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const pct = entry.totalBytes > 0 ? Math.floor((entry.receivedBytes / entry.totalBytes) * 100) : 0;
+      mainWindow.webContents.send('download-progress', {
+        id: entry.id,
+        fileName: entry.fileName,
+        filePath: entry.filePath,
+        percent: pct,
+        receivedBytes: entry.receivedBytes,
+        totalBytes: entry.totalBytes,
+        state: entry.state,
+        canResume: entry.canResume
+      });
+    }
+  }
+  return { success: true };
+});
+
+ipcMain.handle('cancel-download', (e, id) => {
+  if (!verifyIpcSender(e)) return { success: false };
+  const item = activeDownloadItems.get(id);
+  if (!item) return { success: false, error: 'Download no longer active' };
+  item.cancel();
+  return { success: true };
+});
+
+ipcMain.handle('retry-download', (e, id) => {
+  if (!verifyIpcSender(e)) return { success: false };
+  const entry = downloadsDB.find(d => d.id === id);
+  const tab = tabs.get(activeTabId);
+  if (!entry || !isSafeHttpUrl(entry.url) || !tab || !tab.view || !tab.view.webContents) {
+    return { success: false, error: 'Cannot retry download' };
+  }
+  tab.view.webContents.downloadURL(entry.url);
+  return { success: true };
+});
+
+ipcMain.on('show-fav-context-menu', (e, favId, pos) => {
+  if (!verifyIpcSender(e) || !mainWindow || mainWindow.isDestroyed()) return;
+  const fav = bookmarksDB.find(b => b.id === favId);
+  if (!fav) return;
+  const menu = Menu.buildFromTemplate([
+    { label: 'Open in New Tab', click: () => createTab(fav.url) },
+    { label: 'Copy Link', click: () => { clipboard.writeText(fav.url); mainWindow.webContents.send('toast-message', 'Link copied to clipboard'); } },
+    { label: 'Edit', click: () => mainWindow.webContents.send('fav-action', { action: 'edit', id: fav.id }) },
+    { type: 'separator' },
+    { label: 'Delete', click: () => { deleteBookmark(fav.id); mainWindow.webContents.send('toast-message', 'Favourite removed'); } }
+  ]);
+  menu.popup(buildClampedPopupOpts(pos, 210));
+});
+
+ipcMain.on('show-fav-overflow-menu', (e, favIds, pos) => {
+  if (!verifyIpcSender(e) || !mainWindow || mainWindow.isDestroyed()) return;
+  const items = favIds.map(id => bookmarksDB.find(b => b.id === id)).filter(Boolean);
+  if (items.length === 0) return;
+  const menu = Menu.buildFromTemplate(items.map(fav => ({
+    label: (fav.title || fav.url).slice(0, 48),
+    click: () => handleNavigate(fav.url)
+  })));
+  menu.popup(buildClampedPopupOpts(pos, 240));
 });
 
 ipcMain.handle('clear-history', (e, range) => {
@@ -2149,9 +2920,67 @@ ipcMain.handle('delete-bookmark', (e, id) => {
   return deleteBookmark(id);
 });
 
+ipcMain.handle('edit-bookmark', (e, payload) => {
+  if (!verifyIpcSender(e) || !payload || typeof payload !== 'object') return { success: false };
+  const { id, title, url } = payload;
+  const b = bookmarksDB.find(item => item.id === id);
+  if (!b) return { success: false, error: 'Not found' };
+  if (typeof title === 'string' && title.trim()) b.title = title.trim().slice(0, 256);
+  if (typeof url === 'string' && url.trim()) b.url = url.trim().slice(0, 2048);
+  atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
+  }
+  return { success: true, bookmark: b };
+});
+
+ipcMain.handle('reorder-bookmarks', (e, ids) => {
+  if (!verifyIpcSender(e) || !Array.isArray(ids)) return { success: false };
+  const map = new Map(bookmarksDB.map(b => [b.id, b]));
+  const reordered = [];
+  for (const id of ids) {
+    if (map.has(id)) {
+      reordered.push(map.get(id));
+      map.delete(id);
+    }
+  }
+  for (const remaining of map.values()) {
+    reordered.push(remaining);
+  }
+  bookmarksDB = reordered;
+  atomicWriteJson(BOOKMARKS_FILE, bookmarksDB);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('bookmarks-updated', bookmarksDB);
+  }
+  return { success: true };
+});
+
+ipcMain.handle('toggle-favourites-bar', (e, explicitState) => {
+  if (!verifyIpcSender(e)) return false;
+  const currentState = settingsDB.showFavouritesBar !== false;
+  const newState = (explicitState !== undefined) ? Boolean(explicitState) : !currentState;
+  settingsDB.showFavouritesBar = newState;
+  atomicWriteJson(SETTINGS_FILE, settingsDB);
+  updateLayoutBounds();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('favourites-bar-visibility-changed', newState);
+  }
+  return newState;
+});
+
+ipcMain.handle('get-favourites-bar-visible', (e) => {
+  if (!verifyIpcSender(e)) return true;
+  return settingsDB.showFavouritesBar !== false;
+});
+
 ipcMain.handle('delete-history-item', (e, id) => {
   if (!verifyIpcSender(e)) return { success: false };
   return deleteHistoryItem(id);
+});
+
+ipcMain.handle('delete-download', (e, id) => {
+  if (!verifyIpcSender(e)) return { success: false };
+  return deleteDownloadItem(id);
 });
 
 ipcMain.handle('clear-downloads', (e) => {
@@ -2176,50 +3005,240 @@ ipcMain.on('toggle-fullscreen', (e) => {
   }
 });
 
-// 6. Intelligent Omnibox Autocomplete Suggestions Handlers
+// 6. Intelligent Local Omnibox Autocomplete (Favourites + History, Zero External APIs)
+function normalizeSuggestionUrl(u) {
+  if (!u || typeof u !== 'string') return '';
+  try {
+    const parsed = new URL(u.trim());
+    const cleanPath = parsed.pathname.replace(/\/+$/, '') || '';
+    return (parsed.protocol + '//' + parsed.hostname.toLowerCase() + cleanPath + parsed.search).toLowerCase();
+  } catch (_) {
+    return u.trim().toLowerCase().replace(/\/+$/, '');
+  }
+}
+
+function formatDisplaySubtext(u) {
+  try {
+    const parsed = new URL(u);
+    const pathPart = parsed.pathname === '/' ? '' : parsed.pathname;
+    return parsed.hostname + pathPart + parsed.search;
+  } catch (_) {
+    return u;
+  }
+}
+
+function scoreLocalEntry(entry, qLower, qTokens, isBookmark, freqBoost = 0) {
+  const titleLower = (entry.title || '').toLowerCase();
+  const urlLower = (entry.url || '').toLowerCase();
+  const subLower = formatDisplaySubtext(entry.url || '').toLowerCase();
+  const combined = titleLower + ' ' + subLower;
+
+  let score = 0;
+  if (titleLower.startsWith(qLower)) score = 100;
+  else if (subLower.startsWith(qLower) || urlLower.startsWith(qLower)) score = 95;
+  else if (titleLower.includes(qLower)) score = 75;
+  else if (urlLower.includes(qLower)) score = 60;
+  else if (qTokens.length > 1 && qTokens.every(tok => combined.includes(tok))) score = 52;
+
+  if (score === 0) return 0;
+  return score + (isBookmark ? 30 : 0) + freqBoost;
+}
+
 ipcMain.handle('get-suggestions', async (e, query) => {
   if (!verifyIpcSender(e)) return [];
   if (!query || typeof query !== 'string') return [];
   const trimmed = query.trim().slice(0, 256);
   if (!trimmed) return [];
+  const qLower = trimmed.toLowerCase();
+  const qTokens = qLower.split(/\s+/).filter(Boolean);
 
-  // Match from local bookmarks
-  const bookmarkMatches = bookmarksDB
-    .filter(b => (b.title && b.title.toLowerCase().includes(trimmed.toLowerCase())) ||
-                 (b.url && b.url.toLowerCase().includes(trimmed.toLowerCase())))
-    .slice(0, 3)
-    .map(b => ({ text: b.title || b.url, url: b.url, type: 'bookmark' }));
-
-  // Query STAUNT search engine /api/suggest
-  let remoteSuggestions = [];
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 800);
-    const resp = await fetch(`${STAUNT_SEARCH_URL}/api/suggest?q=${encodeURIComponent(trimmed)}`, {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    if (resp.ok) {
-      const data = await resp.json();
-      if (Array.isArray(data)) {
-        remoteSuggestions = data.map(s => (typeof s === 'string' ? { text: s, type: 'search' } : s));
-      }
-    }
-  } catch (err) {
-    // Offline or server unreachable fallback
+  // Build local visit frequency map cleanly
+  const visitCounts = new Map();
+  for (const h of historyDB) {
+    if (!h || !h.url) continue;
+    const uKey = normalizeSuggestionUrl(h.url);
+    visitCounts.set(uKey, (visitCounts.get(uKey) || 0) + 1);
   }
 
-  const seen = new Set();
-  const results = [];
-  for (const item of [...bookmarkMatches, ...remoteSuggestions]) {
-    const key = (item.text || '').toLowerCase();
-    if (key && !seen.has(key)) {
-      seen.add(key);
-      results.push(item);
+  const candidates = [];
+
+  for (const b of bookmarksDB) {
+    if (!b || !b.url) continue;
+    const score = scoreLocalEntry(b, qLower, qTokens, true, 0);
+    if (score > 0) {
+      candidates.push({
+        text: (b.title || b.url).slice(0, 120),
+        url: b.url,
+        subtext: formatDisplaySubtext(b.url),
+        type: 'bookmark',
+        score
+      });
     }
-    if (results.length >= 8) break;
+  }
+
+  for (const h of historyDB) {
+    if (!h || !h.url) continue;
+    const pastSearch = nativeSearchClient.extractSearchQuery(h.url);
+    const freqBoost = Math.min(20, (visitCounts.get(normalizeSuggestionUrl(h.url)) || 1) * 3);
+
+    if (pastSearch) {
+      const pLower = pastSearch.toLowerCase();
+      if (pLower.includes(qLower) || (qTokens.length > 1 && qTokens.every(tok => pLower.includes(tok)))) {
+        const sScore = (pLower.startsWith(qLower) ? 90 : 68) + freqBoost;
+        candidates.push({
+          text: pastSearch.slice(0, 120),
+          url: h.url,
+          subtext: 'Previous search',
+          type: 'search-history',
+          score: sScore,
+          ts: h.timestamp || 0
+        });
+      }
+      continue;
+    }
+
+    const score = scoreLocalEntry(h, qLower, qTokens, false, freqBoost);
+    if (score > 0) {
+      candidates.push({
+        text: (h.title || h.url).slice(0, 120),
+        url: h.url,
+        subtext: formatDisplaySubtext(h.url),
+        type: 'history',
+        score,
+        ts: h.timestamp || 0
+      });
+    }
+  }
+
+  candidates.sort((a, b) => (b.score - a.score) || ((b.ts || 0) - (a.ts || 0)));
+
+  const seenUrls = new Set();
+  const seenKeys = new Set();
+  const results = [];
+  for (const item of candidates) {
+    const uKey = normalizeSuggestionUrl(item.url);
+    const tKey = item.type === 'search-history'
+      ? ('sh:' + (item.text || '').trim().toLowerCase())
+      : ((item.text || '').trim().toLowerCase() + '|' + uKey);
+    if (!uKey || seenUrls.has(uKey) || seenKeys.has(tKey)) continue;
+    seenUrls.add(uKey);
+    seenKeys.add(tKey);
+    results.push({
+      text: item.text,
+      url: item.url,
+      subtext: item.subtext,
+      type: item.type
+    });
+    if (results.length >= 7) break;
   }
   return results;
+});
+
+// Omnibox Overlay Popup WebContentsView (renders cleanly above WebContentsView)
+let omniboxPopupView = null;
+let isOmniboxPopupVisible = false;
+
+function ensureOmniboxPopupView() {
+  if (omniboxPopupView && omniboxPopupView.webContents && !omniboxPopupView.webContents.isDestroyed()) {
+    return omniboxPopupView;
+  }
+  if (typeof WebContentsView === 'undefined') return null;
+  omniboxPopupView = new WebContentsView({
+    webPreferences: {
+      preload: path.join(__dirname, 'src', 'preload-popup.js'),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      nodeIntegrationInWorker: false,
+      nodeIntegrationInSubFrames: false,
+      enableRemoteModule: false,
+      webSecurity: true
+    }
+  });
+  if (omniboxPopupView.setBackgroundColor) {
+    omniboxPopupView.setBackgroundColor('#00000000');
+  }
+  omniboxPopupView.webContents.loadFile(path.join(__dirname, 'src', 'omnibox-popup.html')).catch(() => {});
+  return omniboxPopupView;
+}
+
+function hideOmniboxPopup() {
+  isOmniboxPopupVisible = false;
+  if (omniboxPopupView && mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      if (mainWindow.contentView && mainWindow.contentView.removeChildView) {
+        mainWindow.contentView.removeChildView(omniboxPopupView);
+      }
+      if (omniboxPopupView.setBounds) {
+        omniboxPopupView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+      }
+    } catch (_) {}
+  }
+}
+
+ipcMain.on('show-omnibox-popup', (e, payload) => {
+  if (!verifyIpcSender(e) || !mainWindow || mainWindow.isDestroyed() || isModalOpen) return;
+  if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) {
+    hideOmniboxPopup();
+    return;
+  }
+  const view = ensureOmniboxPopupView();
+  if (!view) return;
+
+  const b = payload.bounds || {};
+  const contentBounds = mainWindow.getContentBounds();
+  const x = Math.max(0, Math.round(Number(b.x) || 200));
+  const y = Math.max(36, Math.round(Number(b.y) || 40));
+  const width = Math.min(Math.max(220, Math.round(Number(b.width) || 480)), contentBounds.width - x);
+  const rowCount = Math.min(payload.items.length, 8);
+  const height = rowCount * 38 + 10;
+
+  if (mainWindow.contentView && mainWindow.contentView.addChildView) {
+    mainWindow.contentView.addChildView(view);
+  }
+  view.setBounds({ x, y, width, height });
+  isOmniboxPopupVisible = true;
+
+  const sendData = () => {
+    if (view.webContents && !view.webContents.isDestroyed()) {
+      view.webContents.send('omnibox-popup-data', {
+        items: payload.items.slice(0, 8),
+        selectedIndex: typeof payload.selectedIndex === 'number' ? payload.selectedIndex : -1
+      });
+    }
+  };
+  if (view.webContents.isLoading()) {
+    view.webContents.once('did-finish-load', sendData);
+  } else {
+    sendData();
+  }
+});
+
+ipcMain.on('update-omnibox-popup-selection', (e, idx) => {
+  if (!verifyIpcSender(e) || !omniboxPopupView || !isOmniboxPopupVisible) return;
+  if (omniboxPopupView.webContents && !omniboxPopupView.webContents.isDestroyed()) {
+    omniboxPopupView.webContents.send('omnibox-popup-selection', typeof idx === 'number' ? idx : -1);
+  }
+});
+
+ipcMain.on('hide-omnibox-popup', (e) => {
+  if (!verifyIpcSender(e)) return;
+  hideOmniboxPopup();
+});
+
+ipcMain.on('omnibox-popup-choose', (e, idx) => {
+  if (!omniboxPopupView || e.sender !== omniboxPopupView.webContents) return;
+  hideOmniboxPopup();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('omnibox-popup-chosen', idx);
+  }
+});
+
+ipcMain.on('omnibox-popup-hover', (e, idx) => {
+  if (!omniboxPopupView || e.sender !== omniboxPopupView.webContents) return;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('omnibox-popup-hover', idx);
+  }
 });
 
 // 7. Settings Vault Handlers
@@ -2232,17 +3251,44 @@ ipcMain.handle('save-settings', (e, newSettings) => {
   if (!verifyIpcSender(e)) return { success: false };
   if (newSettings && typeof newSettings === 'object') {
     const validated = {};
-    if (typeof newSettings.searchEngine === 'string' && ['staunt', 'google', 'duckduckgo', 'bing'].includes(newSettings.searchEngine.toLowerCase())) {
+    const SUPPORTED_ENGINES = ['staunt', 'google', 'duckduckgo', 'bing', 'brave', 'ecosia', 'yahoo', 'startpage', 'custom'];
+    if (typeof newSettings.searchEngine === 'string' && SUPPORTED_ENGINES.includes(newSettings.searchEngine.toLowerCase())) {
       validated.searchEngine = newSettings.searchEngine.toLowerCase();
+    }
+    if (typeof newSettings.customSearchUrl === 'string') {
+      const cTrim = newSettings.customSearchUrl.trim().slice(0, 1024);
+      if (!cTrim || /^https?:\/\//i.test(cTrim)) {
+        validated.customSearchUrl = cTrim;
+      }
     }
     if (typeof newSettings.searchUrl === 'string' && /^https?:\/\//i.test(newSettings.searchUrl.trim())) {
       validated.searchUrl = newSettings.searchUrl.trim().slice(0, 512);
     }
-    if (typeof newSettings.homeUrl === 'string' && (/^https?:\/\//i.test(newSettings.homeUrl.trim()) || newSettings.homeUrl.trim().startsWith('staunt://') || newSettings.homeUrl.trim().startsWith('file://'))) {
-      validated.homeUrl = newSettings.homeUrl.trim().slice(0, 512);
+    if (typeof newSettings.homeUrl === 'string') {
+      const hTrim = newSettings.homeUrl.trim();
+      if (!hTrim || hTrim === 'staunt://newtab' || hTrim === 'about:newtab') {
+        validated.homeUrl = 'staunt://newtab';
+      } else if (/^(https?|file):\/\//i.test(hTrim) || hTrim.startsWith('staunt://')) {
+        try {
+          new URL(hTrim);
+          validated.homeUrl = hTrim.slice(0, 512);
+        } catch (_) {
+          return { success: false, error: 'Please enter a valid Homepage URL' };
+        }
+      } else {
+        const cls = nativeSearchClient.classifyInput(hTrim);
+        if (cls.type === 'DOMAIN' && cls.url) {
+          validated.homeUrl = cls.url.slice(0, 512);
+        } else {
+          return { success: false, error: 'Please enter a valid Homepage URL (e.g. https://example.com or staunt://newtab)' };
+        }
+      }
     }
     if (typeof newSettings.shieldLevel === 'string' && ['strict', 'standard', 'off'].includes(newSettings.shieldLevel.toLowerCase())) {
       validated.shieldLevel = newSettings.shieldLevel.toLowerCase();
+    }
+    if (typeof newSettings.showFavouritesBar === 'boolean') {
+      validated.showFavouritesBar = newSettings.showFavouritesBar;
     }
     if (typeof newSettings.hardwareAcceleration === 'boolean') {
       validated.hardwareAcceleration = newSettings.hardwareAcceleration;
@@ -2262,7 +3308,13 @@ ipcMain.handle('save-settings', (e, newSettings) => {
       }
     }
     settingsDB = { ...settingsDB, ...validated };
+    nativeSearchClient.setSearchEngine(settingsDB.searchEngine || 'staunt', settingsDB.customSearchUrl || '');
+    setShieldLevel(settingsDB.shieldLevel || 'standard');
     atomicWriteJson(SETTINGS_FILE, settingsDB);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('shield-level-changed', settingsDB.shieldLevel || 'standard');
+      mainWindow.webContents.send('settings-updated', settingsDB);
+    }
   }
   return { success: true, settings: settingsDB };
 });
@@ -2461,6 +3513,245 @@ ipcMain.handle('sign-out-account', async (e) => {
     mainWindow.webContents.send('account-state-changed', { isLoggedIn: false, user: null });
   }
   return true;
+});
+
+// =============================================================================
+// PHASE 7 IPC: TAB SEARCH, READING LIST & LOCAL READER MODE
+// =============================================================================
+ipcMain.handle('get-tab-search-data', (e) => {
+  if (!verifyIpcSender(e)) return { openTabs: [], closedTabs: [], activeTabId: null };
+  const openTabs = Array.from(tabs.values()).map(t => ({
+    id: t.id,
+    title: t.title || 'New Tab',
+    url: t.url || '',
+    isPinned: Boolean(t.isPinned),
+    isIncognito: Boolean(t.isIncognito),
+    group: t.group || null,
+    isActive: t.id === activeTabId,
+    isAudioPlaying: Boolean(t.isAudioPlaying),
+    isMuted: Boolean(t.isMuted)
+  }));
+  const closedTabs = closedTabsStack.slice().reverse().map((item, revIdx) => ({
+    stackIndex: closedTabsStack.length - 1 - revIdx,
+    url: item.url,
+    title: item.url,
+    isPinned: Boolean(item.isPinned)
+  }));
+  return { openTabs, closedTabs, activeTabId };
+});
+
+ipcMain.handle('restore-closed-tab-at', (e, stackIndex) => {
+  if (!verifyIpcSender(e)) return { ok: false };
+  const idx = Number(stackIndex);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= closedTabsStack.length) return { ok: false };
+  const [item] = closedTabsStack.splice(idx, 1);
+  if (!item || !item.url) return { ok: false };
+  const newId = createTab(item.url, { workspaceId: item.workspaceId, isPinned: item.isPinned });
+  return { ok: true, tabId: newId };
+});
+
+ipcMain.handle('get-reading-list', (e) => {
+  if (!verifyIpcSender(e)) return [];
+  return readingListDB;
+});
+
+ipcMain.handle('add-reading-list-item', (e, payload) => {
+  if (!verifyIpcSender(e)) return { ok: false, error: 'Unauthorized' };
+  const active = tabs.get(activeTabId);
+  if (active && active.isIncognito && (!payload || !payload.allowExternal)) {
+    return { ok: false, error: 'Incognito pages cannot be saved to the persistent Reading List.' };
+  }
+  const rawUrl = (payload && typeof payload.url === 'string' && payload.url.trim())
+    ? payload.url.trim()
+    : (active ? active.url : '');
+  const rawTitle = (payload && typeof payload.title === 'string' && payload.title.trim())
+    ? payload.title.trim()
+    : (active ? active.title : '');
+
+  if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) {
+    return { ok: false, error: 'Only standard http/https webpages can be saved to Reading List.' };
+  }
+  let normalizedUrl = rawUrl;
+  try {
+    const parsed = new URL(rawUrl);
+    normalizedUrl = parsed.href;
+  } catch (_) {
+    return { ok: false, error: 'Invalid webpage URL.' };
+  }
+
+  const existing = readingListDB.find(item => item.url === normalizedUrl);
+  if (existing) {
+    return { ok: true, duplicate: true, item: existing, list: readingListDB };
+  }
+
+  const newEntry = {
+    id: 'rl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    title: String(rawTitle || normalizedUrl).slice(0, 240),
+    url: normalizedUrl.slice(0, 2048),
+    savedAt: Date.now(),
+    isRead: false
+  };
+  readingListDB.unshift(newEntry);
+  if (readingListDB.length > 500) readingListDB.length = 500;
+  try {
+    atomicWriteJson(READING_LIST_FILE, readingListDB);
+  } catch (err) {
+    return { ok: false, error: 'Failed to save Reading List to disk.' };
+  }
+  return { ok: true, duplicate: false, item: newEntry, list: readingListDB };
+});
+
+ipcMain.handle('remove-reading-list-item', (e, id) => {
+  if (!verifyIpcSender(e)) return { ok: false, list: readingListDB };
+  const cleanId = String(id || '');
+  readingListDB = readingListDB.filter(item => item.id !== cleanId);
+  try {
+    atomicWriteJson(READING_LIST_FILE, readingListDB);
+  } catch (_) {
+    return { ok: false, error: 'Failed to update Reading List on disk.', list: readingListDB };
+  }
+  return { ok: true, list: readingListDB };
+});
+
+ipcMain.handle('toggle-reading-list-read', (e, id) => {
+  if (!verifyIpcSender(e)) return { ok: false, list: readingListDB };
+  const cleanId = String(id || '');
+  const item = readingListDB.find(x => x.id === cleanId);
+  if (!item) return { ok: false, list: readingListDB };
+  item.isRead = !item.isRead;
+  try {
+    atomicWriteJson(READING_LIST_FILE, readingListDB);
+  } catch (_) {}
+  return { ok: true, list: readingListDB };
+});
+
+ipcMain.handle('extract-reader-article', async (e) => {
+  if (!verifyIpcSender(e)) return { ok: false, reason: 'Unauthorized' };
+  const tab = tabs.get(activeTabId);
+  if (!tab || !tab.view || !tab.view.webContents || tab.view.webContents.isDestroyed()) {
+    return { ok: false, reason: 'No active webpage available.' };
+  }
+  const currentUrl = tab.view.webContents.getURL() || tab.url || '';
+  if (!/^https?:\/\//i.test(currentUrl) || isLocalPageUrl(currentUrl, ERROR_PAGE_FILE) || isLocalPageUrl(currentUrl, NEWTAB_PAGE_FILE)) {
+    return { ok: false, reason: 'Reader Mode is supported on web article pages (http/https).' };
+  }
+
+  try {
+    const extracted = await tab.view.webContents.executeJavaScript(`(() => {
+      try {
+        const cleanText = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+        const isHidden = (el) => {
+          if (!el || el.nodeType !== 1) return true;
+          const tag = el.tagName.toLowerCase();
+          if (['script', 'style', 'noscript', 'svg', 'iframe', 'nav', 'aside', 'footer', 'form'].includes(tag)) return true;
+          if (el.getAttribute('aria-hidden') === 'true' || el.hidden) return true;
+          const cls = ((el.className || '') + ' ' + (el.id || '')).toLowerCase();
+          if (/\b(ad|ads|advert|promo|cookie|consent|newsletter|sidebar|comment|social|share-bar|menu|breadcrumb)\b/.test(cls)) return true;
+          const cs = getComputedStyle(el);
+          return cs.display === 'none' || cs.visibility === 'hidden';
+        };
+
+        const title = cleanText(
+          document.querySelector('meta[property="og:title"]')?.content ||
+          document.querySelector('article h1, main h1, h1')?.textContent ||
+          document.title
+        );
+        const byline = cleanText(
+          document.querySelector('meta[name="author"]')?.content ||
+          document.querySelector('[rel="author"], .author, .byline')?.textContent || ''
+        ).slice(0, 120);
+        const siteName = cleanText(
+          document.querySelector('meta[property="og:site_name"]')?.content || location.hostname
+        );
+
+        const candidates = [];
+        const addCand = (el) => { if (el && !candidates.includes(el)) candidates.push(el); };
+        document.querySelectorAll('article, [role="main"], main').forEach(addCand);
+        document.querySelectorAll('section, div').forEach(el => {
+          if (el.querySelectorAll(':scope > p').length >= 2) addCand(el);
+        });
+        addCand(document.body);
+
+        let bestRoot = document.body;
+        let bestScore = -1;
+        for (const cand of candidates) {
+          if (isHidden(cand) && cand !== document.body) continue;
+          const pList = Array.from(cand.querySelectorAll('p'));
+          let pTextLen = 0;
+          for (const p of pList) {
+            if (!isHidden(p)) pTextLen += cleanText(p.textContent).length;
+          }
+          const linkLen = Array.from(cand.querySelectorAll('a')).reduce((acc, a) => acc + cleanText(a.textContent).length, 0);
+          const linkDensity = pTextLen > 0 ? (linkLen / (pTextLen + 1)) : 1;
+          let score = pTextLen * (1 - Math.min(0.75, linkDensity * 0.6));
+          if (cand.tagName.toLowerCase() === 'article') score *= 1.35;
+          else if (cand.tagName.toLowerCase() === 'main' || cand.getAttribute('role') === 'main') score *= 1.15;
+          if (score > bestScore) {
+            bestScore = score;
+            bestRoot = cand;
+          }
+        }
+
+        const blocks = [];
+        const seenTexts = new Set();
+        let wordCount = 0;
+
+        const walk = (node) => {
+          if (!node || node.nodeType !== 1 || isHidden(node) || blocks.length >= 220) return;
+          const tag = node.tagName.toLowerCase();
+          if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4') {
+            const t = cleanText(node.textContent);
+            if (t && t !== title && !seenTexts.has(t)) {
+              seenTexts.add(t);
+              blocks.push({ type: tag === 'h1' ? 'h2' : tag, text: t });
+              wordCount += t.split(/\s+/).length;
+            }
+            return;
+          }
+          if (tag === 'p' || tag === 'blockquote' || tag === 'pre') {
+            const t = cleanText(node.textContent);
+            if (t.length >= 20 && !seenTexts.has(t)) {
+              seenTexts.add(t);
+              blocks.push({ type: tag, text: t });
+              wordCount += t.split(/\s+/).length;
+            }
+            return;
+          }
+          if (tag === 'ul' || tag === 'ol') {
+            const items = Array.from(node.querySelectorAll(':scope > li'))
+              .map(li => cleanText(li.textContent))
+              .filter(t => t.length > 2)
+              .slice(0, 40);
+            if (items.length > 0) {
+              blocks.push({ type: tag, items });
+              wordCount += items.join(' ').split(/\s+/).length;
+            }
+            return;
+          }
+          if (tag === 'img') {
+            const src = node.currentSrc || node.getAttribute('src') || '';
+            const w = node.naturalWidth || Number(node.getAttribute('width')) || 0;
+            if (/^https?:\/\//i.test(src) && (w === 0 || w >= 120)) {
+              blocks.push({ type: 'img', src, alt: cleanText(node.getAttribute('alt') || '').slice(0, 160) });
+            }
+            return;
+          }
+          for (const child of node.children) walk(child);
+        };
+
+        walk(bestRoot);
+        if (wordCount < 45 || blocks.length === 0) {
+          return { ok: false, reason: 'This page does not contain enough structured article text for Reader Mode.' };
+        }
+        return { ok: true, url: location.href, title, byline, siteName, wordCount, blocks };
+      } catch (err) {
+        return { ok: false, reason: 'Failed to extract article from this page.' };
+      }
+    })()`);
+    return extracted || { ok: false, reason: 'Unable to extract article content.' };
+  } catch (err) {
+    return { ok: false, reason: 'Extraction failed or tab closed during operation.' };
+  }
 });
 
 ipcMain.on('open-auth-page', (e) => {

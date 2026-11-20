@@ -51,7 +51,50 @@ class MainActivity : AppCompatActivity() {
 
     // Real File Upload Request Callback
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+
+    private val desktopUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    private var defaultUserAgent: String = ""
+
+    fun applyDesktopSite(webView: WebView, isDesktop: Boolean) {
+        if (defaultUserAgent.isEmpty()) {
+            defaultUserAgent = WebSettings.getDefaultUserAgent(this)
+        }
+        webView.settings.apply {
+            userAgentString = if (isDesktop) desktopUserAgent else defaultUserAgent
+            useWideViewPort = isDesktop
+            loadWithOverviewMode = isDesktop
+        }
+    }
+
+    fun toggleDesktopSite() {
+        val activeTab = tabManager.getActiveTab() ?: return
+        activeTab.isDesktopSite = !activeTab.isDesktopSite
+        applyDesktopSite(activeTab.webView, activeTab.isDesktopSite)
+        val msg = if (activeTab.isDesktopSite) "Desktop site enabled" else "Mobile site enabled"
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        activeTab.webView.reload()
+    }
     private val FILE_CHOOSER_REQUEST_CODE = 1001
+
+    private val openUrlLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val openUrl = result.data?.getStringExtra("open_url")
+            if (!openUrl.isNullOrBlank()) {
+                val activeTab = tabManager.getActiveTab()
+                if (activeTab != null) {
+                    activeTab.webView.loadUrl(openUrl)
+                } else {
+                    val tab = tabManager.createTab()
+                    setupWebView(tab.webView)
+                    tabManager.switchTab(tab.id)
+                    updateTabCount()
+                    tab.webView.loadUrl(openUrl)
+                }
+            }
+        }
+    }
 
     companion object {
         const val NEW_TAB_URL = "file:///android_asset/newtab.html"
@@ -72,6 +115,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         adBlockEngine = AdBlockEngine(this).apply { init() }
+        NativeSearchClient.initFromPreferences(this)
         historyDb = HistoryDb(this)
         bookmarkDb = BookmarkDb(this)
         downloadHandler = DownloadHandler(this)
@@ -125,6 +169,7 @@ class MainActivity : AppCompatActivity() {
             activeTabId = { tabManager.activeTabId },
             onTabSelected = { tab ->
                 tabManager.switchTab(tab.id)
+                applyDesktopSite(tab.webView, tab.isDesktopSite)
                 val u = tab.webView.url ?: ""
                 val searchQ = NativeSearchClient.extractSearchQuery(u)
                 if (searchQ != null) {
@@ -158,7 +203,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showTabSwitcher() {
+    fun showTabSwitcher() {
         tabAdapter.notifyDataSetChanged()
         tabSwitcherContainer.visibility = View.VISIBLE
     }
@@ -269,17 +314,13 @@ class MainActivity : AppCompatActivity() {
             showTabSwitcher()
         }
         findViewById<ImageButton>(R.id.btnNavHome)?.setOnClickListener {
-            tabManager.getActiveTab()?.webView?.loadUrl(NEW_TAB_URL)
+            tabManager.getActiveTab()?.webView?.loadUrl("$NEW_TAB_URL?engine=${NativeSearchClient.activeEngine}")
         }
         findViewById<ImageButton>(R.id.btnNavTabs)?.setOnClickListener {
             showTabSwitcher()
         }
         findViewById<ImageButton>(R.id.btnNavDownload)?.setOnClickListener {
-            try {
-                startActivity(Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS))
-            } catch (_: Exception) {
-                Toast.makeText(this, "Downloads folder", Toast.LENGTH_SHORT).show()
-            }
+            startActivity(Intent(this, DownloadsActivity::class.java))
         }
         findViewById<ImageButton>(R.id.btnNavSettings)?.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -288,12 +329,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun showOverflowMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
+        val activeTab = tabManager.getActiveTab()
+        val isDesktop = activeTab?.isDesktopSite == true
+
         popup.menu.add(0, 1, 0, getString(R.string.new_tab))
-        popup.menu.add(0, 2, 0, getString(R.string.find_in_page))
+        popup.menu.add(0, 2, 0, "Bookmark page")
         popup.menu.add(0, 3, 0, getString(R.string.bookmarks))
-        popup.menu.add(0, 4, 0, getString(R.string.share))
-        popup.menu.add(0, 5, 0, getString(R.string.settings))
-        popup.menu.add(0, 6, 0, getString(R.string.account_sync))
+        popup.menu.add(0, 4, 0, getString(R.string.history))
+        popup.menu.add(0, 5, 0, getString(R.string.downloads))
+        popup.menu.add(0, 6, 0, getString(R.string.find_in_page))
+
+        val desktopLabel = if (isDesktop) "✓ " + getString(R.string.desktop_site) else getString(R.string.desktop_site)
+        val desktopItem = popup.menu.add(0, 10, 0, desktopLabel)
+        desktopItem.isCheckable = true
+        desktopItem.isChecked = isDesktop
+
+        popup.menu.add(0, 7, 0, getString(R.string.share))
+        popup.menu.add(0, 8, 0, getString(R.string.settings))
+        popup.menu.add(0, 9, 0, getString(R.string.account_sync))
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -302,20 +355,38 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 2 -> {
-                    showFindInPage()
-                    true
-                }
-                3 -> {
                     val activeTab = tabManager.getActiveTab()
                     val url = activeTab?.webView?.url ?: ""
                     val title = activeTab?.webView?.title ?: url
-                    if (url.isNotBlank()) {
+                    if (url.isNotBlank() && url != NEW_TAB_URL) {
                         bookmarkDb.addBookmark(url, title)
                         Toast.makeText(this, "Bookmark saved", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Cannot bookmark start page", Toast.LENGTH_SHORT).show()
                     }
                     true
                 }
+                3 -> {
+                    openUrlLauncher.launch(Intent(this, BookmarksActivity::class.java))
+                    true
+                }
                 4 -> {
+                    openUrlLauncher.launch(Intent(this, HistoryActivity::class.java))
+                    true
+                }
+                5 -> {
+                    startActivity(Intent(this, DownloadsActivity::class.java))
+                    true
+                }
+                6 -> {
+                    showFindInPage()
+                    true
+                }
+                10 -> {
+                    toggleDesktopSite()
+                    true
+                }
+                7 -> {
                     val url = tabManager.getActiveTab()?.webView?.url ?: ""
                     if (url.isNotBlank()) {
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -326,11 +397,11 @@ class MainActivity : AppCompatActivity() {
                     }
                     true
                 }
-                5 -> {
+                8 -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
                     true
                 }
-                6 -> {
+                9 -> {
                     tabManager.getActiveTab()?.webView?.loadUrl("https://staunt.vercel.app/auth")
                     true
                 }
@@ -343,9 +414,42 @@ class MainActivity : AppCompatActivity() {
     private fun createNewTab() {
         val tab = tabManager.createTab()
         setupWebView(tab.webView)
+        applyDesktopSite(tab.webView, tab.isDesktopSite)
         tabManager.switchTab(tab.id)
         updateTabCount()
-        tab.webView.loadUrl(NEW_TAB_URL)
+        tab.webView.loadUrl("$NEW_TAB_URL?engine=${NativeSearchClient.activeEngine}")
+    }
+
+    inner class StauntWebAppInterface {
+        @android.webkit.JavascriptInterface
+        fun setSearchEngine(engine: String) {
+            runOnUiThread {
+                NativeSearchClient.setSearchEngine(engine)
+                val prefs = getSharedPreferences("staunt_settings", android.content.Context.MODE_PRIVATE)
+                prefs.edit().putString("search_engine", engine).apply()
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun openSettings() {
+            runOnUiThread {
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun openDownloads() {
+            runOnUiThread {
+                startActivity(Intent(this@MainActivity, DownloadsActivity::class.java))
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun showTabs() {
+            runOnUiThread {
+                showTabSwitcher()
+            }
+        }
     }
 
     private fun setupWebView(webView: WebView) {
@@ -358,9 +462,9 @@ class MainActivity : AppCompatActivity() {
             setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
-            allowFileAccess = false
+            allowFileAccess = true
             @Suppress("DEPRECATION")
-            allowFileAccessFromFileURLs = false
+            allowFileAccessFromFileURLs = true
             @Suppress("DEPRECATION")
             allowUniversalAccessFromFileURLs = false
             allowContentAccess = true
@@ -369,6 +473,7 @@ class MainActivity : AppCompatActivity() {
             javaScriptCanOpenWindowsAutomatically = true
             cacheMode = WebSettings.LOAD_DEFAULT
         }
+        webView.addJavascriptInterface(StauntWebAppInterface(), "StauntAndroid")
 
         webView.webViewClient = StauntWebViewClient(
             this,

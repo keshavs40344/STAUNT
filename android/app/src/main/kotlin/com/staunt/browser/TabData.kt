@@ -10,5 +10,6 @@ data class TabData(
     var title: String = "New Tab",
     var favicon: Bitmap? = null,
     val isIncognito: Boolean = false,
+    var isDesktopSite: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )

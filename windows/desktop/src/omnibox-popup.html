@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Omnibox Suggestions</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      user-select: none;
+    }
+    .popup-shell {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .suggestion-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      color: #f8fafc;
+      font-size: 12.5px;
+      cursor: pointer;
+      height: 36px;
+      border: 1px solid transparent;
+      transition: background 0.08s ease;
+    }
+    .suggestion-row:hover,
+    .suggestion-row.selected {
+      background: rgba(212, 163, 89, 0.14);
+      border-color: rgba(212, 163, 89, 0.28);
+    }
+    .suggestion-icon {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      color: #94a3b8;
+    }
+    .suggestion-row.type-bookmark .suggestion-icon,
+    .suggestion-row.selected .suggestion-icon {
+      color: #d4a359;
+    }
+    .suggestion-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .suggestion-title {
+      color: #f8fafc;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 58%;
+      flex-shrink: 0;
+    }
+    .suggestion-sub {
+      color: #94a3b8;
+      font-size: 11.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .suggestion-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+    .suggestion-row.selected .suggestion-badge {
+      color: #d4a359;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-shell" id="list" role="listbox"></div>
+  <script>
+    (function () {
+      const api = window.omniboxPopupAPI;
+      if (!api) return;
+      const list = document.getElementById('list');
+      let currentItems = [];
+      let selectedIdx = -1;
+
+      const ICONS = {
+        bookmark: '<svg class="suggestion-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+        history: '<svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        'search-history': '<svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        url: '<svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+        search: '<svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+      };
+
+      const LABELS = {
+        bookmark: 'Favourite',
+        history: 'History',
+        'search-history': 'Recent Search',
+        url: 'Open URL',
+        search: 'Search'
+      };
+
+      function render() {
+        list.innerHTML = '';
+        currentItems.forEach((item, idx) => {
+          const row = document.createElement('div');
+          const kind = ICONS[item.type] ? item.type : 'search';
+          row.className = 'suggestion-row type-' + kind + (idx === selectedIdx ? ' selected' : '');
+          row.setAttribute('role', 'option');
+          row.setAttribute('aria-selected', idx === selectedIdx ? 'true' : 'false');
+
+          row.innerHTML = ICONS[kind];
+
+          const main = document.createElement('div');
+          main.className = 'suggestion-main';
+
+          const title = document.createElement('span');
+          title.className = 'suggestion-title';
+          title.textContent = item.text || item.url || '';
+          main.appendChild(title);
+
+          if (item.subtext && item.subtext !== item.text) {
+            const sub = document.createElement('span');
+            sub.className = 'suggestion-sub';
+            sub.textContent = item.subtext;
+            main.appendChild(sub);
+          }
+
+          const badge = document.createElement('span');
+          badge.className = 'suggestion-badge';
+          badge.textContent = LABELS[kind] || 'Search';
+
+          row.appendChild(main);
+          row.appendChild(badge);
+
+          row.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            api.chooseItem(idx);
+          });
+          row.addEventListener('mouseenter', () => {
+            api.hoverItem(idx);
+          });
+
+          list.appendChild(row);
+        });
+      }
+
+      api.onUpdate((data) => {
+        currentItems = Array.isArray(data && data.items) ? data.items : [];
+        selectedIdx = typeof (data && data.selectedIndex) === 'number' ? data.selectedIndex : -1;
+        render();
+      });
+
+      api.onSelectIndex((idx) => {
+        selectedIdx = typeof idx === 'number' ? idx : -1;
+        const rows = list.querySelectorAll('.suggestion-row');
+        rows.forEach((r, i) => {
+          const sel = i === selectedIdx;
+          r.classList.toggle('selected', sel);
+          r.setAttribute('aria-selected', sel ? 'true' : 'false');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

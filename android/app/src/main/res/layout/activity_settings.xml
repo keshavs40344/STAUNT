@@ -29,6 +29,63 @@
                 android:text="@string/ad_blocker"
                 android:textColor="@color/staunt_text_white"
                 android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="4dp"
+                android:text="Search Engine"
+                android:textColor="@color/staunt_text_dim"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerSearchEngine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvSearchEngineAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="8dp"
+                android:textColor="#D4A359"
+                android:textSize="12sp"
+                android:text="Address: https://www.google.com/search?q=%s" />
+
+            <LinearLayout
+                android:id="@+id/layoutCustomSearchUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Custom Search Address / URL Template:"
+                    android:textColor="@color/staunt_text_dim"
+                    android:textSize="11sp" />
+                <EditText
+                    android:id="@+id/etCustomSearchUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="e.g. https://example.com/search?q=%s"
+                    android:textColor="@color/staunt_text_white"
+                    android:textColorHint="@color/staunt_text_dim"
+                    android:textSize="13sp"
+                    android:inputType="textUri" />
+            </LinearLayout>
             <Button
                 android:id="@+id/btnClearData"
                 android:layout_width="match_parent"

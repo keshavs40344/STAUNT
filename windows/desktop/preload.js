@@ -60,9 +60,21 @@ const secureAPI = Object.freeze({
     if (id > 0) ipcRenderer.send('close-tabs-to-right', id);
   },
 
-  showTabContextMenu: (tabId) => {
+  showTabContextMenu: (tabId, pos) => {
     const id = sanitizeNumber(tabId, -1);
-    if (id > 0) ipcRenderer.send('show-tab-context-menu', id);
+    const cleanPos = (pos && typeof pos.x === 'number' && typeof pos.y === 'number') ? { x: Math.round(pos.x), y: Math.round(pos.y) } : undefined;
+    if (id > 0) ipcRenderer.send('show-tab-context-menu', id, cleanPos);
+  },
+
+  setTabGroup: (tabId, group) => {
+    const id = sanitizeNumber(tabId, -1);
+    if (id <= 0) return;
+    const cleanGroup = (group && typeof group === 'object') ? {
+      name: sanitizeString(group.name, 40),
+      color: sanitizeString(group.color, 24),
+      collapsed: Boolean(group.collapsed)
+    } : null;
+    ipcRenderer.send('set-tab-group', id, cleanGroup);
   },
 
   toggleSplitView: (secId) => {
@@ -91,19 +103,35 @@ const secureAPI = Object.freeze({
   stopNavigation: () => ipcRenderer.send('nav-stop'),
   goHome: () => ipcRenderer.send('nav-home'),
 
-  // Autocomplete Suggestions API
+  // Autocomplete Suggestions & Popup View API
   getSuggestions: (query) => {
     return ipcRenderer.invoke('get-suggestions', sanitizeString(query, 256));
   },
 
+  showOmniboxPopup: (payload) => {
+    if (payload && typeof payload === 'object') {
+      ipcRenderer.send('show-omnibox-popup', payload);
+    }
+  },
+  updateOmniboxPopupSelection: (idx) => {
+    ipcRenderer.send('update-omnibox-popup-selection', sanitizeNumber(idx, -1));
+  },
+  hideOmniboxPopup: () => {
+    ipcRenderer.send('hide-omnibox-popup');
+  },
+
   // Find In Page API
-  findInPage: (text, forward = true) => {
+  findInPage: (text, forward = true, findNext = false) => {
     const cleanText = sanitizeString(text, 256);
-    if (cleanText) ipcRenderer.send('find-in-page', cleanText, Boolean(forward));
+    if (cleanText) ipcRenderer.send('find-in-page', cleanText, Boolean(forward), Boolean(findNext));
   },
 
   stopFindInPage: () => {
     ipcRenderer.send('stop-find-in-page');
+  },
+
+  setFindBarOpen: (isOpen) => {
+    ipcRenderer.send('set-find-bar-open', Boolean(isOpen));
   },
 
   // Zoom & PDF Exporter
@@ -148,8 +176,25 @@ const secureAPI = Object.freeze({
   toggleBookmark: () => ipcRenderer.invoke('toggle-bookmark'),
   checkIsBookmarked: (url) => ipcRenderer.invoke('check-is-bookmarked', sanitizeString(url, 2048)),
   deleteBookmark: (id) => ipcRenderer.invoke('delete-bookmark', sanitizeString(id, 64)),
+  editBookmark: (id, item) => {
+    if (!id || !item || typeof item !== 'object') return Promise.resolve({ success: false });
+    return ipcRenderer.invoke('edit-bookmark', {
+      id: sanitizeString(id, 64),
+      title: sanitizeString(item.title, 256),
+      url: sanitizeString(item.url, 2048)
+    });
+  },
+  reorderBookmarks: (ids) => {
+    if (!Array.isArray(ids)) return Promise.resolve({ success: false });
+    return ipcRenderer.invoke('reorder-bookmarks', ids.map(id => sanitizeString(id, 64)).filter(Boolean));
+  },
+  toggleFavouritesBar: (state) => {
+    const s = state !== undefined ? Boolean(state) : undefined;
+    return ipcRenderer.invoke('toggle-favourites-bar', s);
+  },
+  getFavouritesBarVisible: () => ipcRenderer.invoke('get-favourites-bar-visible'),
 
-  // Downloads Vault API
+  // Downloads Vault & Live Lifecycle API
   getDownloads: () => ipcRenderer.invoke('get-downloads'),
   openDownload: (itemPath) => {
     const p = sanitizeString(itemPath, 4096);
@@ -159,7 +204,26 @@ const secureAPI = Object.freeze({
     const p = sanitizeString(itemPath, 4096);
     if (p) ipcRenderer.send('show-in-folder', p);
   },
+  openDownloadChecked: (itemPath) => ipcRenderer.invoke('open-download-checked', sanitizeString(itemPath, 4096)),
+  showInFolderChecked: (itemPath) => ipcRenderer.invoke('show-in-folder-checked', sanitizeString(itemPath, 4096)),
+  pauseDownload: (id) => ipcRenderer.invoke('pause-download', sanitizeString(id, 64)),
+  resumeDownload: (id) => ipcRenderer.invoke('resume-download', sanitizeString(id, 64)),
+  cancelDownload: (id) => ipcRenderer.invoke('cancel-download', sanitizeString(id, 64)),
+  retryDownload: (id) => ipcRenderer.invoke('retry-download', sanitizeString(id, 64)),
+  deleteDownload: (id) => ipcRenderer.invoke('delete-download', sanitizeString(id, 64)),
   clearDownloads: () => ipcRenderer.invoke('clear-downloads'),
+
+  // Native Favourites Bar Context & Overflow Menus (above WebContentsView)
+  showFavContextMenu: (favId, pos) => {
+    const cleanId = sanitizeString(favId, 64);
+    const p = (pos && typeof pos === 'object') ? { x: sanitizeNumber(pos.x, 0), y: sanitizeNumber(pos.y, 0) } : null;
+    if (cleanId) ipcRenderer.send('show-fav-context-menu', cleanId, p);
+  },
+  showFavOverflowMenu: (favIds, pos) => {
+    const ids = Array.isArray(favIds) ? favIds.map(i => sanitizeString(i, 64)).filter(Boolean) : [];
+    const p = (pos && typeof pos === 'object') ? { x: sanitizeNumber(pos.x, 0), y: sanitizeNumber(pos.y, 0) } : null;
+    ipcRenderer.send('show-fav-overflow-menu', ids, p);
+  },
 
   // Settings API
   getSettings: () => ipcRenderer.invoke('get-settings'),
@@ -167,6 +231,11 @@ const secureAPI = Object.freeze({
   selectDownloadDir: () => ipcRenderer.invoke('select-download-dir'),
   resetDownloadDir: () => ipcRenderer.invoke('reset-download-dir'),
   getDefaultDownloadsDir: () => ipcRenderer.invoke('get-default-downloads-dir'),
+  onSettingsUpdated: (callback) => {
+    ipcRenderer.on('settings-updated', (_event, settings) => {
+      if (typeof callback === 'function') callback(settings);
+    });
+  },
 
   // Layout & Shell State
   setSidebarState: (isCollapsed) => {
@@ -176,6 +245,8 @@ const secureAPI = Object.freeze({
   clearCache: () => {
     ipcRenderer.send('clear-browser-cache');
   },
+  clearCacheAsync: () => ipcRenderer.invoke('clear-browser-cache-async'),
+  getRuntimeStats: () => ipcRenderer.invoke('get-runtime-stats'),
 
   toggleDevTools: () => {
     ipcRenderer.send('toggle-devtools');
@@ -223,6 +294,8 @@ const secureAPI = Object.freeze({
   onDownloadProgress: (cb) => { if (typeof cb === 'function') ipcRenderer.on('download-progress', (e, d) => cb(d)); },
   onDownloadComplete: (cb) => { if (typeof cb === 'function') ipcRenderer.on('download-complete', (e, d) => cb(d)); },
   onBookmarkStatusChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('bookmark-status-changed', (e, d) => cb(d)); },
+  onBookmarksUpdated: (cb) => { if (typeof cb === 'function') ipcRenderer.on('bookmarks-updated', (e, d) => cb(d)); },
+  onFavouritesBarToggled: (cb) => { if (typeof cb === 'function') ipcRenderer.on('favourites-bar-visibility-changed', (e, d) => cb(d)); },
   onShowBookmarks: (cb) => { if (typeof cb === 'function') ipcRenderer.on('show-bookmarks', () => cb()); },
   onToggleFindBar: (cb) => { if (typeof cb === 'function') ipcRenderer.on('toggle-find-bar', () => cb()); },
   onOpenSettingsModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-settings-modal', () => cb()); },
@@ -231,6 +304,13 @@ const secureAPI = Object.freeze({
   onOpenDownloadsModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-downloads-modal', () => cb()); },
   onOpenClearDataModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-clear-data-modal', () => cb()); },
   onOpenAboutModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-about-modal', () => cb()); },
+  onFocusOmnibox: (cb) => { if (typeof cb === 'function') ipcRenderer.on('focus-omnibox', () => cb()); },
+  onOmniboxPopupChosen: (cb) => { if (typeof cb === 'function') ipcRenderer.on('omnibox-popup-chosen', (_e, idx) => cb(idx)); },
+  onOmniboxPopupHover: (cb) => { if (typeof cb === 'function') ipcRenderer.on('omnibox-popup-hover', (_e, idx) => cb(idx)); },
+  onChromeShortcut: (cb) => { if (typeof cb === 'function') ipcRenderer.on('chrome-shortcut', (_e, action) => cb(action)); },
+  onShieldLevelChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('shield-level-changed', (_e, lvl) => cb(lvl)); },
+  onFavAction: (cb) => { if (typeof cb === 'function') ipcRenderer.on('fav-action', (_e, data) => cb(data)); },
+  onToastMessage: (cb) => { if (typeof cb === 'function') ipcRenderer.on('toast-message', (_e, msg) => cb(msg)); },
 
   // Unified Sovereign Account & Sync API
   getAccountState: () => ipcRenderer.invoke('get-account-state'),
@@ -247,7 +327,40 @@ const secureAPI = Object.freeze({
   signOutAccount: () => ipcRenderer.invoke('sign-out-account'),
   openAuthPage: () => ipcRenderer.send('open-auth-page'),
   onOpenAccountModal: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-account-modal', () => cb()); },
-  onAccountStateChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('account-state-changed', (_e, state) => cb(state)); }
+  onAccountStateChanged: (cb) => { if (typeof cb === 'function') ipcRenderer.on('account-state-changed', (_e, state) => cb(state)); },
+
+  // Phase 7: Tab Group Productivity, Tab Search, Reading List & Reader Mode
+  renameTabGroup: (oldName, newName, newColor) => {
+    const o = sanitizeString(oldName, 40);
+    const n = sanitizeString(newName, 40);
+    const c = newColor ? sanitizeString(newColor, 24) : '';
+    if (o) ipcRenderer.send('rename-tab-group', o, n, c);
+  },
+  toggleCollapseTabGroup: (groupName) => {
+    const g = sanitizeString(groupName, 40);
+    if (g) ipcRenderer.send('toggle-collapse-tab-group', g);
+  },
+  closeTabGroup: (groupName) => {
+    const g = sanitizeString(groupName, 40);
+    if (g) ipcRenderer.send('close-tab-group', g);
+  },
+  onOpenGroupEditor: (cb) => { if (typeof cb === 'function') ipcRenderer.on('open-group-editor', (_e, data) => cb(data)); },
+
+  getTabSearchData: () => ipcRenderer.invoke('get-tab-search-data'),
+  restoreClosedTabAt: (stackIndex) => ipcRenderer.invoke('restore-closed-tab-at', sanitizeNumber(stackIndex, -1)),
+
+  getReadingList: () => ipcRenderer.invoke('get-reading-list'),
+  addReadingListItem: (payload) => {
+    const clean = (payload && typeof payload === 'object') ? {
+      url: sanitizeString(payload.url, 2048),
+      title: sanitizeString(payload.title, 240)
+    } : {};
+    return ipcRenderer.invoke('add-reading-list-item', clean);
+  },
+  removeReadingListItem: (id) => ipcRenderer.invoke('remove-reading-list-item', sanitizeString(id, 64)),
+  toggleReadingListRead: (id) => ipcRenderer.invoke('toggle-reading-list-read', sanitizeString(id, 64)),
+
+  extractReaderArticle: () => ipcRenderer.invoke('extract-reader-article')
 });
 
 // Expose both namespaces (stauntAPI & stauntSecureBridge)

@@ -45,6 +45,21 @@
             android:exported="false"
             android:theme="@style/Theme.StauntBrowser" />
 
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.StauntBrowser" />
+
+        <activity
+            android:name=".BookmarksActivity"
+            android:exported="false"
+            android:theme="@style/Theme.StauntBrowser" />
+
+        <activity
+            android:name=".DownloadsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.StauntBrowser" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

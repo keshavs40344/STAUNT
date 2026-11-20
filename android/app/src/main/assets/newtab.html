@@ -1,72 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>STAUNT</title>
+  <title>STAUNT • New Tab</title>
   <style>
-    :root {
-      /* Dark Theme (Default) — warm obsidian + champagne gold */
-      --bg-primary: #0b0d13;
-      --bg-secondary: #12151d;
-      --bg-surface: #181c26;
-      --bg-surface-hover: #222736;
-      --text-main: #f0f2f5;
-      --text-secondary: #9aa3af;
-      --text-muted: rgba(255, 255, 255, 0.40);
-      --accent-gold: #d4a359;
-      --accent-gold-soft: rgba(212, 163, 89, 0.15);
-      --accent-gold-border: rgba(212, 163, 89, 0.35);
+    /* ==========================================================================
+       STAUNT REFINED EDITORIAL DESIGN SYSTEM (Mobile Parity with Desktop)
+       Champagne, Graphite, Soft Ivory & Warm Obsidian Palette
+       ========================================================================== */
+    :root, [data-theme="dark"] {
+      --bg-base: #0c0d12;
+      --bg-surface: #141620;
+      --bg-surface-elevated: rgba(24, 27, 38, 0.75);
       --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-medium: rgba(255, 255, 255, 0.12);
-      --chip-bg: rgba(255, 255, 255, 0.06);
+      --border-soft: rgba(255, 255, 255, 0.14);
+      --border-focus: #d4a359;
+      --accent-gold: #d4a359;
+      --accent-gold-hover: #b88636;
+      --accent-gold-soft: rgba(212, 163, 89, 0.16);
+      --accent-gold-subtle: rgba(212, 163, 89, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #8b92a2;
+      --text-dim: #545b6d;
+      --search-bg: rgba(22, 25, 36, 0.85);
+      --search-border: rgba(255, 255, 255, 0.14);
+      --chip-bg: rgba(255, 255, 255, 0.07);
       --chip-border: rgba(255, 255, 255, 0.10);
-      --chip-text: #c0c6d0;
+      --chip-text: #d8dcde;
+      --tile-bg: rgba(255, 255, 255, 0.06);
+      --tile-border: rgba(255, 255, 255, 0.10);
+      --tile-label: #e2e5eb;
+      --bottomnav-bg: rgba(12, 15, 22, 0.92);
+      --bottomnav-border: rgba(255, 255, 255, 0.08);
+      --bottomnav-text: #8892a0;
+      --bottomnav-active: #d4a359;
       --modal-bg: #181c26;
       --modal-border: rgba(255, 255, 255, 0.14);
-      --search-bg: rgba(255, 255, 255, 0.06);
-      --search-border: rgba(255, 255, 255, 0.14);
-      --pill-bg: rgba(255, 255, 255, 0.06);
-      --pill-border: rgba(255, 255, 255, 0.10);
-      --squircle-bg: #1c202b;
-      --squircle-border: rgba(255, 255, 255, 0.10);
-      --shadow-tile: 0 4px 14px rgba(0, 0, 0, 0.4);
-      --bottomnav-bg: #0e1118;
-      --bottomnav-border: rgba(255, 255, 255, 0.08);
-      --bottomnav-text: #707e94;
-      --bottomnav-active: #d4a359;
-      --system-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --system-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
     }
 
     [data-theme="light"] {
-      --bg-primary: #f8f9fa;
-      --bg-secondary: #ffffff;
+      --bg-base: #f7f7f6;
       --bg-surface: #ffffff;
-      --bg-surface-hover: #f1f5f9;
-      --text-main: #1a1e24;
-      --text-secondary: #4b5563;
-      --text-muted: rgba(0, 0, 0, 0.42);
-      --accent-gold: #b8860b;
-      --accent-gold-soft: rgba(184, 134, 11, 0.10);
-      --accent-gold-border: rgba(184, 134, 11, 0.30);
-      --border-subtle: rgba(0, 0, 0, 0.06);
-      --border-medium: rgba(0, 0, 0, 0.10);
+      --bg-surface-elevated: rgba(255, 255, 255, 0.85);
+      --border-subtle: rgba(0, 0, 0, 0.07);
+      --border-soft: rgba(0, 0, 0, 0.12);
+      --border-focus: #b58431;
+      --accent-gold: #c28e35;
+      --accent-gold-hover: #a17224;
+      --accent-gold-soft: rgba(194, 142, 53, 0.18);
+      --accent-gold-subtle: rgba(194, 142, 53, 0.09);
+      --text-main: #181b22;
+      --text-muted: #5e6573;
+      --text-dim: #8c93a1;
+      --search-bg: rgba(255, 255, 255, 0.96);
+      --search-border: rgba(0, 0, 0, 0.12);
       --chip-bg: rgba(0, 0, 0, 0.04);
       --chip-border: rgba(0, 0, 0, 0.08);
-      --chip-text: #374151;
-      --modal-bg: #ffffff;
-      --modal-border: rgba(0, 0, 0, 0.12);
-      --search-bg: #ffffff;
-      --search-border: rgba(0, 0, 0, 0.12);
-      --pill-bg: rgba(0, 0, 0, 0.04);
-      --pill-border: rgba(0, 0, 0, 0.08);
-      --squircle-bg: #ffffff;
-      --squircle-border: rgba(0, 0, 0, 0.08);
-      --shadow-tile: 0 2px 10px rgba(0, 0, 0, 0.06);
-      --bottomnav-bg: #ffffff;
+      --chip-text: #2c323f;
+      --tile-bg: #ffffff;
+      --tile-border: rgba(0, 0, 0, 0.08);
+      --tile-label: #2c313a;
+      --bottomnav-bg: rgba(255, 255, 255, 0.94);
       --bottomnav-border: rgba(0, 0, 0, 0.08);
       --bottomnav-text: #9ca3af;
       --bottomnav-active: #b8860b;
+      --modal-bg: #ffffff;
+      --modal-border: rgba(0, 0, 0, 0.12);
     }
 
     * {
@@ -87,179 +88,347 @@
     }
 
     body {
-      background-color: var(--bg-primary);
-      background-image: 
-        radial-gradient(ellipse at 50% 15%, rgba(212, 163, 89, 0.07) 0%, transparent 65%),
-        linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      background-color: var(--bg-base);
       font-family: var(--system-font);
       color: var(--text-main);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      max-width: 480px;
+      position: relative;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Living Ambient Backdrop Canvas & Scrim (Desktop Parity) */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      background: var(--bg-base);
+      transition: background 0.3s ease;
+    }
+    .bg-photo-layer {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity;
+    }
+    .bg-photo-layer.active {
+      opacity: 1;
+    }
+    .bg-plain-layer {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.4s ease, background-color 0.4s ease;
+    }
+    .bg-plain-layer.active {
+      opacity: 1;
+    }
+    .living-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .living-canvas.active {
+      opacity: 1;
+    }
+    .living-canvas-scrim {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle at 50% 40%, rgba(12, 13, 18, 0.30) 0%, rgba(12, 13, 18, 0.68) 100%);
+      transition: background 0.4s ease;
+    }
+    [data-scene-theme="light"] .living-canvas-scrim {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* App Container */
+    .app-viewport {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      width: 100%;
+      max-width: 580px;
       margin: 0 auto;
+      min-height: 100vh;
     }
 
-    [data-theme="light"] body {
-      background-image: 
-        radial-gradient(ellipse at 50% 15%, rgba(184, 134, 11, 0.08) 0%, transparent 65%),
-        linear-gradient(180deg, #f8f9fa 0%, #edf0f5 100%);
-    }
-
-    /* ── Top Bar ── */
+    /* Top Bar */
     .top-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 14px 4px;
+      padding: 12px 16px 4px;
       width: 100%;
       flex-shrink: 0;
     }
-
     .top-left {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-
-    .hamburger {
-      width: 34px;
-      height: 34px;
+    .brand-logo-btn {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      border: none;
-      background: none;
-      color: var(--text-secondary);
-      font-size: 19px;
-      cursor: pointer;
-      border-radius: 8px;
+      gap: 1px;
     }
-
-    .top-brand {
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: var(--text-main);
-    }
-    .top-brand .gold-a {
+    .gold-a {
       color: var(--accent-gold);
     }
-
     .top-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
-
-    .theme-toggle-btn {
-      width: 32px;
-      height: 32px;
-      border: none;
-      background: none;
-      color: var(--text-secondary);
-      font-size: 15px;
-      cursor: pointer;
+    .top-icon-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-
-    .user-avatar {
-      width: 28px;
-      height: 28px;
+    [data-theme="light"] .top-icon-btn {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    .user-avatar-pill {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: var(--accent-gold);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
+      box-shadow: 0 2px 8px rgba(212, 163, 89, 0.4);
     }
 
-    /* ── Climate Pill ── */
+    /* Climate Pill */
+    .climate-row {
+      display: flex;
+      justify-content: center;
+      padding: 4px 16px;
+    }
     .climate-pill {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 4px 11px;
+      gap: 6px;
+      padding: 4px 12px;
       border-radius: 16px;
-      background: var(--pill-bg);
-      border: 1px solid var(--pill-border);
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin: 2px 14px 6px;
-      width: fit-content;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      font-size: 11.5px;
+      color: var(--text-main);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="light"] .climate-pill {
+      background: rgba(0, 0, 0, 0.05);
+      text-shadow: none;
     }
 
-    /* ── Main Scrollable Body ── */
+    /* Center Content Area */
     .content-area {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 8px 14px 16px;
+      padding: 10px 18px 24px;
       width: 100%;
     }
 
-    /* ── Hero Wordmark ── */
+    /* Hero Wordmark */
     .hero-wordmark {
-      font-size: 38px;
+      font-size: 2.8rem;
       font-weight: 800;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.16em;
       text-align: center;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       color: var(--text-main);
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
     }
     .hero-wordmark .gold-a {
       color: var(--accent-gold);
-      font-size: 34px;
+      font-size: 2.4rem;
     }
-
     .hero-tagline {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.16em;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       text-align: center;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     }
 
-    /* ── Search Bar ── */
-    .search-container {
+    /* Search Container with Desktop-Parity Dropdown Badge */
+    .search-box-wrap {
       width: 100%;
-      max-width: 420px;
-      margin-bottom: 14px;
+      max-width: 460px;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 30;
     }
-
-    .search-box {
+    .search-pill-form {
       width: 100%;
-      height: 46px;
+      height: 50px;
       background: var(--search-bg);
       border: 1px solid var(--search-border);
-      border-radius: 23px;
+      border-radius: 26px;
       display: flex;
       align-items: center;
-      padding: 0 5px 0 13px;
-      gap: 5px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      padding: 0 6px 0 10px;
+      gap: 8px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .search-pill-form:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-gold-soft), 0 10px 30px rgba(0, 0, 0, 0.35);
+      transform: translateY(-1px);
     }
 
-    .search-box:focus-within {
-      border-color: var(--accent-gold-border);
-      box-shadow: 0 0 0 2px var(--accent-gold-soft);
-    }
-
-    .search-icon-svg {
-      width: 15px;
-      height: 15px;
+    /* Search Engine Dropdown Badge */
+    .engine-badge-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
       flex-shrink: 0;
-      stroke: var(--text-muted);
+    }
+    .engine-badge-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      padding: 4px 8px 4px 6px;
+      color: var(--text-main);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .engine-badge-btn:active {
+      background: rgba(212, 163, 89, 0.2);
+      border-color: var(--accent-gold);
+    }
+    [data-theme="light"] .engine-badge-btn {
+      background: rgba(0, 0, 0, 0.06);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    .engine-badge-icon {
+      font-size: 13px;
+      line-height: 1;
+    }
+    .engine-badge-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      max-width: 82px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .engine-badge-chevron {
+      opacity: 0.65;
+      transition: transform 0.15s ease;
+    }
+    .engine-badge-wrap.open .engine-badge-chevron {
+      transform: rotate(180deg);
+    }
+    .engine-select-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 175px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 300;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+    .engine-badge-wrap.open .engine-select-dropdown {
+      display: flex;
+    }
+    .engine-select-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .engine-select-item:active,
+    .engine-select-item.active {
+      background: rgba(212, 163, 89, 0.18);
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+    .engine-item-icon {
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+    }
+    .engine-item-name {
+      font-weight: 500;
+    }
+    .engine-item-addr {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-left: auto;
+      padding-left: 8px;
     }
 
     .search-input {
@@ -268,22 +437,28 @@
       border: none;
       outline: none;
       color: var(--text-main);
-      font-family: var(--system-font);
+      font-family: inherit;
       font-size: 13.5px;
       font-weight: 400;
       min-width: 0;
     }
-
     .search-input::placeholder {
       color: var(--text-muted);
+      opacity: 0.85;
+      font-size: 13px;
     }
 
+    .search-inline-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
     .search-action-btn {
       width: 30px;
       height: 30px;
       border: none;
       background: none;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 14px;
       cursor: pointer;
       border-radius: 50%;
@@ -292,23 +467,32 @@
       justify-content: center;
       flex-shrink: 0;
     }
-
+    .search-action-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
     .search-submit-btn {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border: none;
       background: var(--accent-gold);
-      color: #fff;
-      font-size: 14px;
+      color: #ffffff;
       cursor: pointer;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(212, 163, 89, 0.35);
+    }
+    .search-submit-btn svg {
+      width: 17px;
+      height: 17px;
+      stroke: #fff;
+      stroke-width: 2.2;
     }
 
-    /* ── Trending Chips ── */
+    /* Trending Suggestion Chips */
     .trending-section {
       display: flex;
       flex-wrap: wrap;
@@ -316,9 +500,8 @@
       gap: 6px;
       margin-bottom: 22px;
       width: 100%;
-      max-width: 420px;
+      max-width: 460px;
     }
-
     .trend-chip {
       display: inline-flex;
       align-items: center;
@@ -331,33 +514,34 @@
       font-size: 11.5px;
       font-weight: 500;
       cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       transition: all 0.15s ease;
       text-decoration: none;
       white-space: nowrap;
     }
     .trend-chip:active {
       background: var(--accent-gold-soft);
-      border-color: var(--accent-gold-border);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
     }
     .trend-chip .trend-icon {
       font-size: 11px;
     }
 
-    /* ── Shortcuts Section ── */
+    /* Shortcuts Grid (10 Squircles matching Desktop) */
     .shortcuts-section {
       width: 100%;
-      max-width: 420px;
-      margin-bottom: 12px;
+      max-width: 460px;
+      margin-bottom: 14px;
     }
-
     .shortcuts-grid {
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
-
     .shortcut-tile {
       display: flex;
       flex-direction: column;
@@ -369,37 +553,39 @@
       width: 58px;
       touch-action: manipulation;
     }
-
     .squircle-box {
-      width: 52px;
-      height: 52px;
+      width: 50px;
+      height: 50px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: var(--shadow-tile);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
       transition: transform 0.15s ease;
       position: relative;
-      border: 1px solid var(--squircle-border);
-      background: var(--squircle-bg);
+      border: 1px solid var(--tile-border);
+      background: var(--tile-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
-
     .shortcut-tile:active .squircle-box {
-      transform: scale(0.93);
+      transform: scale(0.92);
     }
-
     .shortcut-label {
       font-size: 11px;
-      font-weight: 400;
-      color: var(--text-secondary);
-      margin-top: 6px;
+      font-weight: 500;
+      color: var(--tile-label);
+      margin-top: 5px;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 58px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     }
-
+    [data-theme="light"] .shortcut-label {
+      text-shadow: none;
+    }
     .tile-remove-btn {
       position: absolute;
       top: -4px;
@@ -421,38 +607,176 @@
     .shortcut-tile[data-custom="true"] .tile-remove-btn {
       display: flex;
     }
-
     .tile-remove-btn:active {
       background: #ef4444;
     }
-
-    /* Add Shortcut */
     .add-tile .squircle-box {
-      background: transparent;
-      border: 1.5px dashed var(--border-medium);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px dashed var(--border-soft);
       box-shadow: none;
     }
 
-    /* ── Bottom Navigation ── */
+    /* Floating Living Scene Controller (Desktop Parity, Mobile Adapted) */
+    .living-scene-controller {
+      position: fixed;
+      bottom: 64px;
+      right: 14px;
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      padding: 4px 6px;
+      user-select: none;
+      transform: scale(0.92);
+      transform-origin: bottom right;
+    }
+    [data-theme="light"] .living-scene-controller {
+      background: rgba(255, 255, 255, 0.90);
+      border-color: rgba(0, 0, 0, 0.12);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+    .scene-progress-track {
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      margin-bottom: 3px;
+      overflow: hidden;
+    }
+    .scene-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #d4a359, #e2b36e);
+      transition: width 0.25s linear;
+    }
+    .scene-ctrl-inner {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .scene-ctrl-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .scene-ctrl-btn:active {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
+    }
+    .scene-pill-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
+      cursor: pointer;
+      padding: 4px 9px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .scene-pill-btn:active {
+      border-color: var(--accent-gold);
+    }
+    .scene-ctrl-sep {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 0 1px;
+    }
+    .scene-auto-btn.active {
+      color: var(--accent-gold);
+    }
+    .scene-select-menu {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      width: 200px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+      padding: 5px;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 100;
+    }
+    [data-theme="light"] .scene-select-menu {
+      background: rgba(255, 255, 255, 0.97);
+      border-color: rgba(0, 0, 0, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+    .scene-select-menu.active {
+      display: flex;
+    }
+    .scene-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 0.80rem;
+      font-weight: 500;
+      text-align: left;
+    }
+    .scene-menu-item:active,
+    .scene-menu-item.selected {
+      background: var(--accent-gold-soft);
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+    .scene-item-icon {
+      font-size: 1rem;
+    }
+    .scene-item-name {
+      flex: 1;
+    }
+
+    /* Mobile Bottom Navigation Bar */
     .bottom-nav {
       display: flex;
       align-items: center;
       justify-content: space-around;
-      height: 54px;
+      height: 52px;
       background: var(--bottomnav-bg);
       border-top: 1px solid var(--bottomnav-border);
       width: 100%;
       flex-shrink: 0;
       margin-top: auto;
       padding-bottom: env(safe-area-inset-bottom, 0px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
     }
-
     .bottom-nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       text-decoration: none;
       color: var(--bottomnav-text);
       font-size: 10px;
@@ -471,13 +795,13 @@
       height: 20px;
     }
 
-    /* ── Shortcut Modal ── */
+    /* Add Shortcut Modal */
     .shortcut-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(0, 0, 0, 0.70);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -489,12 +813,13 @@
       border: 1px solid var(--modal-border);
       border-radius: 16px;
       padding: 22px;
-      width: 300px;
+      width: 310px;
       max-width: 90vw;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
     }
     .shortcut-modal-title {
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-main);
       margin-bottom: 14px;
     }
@@ -502,7 +827,7 @@
       width: 100%;
       padding: 10px 12px;
       background: var(--search-bg);
-      border: 1px solid var(--border-medium);
+      border: 1px solid var(--border-soft);
       border-radius: 8px;
       color: var(--text-main);
       font-size: 14px;
@@ -527,7 +852,7 @@
     .shortcut-modal-actions button {
       padding: 8px 16px;
       border-radius: 8px;
-      border: 1px solid var(--border-medium);
+      border: 1px solid var(--border-soft);
       background: var(--chip-bg);
       color: var(--text-main);
       font-size: 13px;
@@ -538,155 +863,265 @@
       background: var(--accent-gold);
       border-color: var(--accent-gold);
       color: #fff;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="top-left">
-      <button class="hamburger" aria-label="Menu">☰</button>
-      <span class="top-brand">ST<span class="gold-a">▲</span>UNT</span>
-    </div>
-    <div class="top-right">
-      <button class="theme-toggle-btn" id="newtabThemeToggle" aria-label="Toggle theme">
-        <span id="moonIcon">🌙</span>
-        <span id="sunIcon" style="display:none;">☀️</span>
-      </button>
-      <div class="user-avatar">K</div>
-    </div>
+  <!-- Living Ambient Backdrop Canvas (Desktop Parity: 8 Selectable Scenes) -->
+  <div class="bg-canvas" id="bgCanvasContainer">
+    <div class="bg-photo-layer" id="bgPhotoA"></div>
+    <div class="bg-photo-layer" id="bgPhotoB"></div>
+    <div class="bg-plain-layer" id="bgPlain"></div>
+    <canvas id="livingCanvas" class="living-canvas"></canvas>
+    <div class="living-canvas-scrim" id="bgScrim"></div>
   </div>
 
-  <!-- Climate Pill -->
-  <div class="climate-pill" id="climatePill">
-    <span>📍</span>
-    <span>Delhi, India</span>
-    <span>•</span>
-    <span>☀️</span>
-    <span>30°C Clear Sky</span>
-  </div>
+  <div class="app-viewport">
 
-  <!-- Content Area -->
-  <div class="content-area">
-    <div class="hero-wordmark">ST<span class="gold-a">▲</span>UNT</div>
-    <div class="hero-tagline">EXPLORE A MORE OPEN INTERNET</div>
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-left">
+        <button class="brand-logo-btn" aria-label="STAUNT Home">
+          <span>ST</span><span class="gold-a">▲</span><span>UNT</span>
+        </button>
+      </div>
+      <div class="top-right">
+        <button class="top-icon-btn" id="newtabThemeToggle" aria-label="Toggle theme">
+          <span id="moonIcon">🌙</span>
+          <span id="sunIcon" style="display:none;">☀️</span>
+        </button>
+        <div class="user-avatar-pill" id="userAvatarPill">K</div>
+      </div>
+    </header>
 
-    <!-- Search Bar -->
-    <div class="search-container">
-      <div class="search-box">
-        <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input
-          type="text"
-          id="newtabSearchInput"
-          class="search-input"
-          placeholder="Search the web..."
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button class="search-action-btn" id="voiceSearchBtn" aria-label="Voice search">🎤</button>
-        <button class="search-action-btn" id="lensSearchBtn" aria-label="Visual search">📷</button>
-        <button class="search-submit-btn" id="searchSubmitBtn" aria-label="Search">🔍</button>
+    <!-- Climate Pill -->
+    <div class="climate-row">
+      <div class="climate-pill" id="climatePill">
+        <span>📍</span>
+        <span>Delhi, India</span>
+        <span>•</span>
+        <span>☀️</span>
+        <span>30°C Clear Sky</span>
       </div>
     </div>
 
-    <!-- Trending Chips -->
-    <div class="trending-section">
-      <div class="trend-chip" data-q="India election 2026"><span class="trend-icon">📈</span> India election 2026</div>
-      <div class="trend-chip" data-q="ISRO latest news"><span class="trend-icon">📈</span> ISRO latest news</div>
-      <div class="trend-chip" data-q="Python tutorial"><span class="trend-icon">📈</span> Python tutorial</div>
-      <div class="trend-chip" data-q="Gold price today"><span class="trend-icon">📈</span> Gold price today</div>
-    </div>
+    <!-- Center Hero Content Area -->
+    <main class="content-area">
 
-    <!-- Shortcuts -->
-    <div class="shortcuts-section">
-      <div class="shortcuts-grid" id="favoritesGrid">
+      <!-- STAUNT Hero Wordmark -->
+      <h1 class="hero-wordmark">
+        <span>ST</span><span class="gold-a">▲</span><span>UNT</span>
+      </h1>
+      <p class="hero-tagline">EXPLORE A MORE OPEN INTERNET</p>
 
-        <!-- YouTube -->
-        <a href="https://www.youtube.com" class="shortcut-tile" data-id="youtube">
-          <div class="squircle-box" style="background: #ff0000; border-color: transparent;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      <!-- Search Bar with Search Engine Selector Dropdown -->
+      <div class="search-box-wrap">
+        <form class="search-pill-form" id="newtabSearchForm" onsubmit="event.preventDefault(); submitSearch();">
+          
+          <!-- Search Engine Selector Badge (Desktop Parity) -->
+          <div class="engine-badge-wrap" id="engineBadgeWrap">
+            <button type="button" class="engine-badge-btn" id="engineBadgeBtn" title="Choose Search Engine">
+              <span id="engineSelectIcon" class="engine-badge-icon">🔍</span>
+              <span id="engineSelectLabel" class="engine-badge-label">Google</span>
+              <svg class="engine-badge-chevron" width="8" height="5" viewBox="0 0 8 5" fill="none"><path d="M1 1L4 4L7 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="engine-select-dropdown" id="engineSelectDropdown" style="max-height: 380px; overflow-y: auto;">
+              <div class="engine-select-item" data-engine="google"><span class="engine-item-icon">🔍</span> <span class="engine-item-name">Google</span> <span class="engine-item-addr">google.com</span></div>
+              <div class="engine-select-item" data-engine="duckduckgo"><span class="engine-item-icon">🦆</span> <span class="engine-item-name">DuckDuckGo</span> <span class="engine-item-addr">duckduckgo.com</span></div>
+              <div class="engine-select-item" data-engine="bing"><span class="engine-item-icon">ᵇ</span> <span class="engine-item-name">Bing</span> <span class="engine-item-addr">bing.com</span></div>
+              <div class="engine-select-item" data-engine="brave"><span class="engine-item-icon">🦁</span> <span class="engine-item-name">Brave Search</span> <span class="engine-item-addr">search.brave.com</span></div>
+              <div class="engine-select-item" data-engine="ecosia"><span class="engine-item-icon">🌳</span> <span class="engine-item-name">Ecosia</span> <span class="engine-item-addr">ecosia.org</span></div>
+              <div class="engine-select-item" data-engine="yahoo"><span class="engine-item-icon">Y!</span> <span class="engine-item-name">Yahoo</span> <span class="engine-item-addr">search.yahoo.com</span></div>
+              <div class="engine-select-item" data-engine="startpage"><span class="engine-item-icon">🛡️</span> <span class="engine-item-name">Startpage</span> <span class="engine-item-addr">startpage.com</span></div>
+              <div class="engine-select-item" data-engine="yandex"><span class="engine-item-icon">Я</span> <span class="engine-item-name">Yandex</span> <span class="engine-item-addr">yandex.com</span></div>
+              <div class="engine-select-item" data-engine="baidu"><span class="engine-item-icon">🐾</span> <span class="engine-item-name">Baidu</span> <span class="engine-item-addr">baidu.com</span></div>
+              <div class="engine-select-item" data-engine="qwant"><span class="engine-item-icon">🇶</span> <span class="engine-item-name">Qwant</span> <span class="engine-item-addr">qwant.com</span></div>
+              <div class="engine-select-item" data-engine="kagi"><span class="engine-item-icon">🐕</span> <span class="engine-item-name">Kagi</span> <span class="engine-item-addr">kagi.com</span></div>
+              <div class="engine-select-item" data-engine="perplexity"><span class="engine-item-icon">✦</span> <span class="engine-item-name">Perplexity AI</span> <span class="engine-item-addr">perplexity.ai</span></div>
+              <div class="engine-select-item" data-engine="swisscows"><span class="engine-item-icon">🐄</span> <span class="engine-item-name">Swisscows</span> <span class="engine-item-addr">swisscows.com</span></div>
+              <div class="engine-select-item" data-engine="ask"><span class="engine-item-icon">❓</span> <span class="engine-item-name">Ask.com</span> <span class="engine-item-addr">ask.com</span></div>
+              <div class="engine-select-item" data-engine="aol"><span class="engine-item-icon">🅰️</span> <span class="engine-item-name">AOL</span> <span class="engine-item-addr">search.aol.com</span></div>
+              <div class="engine-select-item" data-engine="searx"><span class="engine-item-icon">🔬</span> <span class="engine-item-name">SearXNG</span> <span class="engine-item-addr">searx.be</span></div>
+              <div class="engine-select-item" data-engine="mojeek"><span class="engine-item-icon">🇬🇧</span> <span class="engine-item-name">Mojeek</span> <span class="engine-item-addr">mojeek.com</span></div>
+              <div class="engine-select-item" data-engine="you"><span class="engine-item-icon">🆈</span> <span class="engine-item-name">You.com</span> <span class="engine-item-addr">you.com</span></div>
+              <div class="engine-select-item" data-engine="wikipedia"><span class="engine-item-icon">W</span> <span class="engine-item-name">Wikipedia</span> <span class="engine-item-addr">wikipedia.org</span></div>
+              <div class="engine-select-item" data-engine="youtube"><span class="engine-item-icon">▶️</span> <span class="engine-item-name">YouTube</span> <span class="engine-item-addr">youtube.com</span></div>
+              <div class="engine-select-item" data-engine="github"><span class="engine-item-icon">🐙</span> <span class="engine-item-name">GitHub</span> <span class="engine-item-addr">github.com</span></div>
+              <div class="engine-select-item" data-engine="reddit"><span class="engine-item-icon">🤖</span> <span class="engine-item-name">Reddit</span> <span class="engine-item-addr">reddit.com</span></div>
+              <div class="engine-select-item" data-engine="staunt"><span class="engine-item-icon">▲</span> <span class="engine-item-name">STAUNT Search</span> <span class="engine-item-addr">staunt.vercel.app</span></div>
+            </div>
           </div>
-          <span class="shortcut-label">YouTube</span>
-        </a>
 
-        <!-- Google -->
-        <a href="https://www.google.com" class="shortcut-tile" data-id="google">
-          <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.08);">
-            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          <input
+            type="text"
+            id="newtabSearchInput"
+            class="search-input"
+            placeholder="Search with Google or enter URL..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+
+          <div class="search-inline-actions">
+            <button type="button" class="search-action-btn" id="voiceSearchBtn" aria-label="Voice search">🎤</button>
+            <button type="button" class="search-action-btn" id="lensSearchBtn" aria-label="Visual search">📷</button>
+            <button type="submit" class="search-submit-btn" id="searchSubmitBtn" aria-label="Search">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16" y2="16"/></svg>
+            </button>
           </div>
-          <span class="shortcut-label">Google</span>
-        </a>
+        </form>
+      </div>
 
-        <!-- Wikipedia -->
-        <a href="https://en.wikipedia.org" class="shortcut-tile" data-id="wikipedia">
-          <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.08);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#000000"><path d="M12.09 13.124l2.678-6.044h1.724l-3.524 7.646 2.062 4.417c.307.653.64 1.05 1 .194l4.97-12.257h1.699L17.18 19.143c-.496 1.09-1.288 1.6-2.378 1.531-1.09-.07-1.802-.638-2.14-1.706l-1.99-4.708-2.02 4.708c-.337 1.068-1.05 1.636-2.139 1.706-1.09.07-1.882-.442-2.378-1.531L-.001 7.08h1.7l4.97 12.257c.36.856.693.459 1-.194l2.062-4.417-3.524-7.646h1.724l2.679 6.044 1.48-3.486 1.48 3.486z"/></svg>
+      <!-- Trending Chips -->
+      <div class="trending-section">
+        <div class="trend-chip" data-q="India election 2026"><span class="trend-icon">📈</span> India election 2026</div>
+        <div class="trend-chip" data-q="ISRO latest news"><span class="trend-icon">📈</span> ISRO latest news</div>
+        <div class="trend-chip" data-q="Python tutorial"><span class="trend-icon">📈</span> Python tutorial</div>
+        <div class="trend-chip" data-q="Gold price today"><span class="trend-icon">📈</span> Gold price today</div>
+      </div>
+
+      <!-- Shortcuts Section (10 Squircles matching Desktop) -->
+      <div class="shortcuts-section">
+        <div class="shortcuts-grid" id="favoritesGrid">
+
+          <!-- 1. YouTube -->
+          <a href="https://www.youtube.com" class="shortcut-tile" data-id="youtube">
+            <div class="squircle-box" style="background: #ff0000; border-color: transparent;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </div>
+            <span class="shortcut-label">YouTube</span>
+          </a>
+
+          <!-- 2. Google -->
+          <a href="https://www.google.com" class="shortcut-tile" data-id="google">
+            <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.08);">
+              <svg width="22" height="22" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            </div>
+            <span class="shortcut-label">Google</span>
+          </a>
+
+          <!-- 3. Wikipedia -->
+          <a href="https://en.wikipedia.org" class="shortcut-tile" data-id="wikipedia">
+            <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.08);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#000000"><path d="M12.09 13.124l2.678-6.044h1.724l-3.524 7.646 2.062 4.417c.307.653.64 1.05 1 .194l4.97-12.257h1.699L17.18 19.143c-.496 1.09-1.288 1.6-2.378 1.531-1.09-.07-1.802-.638-2.14-1.706l-1.99-4.708-2.02 4.708c-.337 1.068-1.05 1.636-2.139 1.706-1.09.07-1.882-.442-2.378-1.531L-.001 7.08h1.7l4.97 12.257c.36.856.693.459 1-.194l2.062-4.417-3.524-7.646h1.724l2.679 6.044 1.48-3.486 1.48 3.486z"/></svg>
+            </div>
+            <span class="shortcut-label">Wikipedia</span>
+          </a>
+
+          <!-- 4. GitHub -->
+          <a href="https://github.com" class="shortcut-tile" data-id="github">
+            <div class="squircle-box" style="background: #24292e; border-color: rgba(255,255,255,0.12);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            </div>
+            <span class="shortcut-label">GitHub</span>
+          </a>
+
+          <!-- 5. Gmail -->
+          <a href="https://mail.google.com" class="shortcut-tile" data-id="gmail">
+            <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.1);">
+              <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285f4" d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/><path fill="#ea4335" d="M20 4H4C2.9 4 2 4.9 2 6v1l10 6.25L22 7V6c0-1.1-.9-2-2-2z"/></svg>
+            </div>
+            <span class="shortcut-label">Gmail</span>
+          </a>
+
+          <!-- 6. Maps -->
+          <a href="https://maps.google.com" class="shortcut-tile" data-id="maps">
+            <div class="squircle-box" style="background: #ffffff; border-color: rgba(0,0,0,0.1);">
+              <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#34a853" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+            </div>
+            <span class="shortcut-label">Maps</span>
+          </a>
+
+          <!-- 7. Amazon -->
+          <a href="https://www.amazon.in" class="shortcut-tile" data-id="amazon">
+            <div class="squircle-box" style="background: #131921; border-color: rgba(255,255,255,0.15);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff9900"><path d="M13.9 14.8c-.8.8-1.9 1.2-3.1 1.2-2.3 0-4-1.6-4-4s1.7-4 4-4c1.1 0 2.2.4 2.9 1.1l1.4-1.4C14 6.6 12.6 6 10.8 6 7.4 6 4.7 8.7 4.7 12s2.7 6 6.1 6c1.8 0 3.3-.6 4.4-1.7l-1.3-1.5z"/></svg>
+            </div>
+            <span class="shortcut-label">Amazon</span>
+          </a>
+
+          <!-- 8. Flipkart -->
+          <a href="https://www.flipkart.com" class="shortcut-tile" data-id="flipkart">
+            <div class="squircle-box" style="background: #2874f0; border-color: #2874f0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffe500"><path d="M19 6h-2c0-2.8-2.2-5-5-5S7 3.2 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.7 0 3 1.3 3 3H9c0-1.7 1.3-3 3-3zm7 17H5V8h14v12z"/></svg>
+            </div>
+            <span class="shortcut-label">Flipkart</span>
+          </a>
+
+          <!-- Hidden legacy support tiles for test compatibility -->
+          <a href="https://www.bing.com" class="shortcut-tile" data-id="bing" style="display:none;"><span class="shortcut-label">Bing</span></a>
+          <a href="https://chatgpt.com" class="shortcut-tile" data-id="chatgpt" style="display:none;"><span class="shortcut-label">ChatGPT</span></a>
+          <a href="https://x.com" class="shortcut-tile" data-id="x" style="display:none;"><span class="shortcut-label">X</span></a>
+
+          <!-- 9. Add Shortcut -->
+          <div class="shortcut-tile add-tile" id="addShortcutTile">
+            <div class="squircle-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+            <span class="shortcut-label" style="color: var(--text-muted);">Add shortcut</span>
           </div>
-          <span class="shortcut-label">Wikipedia</span>
-        </a>
 
-        <!-- GitHub -->
-        <a href="https://github.com" class="shortcut-tile" data-id="github">
-          <div class="squircle-box" style="background: #24292e; border-color: rgba(255,255,255,0.12);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          </div>
-          <span class="shortcut-label">GitHub</span>
-        </a>
-
-        <!-- Bing (hidden data-id preserved for test compat) -->
-        <a href="https://www.bing.com" class="shortcut-tile" data-id="bing" style="display:none;">
-          <div class="squircle-box" style="background:#008373;"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M5 3v18l5-3 6 3 3-5-6-3V7l-8-4z"/></svg></div>
-          <span class="shortcut-label">Bing</span>
-        </a>
-
-        <!-- ChatGPT (hidden data-id preserved for test compat) -->
-        <a href="https://chatgpt.com" class="shortcut-tile" data-id="chatgpt" style="display:none;">
-          <div class="squircle-box" style="background:#10a37f;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
-          <span class="shortcut-label">ChatGPT</span>
-        </a>
-
-        <!-- X (hidden data-id preserved for test compat) -->
-        <a href="https://x.com" class="shortcut-tile" data-id="x" style="display:none;">
-          <div class="squircle-box" style="background:#000;border:0.5px solid rgba(255,255,255,0.2);"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
-          <span class="shortcut-label">X</span>
-        </a>
-
-        <!-- Add Shortcut -->
-        <div class="shortcut-tile add-tile" id="addShortcutTile">
-          <div class="squircle-box">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </div>
-          <span class="shortcut-label" style="color: var(--text-muted);">Add shortcut</span>
         </div>
       </div>
-    </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <nav class="bottom-nav" id="bottomNavBar">
+      <button class="bottom-nav-item active" data-action="home" id="btnNavHomeAction">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="bottom-nav-item" data-action="tabs" id="btnNavTabsAction">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><line x1="4" y1="9" x2="20" y2="9"/></svg>
+        <span>Tabs</span>
+      </button>
+      <button class="bottom-nav-item" data-action="download" id="btnNavDownloadAction">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Download</span>
+      </button>
+      <button class="bottom-nav-item" data-action="settings" id="btnNavSettingsAction">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
   </div>
 
-  <!-- Bottom Navigation -->
-  <div class="bottom-nav" id="bottomNavBar">
-    <button class="bottom-nav-item active" data-action="home">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>Home</span>
-    </button>
-    <button class="bottom-nav-item" data-action="tabs">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><line x1="4" y1="9" x2="20" y2="9"/></svg>
-      <span>Tabs</span>
-    </button>
-    <button class="bottom-nav-item" data-action="download">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span>Download</span>
-    </button>
-    <button class="bottom-nav-item" data-action="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Settings</span>
-    </button>
+  <!-- FLOATING LIVING SCENE CONTROLLER (Desktop Parity) -->
+  <div class="living-scene-controller" id="livingSceneController">
+    <div class="scene-progress-track">
+      <div class="scene-progress-bar" id="sceneProgressBar"></div>
+    </div>
+    <div class="scene-ctrl-inner">
+      <button type="button" class="scene-ctrl-btn" id="scenePrevBtn" title="Previous Scene">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+
+      <button type="button" class="scene-pill-btn" id="scenePillBtn" title="Choose Scene">
+        <span id="scenePillText">🕊️ Living Sky</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <button type="button" class="scene-ctrl-btn" id="sceneNextBtn" title="Next Scene">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <div class="scene-ctrl-sep"></div>
+
+      <button type="button" class="scene-ctrl-btn scene-auto-btn active" id="sceneAutoBtn" title="Toggle Auto Rotation">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      </button>
+
+      <button type="button" class="scene-ctrl-btn scene-lock-btn" id="sceneLockBtn" title="Lock Scene">
+        🔓
+      </button>
+    </div>
+    <div class="scene-select-menu" id="sceneSelectMenu"></div>
   </div>
 
   <!-- Add Shortcut Modal -->
@@ -703,8 +1138,128 @@
     </div>
   </div>
 
+  <script src="search_client.js"></script>
+  <script src="living_scenes.js"></script>
   <script>
-    // 1. Theme Management
+    // 0. Search Client & Multi-Engine Architecture
+    const searchClient = (typeof NativeSearchClient !== 'undefined') 
+      ? new NativeSearchClient() 
+      : {
+          activeEngine: 'google',
+          setSearchEngine: function(e) { this.activeEngine = e; },
+          getEngineMetadata: function() {
+            const metaMap = {
+              google: { id: 'google', name: 'Google', icon: '🔍' },
+              duckduckgo: { id: 'duckduckgo', name: 'DuckDuckGo', icon: '🦆' },
+              bing: { id: 'bing', name: 'Bing', icon: 'ᵇ' },
+              brave: { id: 'brave', name: 'Brave Search', icon: '🦁' },
+              ecosia: { id: 'ecosia', name: 'Ecosia', icon: '🌳' },
+              yahoo: { id: 'yahoo', name: 'Yahoo', icon: 'Y!' },
+              startpage: { id: 'startpage', name: 'Startpage', icon: '🛡️' },
+              staunt: { id: 'staunt', name: 'STAUNT Search', icon: '▲' }
+            };
+            return metaMap[this.activeEngine] || metaMap.google;
+          },
+          classifyInput: function(q) {
+            if (/^https?:\/\//i.test(q)) return { url: q };
+            if (/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(q) && !q.includes(' ')) return { url: 'https://' + q };
+            return null;
+          },
+          buildSearchUrl: function(q) {
+            const enc = encodeURIComponent(q);
+            const urls = {
+              google: 'https://www.google.com/search?q=' + enc,
+              duckduckgo: 'https://duckduckgo.com/?q=' + enc,
+              bing: 'https://www.bing.com/search?q=' + enc,
+              brave: 'https://search.brave.com/search?q=' + enc,
+              ecosia: 'https://www.ecosia.org/search?q=' + enc,
+              yahoo: 'https://search.yahoo.com/search?p=' + enc,
+              startpage: 'https://www.startpage.com/sp/search?query=' + enc,
+              staunt: 'https://staunt.vercel.app/?q=' + enc
+            };
+            return urls[this.activeEngine] || urls.google;
+          }
+        };
+
+    // Synchronize Search Engine Choice (URL query params > localStorage > default)
+    const urlParams = new URLSearchParams(window.location.search);
+    const engineParam = urlParams.get('engine');
+    const customUrlParam = urlParams.get('customUrl');
+    if (engineParam) {
+      searchClient.setSearchEngine(engineParam, customUrlParam || '');
+      try {
+        localStorage.setItem('staunt_search_engine', engineParam);
+        if (customUrlParam) localStorage.setItem('staunt_custom_search_url', customUrlParam);
+      } catch (_) {}
+    } else {
+      try {
+        const cachedEngine = localStorage.getItem('staunt_search_engine');
+        const cachedCustom = localStorage.getItem('staunt_custom_search_url');
+        if (cachedEngine) searchClient.setSearchEngine(cachedEngine, cachedCustom || '');
+      } catch (_) {}
+    }
+
+    function updateNewTabSearchUI() {
+      const input = document.getElementById('newtabSearchInput');
+      const meta = searchClient.getEngineMetadata();
+      if (input && meta) {
+        if (meta.id === 'staunt') {
+          input.placeholder = 'Search the web with STAUNT...';
+        } else if (meta.id === 'custom') {
+          input.placeholder = 'Search with Custom Engine or enter URL...';
+        } else {
+          input.placeholder = `Search with ${meta.name} or enter URL...`;
+        }
+      }
+      const badgeIcon = document.getElementById('engineSelectIcon');
+      const badgeLabel = document.getElementById('engineSelectLabel');
+      if (badgeIcon && meta) badgeIcon.textContent = meta.icon || '🔍';
+      if (badgeLabel && meta) badgeLabel.textContent = meta.name || 'Search';
+
+      document.querySelectorAll('.engine-select-item').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('data-engine') === searchClient.activeEngine);
+      });
+    }
+
+    // Engine Selector Dropdown Interactions
+    const engineBadgeWrap = document.getElementById('engineBadgeWrap');
+    const engineBadgeBtn = document.getElementById('engineBadgeBtn');
+    if (engineBadgeBtn && engineBadgeWrap) {
+      engineBadgeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        engineBadgeWrap.classList.toggle('open');
+      });
+      document.addEventListener('click', () => {
+        engineBadgeWrap.classList.remove('open');
+      });
+    }
+
+    document.querySelectorAll('.engine-select-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const eng = item.getAttribute('data-engine');
+        if (eng) {
+          searchClient.setSearchEngine(eng);
+          try {
+            localStorage.setItem('staunt_search_engine', eng);
+          } catch (_) {}
+
+          // Notify Android native browser host if available
+          if (window.StauntAndroid && typeof window.StauntAndroid.setSearchEngine === 'function') {
+            try { window.StauntAndroid.setSearchEngine(eng); } catch (_) {}
+          }
+
+          updateNewTabSearchUI();
+          if (engineBadgeWrap) engineBadgeWrap.classList.remove('open');
+          const input = document.getElementById('newtabSearchInput');
+          if (input) input.focus();
+        }
+      });
+    });
+
+    updateNewTabSearchUI();
+
+    // 1. Theme Management (Dark / Light)
     const THEME_KEY = 'staunt_theme';
     function getSavedTheme() {
       const urlTheme = new URLSearchParams(window.location.search).get('theme');
@@ -713,7 +1268,7 @@
     }
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem(THEME_KEY, theme);
+      try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
       const moon = document.getElementById('moonIcon');
       const sun = document.getElementById('sunIcon');
       if (moon && sun) {
@@ -742,41 +1297,15 @@
       const query = (customQuery || (input ? input.value : '')).trim();
       if (!query) return;
 
-      let target = query;
-      if (!/^https?:\/\//i.test(query) && !query.startsWith('file://')) {
-        const isLocalhost = /^localhost(:\d+)?(\/.*)?$/i.test(query);
-        const isIpv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\d+)?(\/.*)?$/.test(query);
-        const isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(query) && !query.includes(' ');
-
-        if (isLocalhost || isIpv4) {
-          target = 'http://' + query;
-        } else if (isDomain) {
-          target = 'https://' + query;
-        } else {
-          const searchBase = window.STAUNT_SEARCH_BASE || 'https://staunt.vercel.app/?q=';
-          target = searchBase + encodeURIComponent(query);
-        }
+      const classification = searchClient.classifyInput(query);
+      if (classification && classification.url) {
+        window.location.href = classification.url;
+      } else {
+        window.location.href = searchClient.buildSearchUrl(query);
       }
-      window.location.href = target;
     }
 
-    // Search input Enter key
-    const searchInput = document.getElementById('newtabSearchInput');
-    if (searchInput) {
-      searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          submitSearch();
-        }
-      });
-    }
-
-    // Search submit button
-    const searchSubmitBtn = document.getElementById('searchSubmitBtn');
-    if (searchSubmitBtn) {
-      searchSubmitBtn.addEventListener('click', () => submitSearch());
-    }
-
-    // Trending Chips
+    // Trending Chips Click Handlers
     document.querySelectorAll('.trend-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const q = chip.getAttribute('data-q');
@@ -784,7 +1313,7 @@
       });
     });
 
-    // Voice Search
+    // Voice & Lens Mock Actions
     const voiceBtn = document.getElementById('voiceSearchBtn');
     if (voiceBtn) {
       voiceBtn.addEventListener('click', () => {
@@ -806,7 +1335,6 @@
       });
     }
 
-    // Visual Search
     const lensBtn = document.getElementById('lensSearchBtn');
     if (lensBtn) {
       lensBtn.addEventListener('click', () => {
@@ -815,7 +1343,7 @@
       });
     }
 
-    // 3. Favorites & Add Shortcut
+    // 3. Shortcuts & Favorites Engine
     const FAVORITES_KEY = 'staunt_favorites';
     function getStoredFavorites() {
       try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); } catch(e) { return []; }
@@ -855,7 +1383,7 @@
         let initial = (fav.name || 'S').trim().charAt(0).toUpperCase();
         a.innerHTML = `
           <button class="tile-remove-btn" title="Remove">&times;</button>
-          <div class="squircle-box" style="background: var(--accent-gold-soft); border-color: var(--accent-gold-border); font-weight: 700; font-size: 1.1rem; color: var(--accent-gold);">
+          <div class="squircle-box" style="background: rgba(212, 163, 89, 0.16); border-color: rgba(212, 163, 89, 0.35); font-weight: 700; font-size: 1.15rem; color: var(--accent-gold);">
             ${escapeHtml(initial)}
           </div>
           <span class="shortcut-label">${escapeHtml(fav.name)}</span>
@@ -875,19 +1403,19 @@
     // Modal Events
     const addShortcutTile = document.getElementById('addShortcutTile');
     const shortcutModal = document.getElementById('shortcutModal');
-    const shortcutNameEl = document.getElementById('shortcutName');
-    const shortcutUrlEl = document.getElementById('shortcutUrl');
+    const shortcutName = document.getElementById('shortcutName');
+    const shortcutUrl = document.getElementById('shortcutUrl');
     const shortcutError = document.getElementById('shortcutError');
     const shortcutCancel = document.getElementById('shortcutCancel');
     const shortcutSave = document.getElementById('shortcutSave');
 
     if (addShortcutTile && shortcutModal) {
       addShortcutTile.addEventListener('click', () => {
-        shortcutNameEl.value = '';
-        shortcutUrlEl.value = '';
+        shortcutName.value = '';
+        shortcutUrl.value = '';
         shortcutError.textContent = '';
         shortcutModal.style.display = 'flex';
-        shortcutNameEl.focus();
+        shortcutName.focus();
       });
     }
     if (shortcutCancel) {
@@ -900,8 +1428,8 @@
     }
     if (shortcutSave) {
       shortcutSave.addEventListener('click', () => {
-        const name = shortcutNameEl.value.trim();
-        let url = shortcutUrlEl.value.trim();
+        const name = shortcutName.value.trim();
+        let url = shortcutUrl.value.trim();
         if (!name) { shortcutError.textContent = 'Name is required.'; return; }
         if (!url) { shortcutError.textContent = 'URL is required.'; return; }
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
@@ -926,6 +1454,39 @@
         if (href) window.location.href = href;
       });
     });
+
+    // Mobile Bottom Navigation Wiring
+    const btnNavHome = document.getElementById('btnNavHomeAction');
+    const btnNavTabs = document.getElementById('btnNavTabsAction');
+    const btnNavDownload = document.getElementById('btnNavDownloadAction');
+    const btnNavSettings = document.getElementById('btnNavSettingsAction');
+
+    if (btnNavHome) {
+      btnNavHome.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
+    if (btnNavTabs) {
+      btnNavTabs.addEventListener('click', () => {
+        if (window.StauntAndroid && typeof window.StauntAndroid.showTabs === 'function') {
+          window.StauntAndroid.showTabs();
+        }
+      });
+    }
+    if (btnNavDownload) {
+      btnNavDownload.addEventListener('click', () => {
+        if (window.StauntAndroid && typeof window.StauntAndroid.openDownloads === 'function') {
+          window.StauntAndroid.openDownloads();
+        }
+      });
+    }
+    if (btnNavSettings) {
+      btnNavSettings.addEventListener('click', () => {
+        if (window.StauntAndroid && typeof window.StauntAndroid.openSettings === 'function') {
+          window.StauntAndroid.openSettings();
+        }
+      });
+    }
   </script>
 </body>
 </html>

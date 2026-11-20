@@ -238,12 +238,56 @@ div[data-ad-slot] {
 // 6. GHOSTERY + BRAVE HYBRID SHIELD INITIALIZATION
 // =============================================================================
 let activeBlocker = null;
+let currentShieldLevel = 'standard'; // 'strict' | 'standard' | 'off'
+const SHIELD_SESSIONS = new WeakSet();
 let stats = {
   totalBlocked: 0,
   trackersBlocked: 0,
   adsBlocked: 0,
   bandwidthSavedMB: 0.0
 };
+
+const STANDARD_TRACKER_PATTERNS = [
+  'google-analytics.com',
+  'hotjar.com',
+  'clarity.ms',
+  'coinhive.com',
+  'doubleclick.net'
+];
+
+const STRICT_TRACKER_PATTERNS = [
+  ...STANDARD_TRACKER_PATTERNS,
+  'googletagmanager.com',
+  'googlesyndication.com',
+  'googleadservices.com',
+  'mouseflow.com',
+  'crazyegg.com',
+  'fullstory.com',
+  'segment.io',
+  'segment.com',
+  'mixpanel.com',
+  'optimizely.com',
+  'connect.facebook.net',
+  'ads-twitter.com',
+  'analytics.twitter.com',
+  'criteo.com',
+  'outbrain.com',
+  'taboola.com',
+  'pubmatic.com',
+  'adnxs.com'
+];
+
+function setShieldLevel(level) {
+  const clean = String(level || 'standard').toLowerCase().trim();
+  if (clean === 'strict' || clean === 'standard' || clean === 'off') {
+    currentShieldLevel = clean;
+  }
+  return currentShieldLevel;
+}
+
+function getShieldLevel() {
+  return currentShieldLevel;
+}
 
 async function initStauntShieldEngine(userDataPath) {
   const cachePath = path.join(userDataPath || '.', 'staunt_engine_cache.bin');
@@ -273,42 +317,33 @@ async function initStauntShieldEngine(userDataPath) {
 }
 
 function enableShieldInSession(targetSession, onStatsUpdate) {
-  if (!targetSession) return;
+  if (!targetSession || SHIELD_SESSIONS.has(targetSession)) return;
+  SHIELD_SESSIONS.add(targetSession);
 
-  // 1. Enable Ghostery blocker in session if available
-  if (activeBlocker) {
+  if (activeBlocker && typeof targetSession.registerPreloadScript === 'function') {
     try {
       activeBlocker.enableBlockingInSession(targetSession);
-    } catch(e) {
-      console.warn('[STAUNT SHIELD] Ghostery enable error:', e.message);
-    }
+    } catch (_e) {}
   }
 
-  // 2. Intercept requests with Zero-Breakage Whitelist & eTLD+1 Guard
   targetSession.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
-    const url = details.url;
+    if (currentShieldLevel === 'off') {
+      return callback({ cancel: false });
+    }
 
-    // Never intercept or cancel Critical Whitelist items
+    const url = details.url;
     if (isCriticalWhitelisted(url)) {
       return callback({ cancel: false });
     }
 
-    // First-Party Script Protection: Never block same eTLD+1 resources
-    if (isFirstParty(url, details.initiator)) {
-      // Allow legitimate first-party functionality
+    if (currentShieldLevel === 'standard' && isFirstParty(url, details.initiator)) {
       if (!url.includes('/ads/') && !url.includes('/pagead/')) {
         return callback({ cancel: false });
       }
     }
 
-    // Check high-confidence known trackers to defuse/block
-    if (
-      url.includes('google-analytics.com') ||
-      url.includes('hotjar.com') ||
-      url.includes('clarity.ms') ||
-      url.includes('coinhive.com') ||
-      url.includes('doubleclick.net')
-    ) {
+    const patterns = currentShieldLevel === 'strict' ? STRICT_TRACKER_PATTERNS : STANDARD_TRACKER_PATTERNS;
+    if (patterns.some(pat => url.includes(pat))) {
       stats.totalBlocked++;
       stats.trackersBlocked++;
       stats.bandwidthSavedMB += 0.12;
@@ -319,17 +354,18 @@ function enableShieldInSession(targetSession, onStatsUpdate) {
     callback({ cancel: false });
   });
 
-  // 3. Outgoing Header Sanitization (Strip Client Hints, Enforce GPC)
   targetSession.webRequest.onBeforeSendHeaders((details, callback) => {
     const headers = { ...details.requestHeaders };
 
-    delete headers['X-Client-Data'];
-    delete headers['Sec-CH-UA-Model'];
-    delete headers['Sec-CH-UA-Platform-Version'];
-    delete headers['Sec-CH-UA-Full-Version-List'];
+    if (currentShieldLevel !== 'off') {
+      delete headers['X-Client-Data'];
+      delete headers['Sec-CH-UA-Model'];
+      delete headers['Sec-CH-UA-Platform-Version'];
+      delete headers['Sec-CH-UA-Full-Version-List'];
 
-    headers['Sec-GPC'] = '1';
-    headers['DNT'] = '1';
+      headers['Sec-GPC'] = '1';
+      headers['DNT'] = '1';
+    }
 
     callback({ requestHeaders: headers });
   });
@@ -338,19 +374,16 @@ function enableShieldInSession(targetSession, onStatsUpdate) {
 function attachShieldToWebContents(webContents) {
   if (!webContents || webContents.isDestroyed()) return;
 
-  // Inject script surrogates as early as possible
   webContents.on('did-start-navigation', () => {
+    if (currentShieldLevel === 'off') return;
     webContents.executeJavaScript(SURROGATES_SCRIPT).catch(() => {});
   });
 
   webContents.on('dom-ready', () => {
-    // Inject surrogates
+    if (currentShieldLevel === 'off') return;
     webContents.executeJavaScript(SURROGATES_SCRIPT).catch(() => {});
-
-    // Inject non-destructive cosmetic CSS
     webContents.insertCSS(SCOPED_COSMETIC_CSS).catch(() => {});
 
-    // Inject YouTube Ad Neutralization if visiting YouTube
     const currentUrl = webContents.getURL() || '';
     if (currentUrl.includes('youtube.com')) {
       webContents.executeJavaScript(YOUTUBE_AD_SUPPRESSION_SCRIPT).catch(() => {});
@@ -362,6 +395,8 @@ module.exports = {
   initStauntShieldEngine,
   enableShieldInSession,
   attachShieldToWebContents,
+  setShieldLevel,
+  getShieldLevel,
   isCriticalWhitelisted,
   isFirstParty,
   SURROGATES_SCRIPT,
